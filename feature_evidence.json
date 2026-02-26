@@ -1,0 +1,48 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-populate-complete-vrat-katha-content-for-all-major-vratas-in-the-static-katha-data-frontend-src-lib-kathadata-ts-each-vrat-katha-must-include-full-hindi-story-text-kathahindi-full-english-story-text-kathaenglish-correct-category-set-to-vrat-deity-name-title-and-all-required-metadata-fields-include-at-minimum-the-following-vratas-ekadashi-vrat-katha-somvar-monday-shiv-vrat-katha-mangalvar-tuesday-hanuman-vrat-katha-budh-wednesday-vrat-katha-brihaspativar-thursday-vrat-katha-shukravar-friday-santoshi-mata-vrat-katha-shanivar-saturday-shani-vrat-katha-karva-chauth-vrat-katha-teej-vrat-katha-navratri-vrat-katha-satyanarayan-vrat-katha-complete-version-pradosh-vrat-katha-ganesh-chaturthi-vrat-katha-ahoi-ashtami-vrat-katha-hartalika-teej-vrat-katha-jivitputrika-vrat-katha-vat-savitri-vrat-katha-surya-shashti-chhath-vrat-katha-nirjala-ekadashi-vrat-katha-and-purnima-vrat-katha-all-katha-text-must-be-meaningful-complete-religious-narratives-not-placeholder-or-truncated-text",
+      "featureTitle": "Populate complete Vrat Katha content for all major vratas in the static katha data (frontend/src/lib/kathaData.ts). Each Vrat Katha must include: full Hindi story text (kathaHindi), full English story text (kathaEnglish), correct category set to 'Vrat', deity name, title, and all required metadata fields. Include at minimum the following vratas: Ekadashi Vrat Katha, Somvar (Monday) Shiv Vrat Katha, Mangalvar (Tuesday) Hanuman Vrat Katha, Budh (Wednesday) Vrat Katha, Brihaspativar (Thursday) Vrat Katha, Shukravar (Friday) Santoshi Mata Vrat Katha, Shanivar (Saturday) Shani Vrat Katha, Karva Chauth Vrat Katha, Teej Vrat Katha, Navratri Vrat Katha, Satyanarayan Vrat Katha (complete version), Pradosh Vrat Katha, Ganesh Chaturthi Vrat Katha, Ahoi Ashtami Vrat Katha, Hartalika Teej Vrat Katha, Jivitputrika Vrat Katha, Vat Savitri Vrat Katha, Surya Shashti (Chhath) Vrat Katha, Nirjala Ekadashi Vrat Katha, and Purnima Vrat Katha. All katha text must be meaningful, complete religious narratives — not placeholder or truncated text.",
+      "files": [
+        "frontend/src/lib/kathaData.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-fix-the-ai-text-to-speech-tts-narration-feature-in-the-krishna-leela-katha-detail-page-frontend-src-pages-kathadetail-tsx-the-usespeechnarration-hook-frontend-src-hooks-usespeechnarration-ts-must-be-correctly-invoked-with-the-currently-displayed-katha-text-hindi-or-english-based-on-the-active-language-toggle-ensure-1-the-narration-play-button-is-visible-and-enabled-for-krishna-leela-kathas-2-clicking-play-triggers-speech-synthesis-using-the-web-speech-api-3-pause-resume-and-stop-controls-work-as-expected-4-when-the-language-is-toggled-while-narration-is-active-the-current-narration-stops-and-restarts-in-the-new-language-5-appropriate-error-handling-is-shown-if-the-browser-does-not-support-speech-synthesis",
+      "featureTitle": "Fix the AI text-to-speech (TTS) narration feature in the Krishna Leela katha detail page (frontend/src/pages/KathaDetail.tsx). The useSpeechNarration hook (frontend/src/hooks/useSpeechNarration.ts) must be correctly invoked with the currently displayed katha text (Hindi or English based on the active language toggle). Ensure: (1) the narration play button is visible and enabled for Krishna Leela kathas, (2) clicking play triggers speech synthesis using the Web Speech API, (3) pause, resume, and stop controls work as expected, (4) when the language is toggled while narration is active, the current narration stops and restarts in the new language, (5) appropriate error handling is shown if the browser does not support speech synthesis.",
+      "files": [
+        "frontend/src/hooks/useSpeechNarration.ts",
+        "frontend/src/pages/KathaDetail.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

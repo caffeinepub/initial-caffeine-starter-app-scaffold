@@ -1,0 +1,48 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Fill Vrat Katha content and fix Krishna Leela TTS narration",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Populate complete Vrat Katha content for all major vratas in the static katha data with full Hindi and English narratives",
+      "acceptanceCriteria": [
+        "The Kathayen page with 'Vrat' category tab shows at least 20 Vrat Kathas",
+        "Each Vrat Katha card displays the correct title, deity, and category badge",
+        "Opening any Vrat Katha detail page shows full Hindi and English story text — no empty or placeholder content",
+        "Hindi/English language toggle works correctly for all Vrat Kathas"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/kathaData.ts",
+          "operation": "modify",
+          "description": "Replace the existing staticKathaData array with complete Vrat Katha entries for at least 20 vratas. Each entry must include: full meaningful Hindi story text in kathaHindi field (minimum 300 words), full meaningful English story text in kathaEnglish field (minimum 300 words), category set to 'Vrat', correct deity name, proper title, tags array, and isApproved set to true. Include the following vratas: Ekadashi Vrat Katha, Somvar (Monday) Shiv Vrat Katha, Mangalvar (Tuesday) Hanuman Vrat Katha, Budh (Wednesday) Vrat Katha, Brihaspativar (Thursday) Vrat Katha, Shukravar (Friday) Santoshi Mata Vrat Katha, Shanivar (Saturday) Shani Vrat Katha, Karva Chauth Vrat Katha, Teej Vrat Katha, Navratri Vrat Katha, Satyanarayan Vrat Katha (complete version), Pradosh Vrat Katha, Ganesh Chaturthi Vrat Katha, Ahoi Ashtami Vrat Katha, Hartalika Teej Vrat Katha, Jivitputrika Vrat Katha, Vat Savitri Vrat Katha, Surya Shashti (Chhath) Vrat Katha, Nirjala Ekadashi Vrat Katha, and Purnima Vrat Katha. All katha text must be authentic Hindu religious narratives — not placeholder or truncated text. Preserve existing Krishna Leela and other Puranik kathas. Ensure the file exports the staticKathaData array as the default export."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Fix the AI text-to-speech (TTS) narration feature in the Krishna Leela katha detail page to correctly invoke speech synthesis with the currently displayed katha text",
+      "acceptanceCriteria": [
+        "Narration play button is visible on Krishna Leela katha detail pages",
+        "Clicking play begins audio narration of the displayed katha text",
+        "Pause, resume, and stop buttons function correctly during narration",
+        "Switching language (Hindi/English) while narrating stops the current speech and restarts in the new language",
+        "No console errors related to speech synthesis when using the narration feature",
+        "A user-facing message is shown if the browser does not support Web Speech API"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/KathaDetail.tsx",
+          "operation": "modify",
+          "description": "Fix the useSpeechNarration hook invocation to correctly pass the currently displayed katha text based on the active language toggle (language === 'hindi' ? katha.hindiText : katha.englishText). Ensure the narration controls (play, pause, resume, stop buttons) are wired to the hook's returned functions. Add a useEffect that calls stopNarration when the language state changes to ensure the current narration stops and can be restarted in the new language. Verify that the narration controls are visible when the katha text is available. Add error handling UI to display a toast or alert if speechSupported is false. Ensure the narration play button is conditionally rendered based on whether the browser supports speech synthesis."
+        },
+        {
+          "path": "frontend/src/hooks/useSpeechNarration.ts",
+          "operation": "modify",
+          "description": "Review and ensure the hook correctly implements the Web Speech API with proper error handling. Verify that the play function initializes speech synthesis with the provided text, pause/resume functions control the utterance state, and stop function cancels synthesis. Ensure the hook returns speechSupported, isPlaying, and isPaused state flags along with the control functions. Add defensive checks to prevent crashes if the Web Speech API is unavailable in the browser. Ensure the hook can handle language changes by allowing the caller to call stopNarration before restarting with new text."
+        }
+      ]
+    }
+  ]
+}
