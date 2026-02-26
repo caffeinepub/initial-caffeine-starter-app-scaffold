@@ -44,7 +44,17 @@ export interface JapStats {
     daily: bigint;
     weekly: bigint;
 }
+export interface KrishnaLeela {
+    id: bigint;
+    hindiText: string;
+}
+export interface VratKatha {
+    id: bigint;
+    title: string;
+    hindiText: string;
+}
 export interface UserProfile {
+    selectedMantra: Mantra;
     name: string;
 }
 export enum KathaApprovalStatus {
@@ -56,6 +66,17 @@ export enum KathaCategory {
     vrat = "vrat",
     puranik = "puranik"
 }
+export enum Mantra {
+    saiRam = "saiRam",
+    hareKrishna = "hareKrishna",
+    mahamrityunjayaMantra = "mahamrityunjayaMantra",
+    omMantra = "omMantra",
+    jaiShreeRamNamJap = "jaiShreeRamNamJap",
+    sitaram = "sitaram",
+    gayatriMantra = "gayatriMantra",
+    omNamahShivaya = "omNamahShivaya",
+    radhaNamJap = "radhaNamJap"
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -65,10 +86,10 @@ export interface backendInterface {
     addAarti(id: bigint, name: string, hindiText: string, englishText: string): Promise<void>;
     addDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<void>;
     addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>): Promise<bigint>;
-    addPanchang(day: bigint, tithi: string, nakshatra: string, rahuKaal: string, muhurat: string, sunrise: string, sunset: string): Promise<void>;
     approveKatha(kathaId: bigint): Promise<boolean>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     getAllKathayen(): Promise<Array<Katha>>;
+    getAllVratKathas(): Promise<Array<VratKatha>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDharmaQuoteOfDay(): Promise<DharmaQuote | null>;
@@ -76,19 +97,19 @@ export interface backendInterface {
     getJapLeaderboard(): Promise<Array<JapStats>>;
     getJapStats(): Promise<JapStatsInternal>;
     getKatha(id: bigint): Promise<Katha | null>;
-    getPanchang(day: bigint): Promise<{
-        tithi?: string;
-        muhurat?: string;
-    }>;
+    getKrishnaLeelaStory(): Promise<KrishnaLeela>;
+    getUserMantra(): Promise<Mantra>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getVratKathaById(id: bigint): Promise<VratKatha | null>;
     incrementJap(count: bigint): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     listKathayenByCategory(category: KathaCategory): Promise<Array<Katha>>;
     requestApproval(): Promise<void>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    resetJapStats(): Promise<void>;
     searchKathayenByDeity(deity: string): Promise<Array<Katha>>;
     searchKathayenByTitle(search: string): Promise<Array<Katha>>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
+    setUserProfile(profile: UserProfile): Promise<void>;
 }

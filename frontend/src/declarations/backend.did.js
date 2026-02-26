@@ -44,7 +44,26 @@ export const Katha = IDL.Record({
   'hindiText' : IDL.Text,
   'deity' : IDL.Text,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const VratKatha = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'hindiText' : IDL.Text,
+});
+export const Mantra = IDL.Variant({
+  'saiRam' : IDL.Null,
+  'hareKrishna' : IDL.Null,
+  'mahamrityunjayaMantra' : IDL.Null,
+  'omMantra' : IDL.Null,
+  'jaiShreeRamNamJap' : IDL.Null,
+  'sitaram' : IDL.Null,
+  'gayatriMantra' : IDL.Null,
+  'omNamahShivaya' : IDL.Null,
+  'radhaNamJap' : IDL.Null,
+});
+export const UserProfile = IDL.Record({
+  'selectedMantra' : Mantra,
+  'name' : IDL.Text,
+});
 export const DharmaQuote = IDL.Record({
   'id' : IDL.Nat,
   'author' : IDL.Text,
@@ -66,6 +85,10 @@ export const JapStatsInternal = IDL.Record({
   'lifetime' : IDL.Nat,
   'daily' : IDL.Nat,
   'weekly' : IDL.Nat,
+});
+export const KrishnaLeela = IDL.Record({
+  'id' : IDL.Nat,
+  'hindiText' : IDL.Text,
 });
 export const ApprovalStatus = IDL.Variant({
   'pending' : IDL.Null,
@@ -119,14 +142,10 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
-  'addPanchang' : IDL.Func(
-      [IDL.Nat, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
-      [],
-      [],
-    ),
   'approveKatha' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'getAllKathayen' : IDL.Func([], [IDL.Vec(Katha)], ['query']),
+  'getAllVratKathas' : IDL.Func([], [IDL.Vec(VratKatha)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
@@ -134,21 +153,14 @@ export const idlService = IDL.Service({
   'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapStats)], ['query']),
   'getJapStats' : IDL.Func([], [JapStatsInternal], ['query']),
   'getKatha' : IDL.Func([IDL.Nat], [IDL.Opt(Katha)], ['query']),
-  'getPanchang' : IDL.Func(
-      [IDL.Nat],
-      [
-        IDL.Record({
-          'tithi' : IDL.Opt(IDL.Text),
-          'muhurat' : IDL.Opt(IDL.Text),
-        }),
-      ],
-      ['query'],
-    ),
+  'getKrishnaLeelaStory' : IDL.Func([], [KrishnaLeela], ['query']),
+  'getUserMantra' : IDL.Func([], [Mantra], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getVratKathaById' : IDL.Func([IDL.Nat], [IDL.Opt(VratKatha)], ['query']),
   'incrementJap' : IDL.Func([IDL.Nat], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
@@ -159,10 +171,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'requestApproval' : IDL.Func([], [], []),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'resetJapStats' : IDL.Func([], [], []),
   'searchKathayenByDeity' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
   'searchKathayenByTitle' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
+  'setUserProfile' : IDL.Func([UserProfile], [], []),
 });
 
 export const idlInitArgs = [];
@@ -204,7 +217,26 @@ export const idlFactory = ({ IDL }) => {
     'hindiText' : IDL.Text,
     'deity' : IDL.Text,
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const VratKatha = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'hindiText' : IDL.Text,
+  });
+  const Mantra = IDL.Variant({
+    'saiRam' : IDL.Null,
+    'hareKrishna' : IDL.Null,
+    'mahamrityunjayaMantra' : IDL.Null,
+    'omMantra' : IDL.Null,
+    'jaiShreeRamNamJap' : IDL.Null,
+    'sitaram' : IDL.Null,
+    'gayatriMantra' : IDL.Null,
+    'omNamahShivaya' : IDL.Null,
+    'radhaNamJap' : IDL.Null,
+  });
+  const UserProfile = IDL.Record({
+    'selectedMantra' : Mantra,
+    'name' : IDL.Text,
+  });
   const DharmaQuote = IDL.Record({
     'id' : IDL.Nat,
     'author' : IDL.Text,
@@ -227,6 +259,7 @@ export const idlFactory = ({ IDL }) => {
     'daily' : IDL.Nat,
     'weekly' : IDL.Nat,
   });
+  const KrishnaLeela = IDL.Record({ 'id' : IDL.Nat, 'hindiText' : IDL.Text });
   const ApprovalStatus = IDL.Variant({
     'pending' : IDL.Null,
     'approved' : IDL.Null,
@@ -283,14 +316,10 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
-    'addPanchang' : IDL.Func(
-        [IDL.Nat, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
-        [],
-        [],
-      ),
     'approveKatha' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'getAllKathayen' : IDL.Func([], [IDL.Vec(Katha)], ['query']),
+    'getAllVratKathas' : IDL.Func([], [IDL.Vec(VratKatha)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
@@ -298,21 +327,14 @@ export const idlFactory = ({ IDL }) => {
     'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapStats)], ['query']),
     'getJapStats' : IDL.Func([], [JapStatsInternal], ['query']),
     'getKatha' : IDL.Func([IDL.Nat], [IDL.Opt(Katha)], ['query']),
-    'getPanchang' : IDL.Func(
-        [IDL.Nat],
-        [
-          IDL.Record({
-            'tithi' : IDL.Opt(IDL.Text),
-            'muhurat' : IDL.Opt(IDL.Text),
-          }),
-        ],
-        ['query'],
-      ),
+    'getKrishnaLeelaStory' : IDL.Func([], [KrishnaLeela], ['query']),
+    'getUserMantra' : IDL.Func([], [Mantra], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getVratKathaById' : IDL.Func([IDL.Nat], [IDL.Opt(VratKatha)], ['query']),
     'incrementJap' : IDL.Func([IDL.Nat], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
@@ -323,10 +345,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'requestApproval' : IDL.Func([], [], []),
-    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'resetJapStats' : IDL.Func([], [], []),
     'searchKathayenByDeity' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
     'searchKathayenByTitle' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
+    'setUserProfile' : IDL.Func([UserProfile], [], []),
   });
 };
 

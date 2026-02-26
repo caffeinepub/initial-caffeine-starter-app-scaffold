@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ChatMessageProps {
-  role: 'user' | 'ai';
+  role: 'user' | 'ai' | 'assistant';
   content: string;
   timestamp: Date;
 }

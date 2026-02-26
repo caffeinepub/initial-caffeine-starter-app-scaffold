@@ -1,23 +1,30 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import KathaCard from '../components/KathaCard';
 import { useGetAllKathayen } from '../hooks/useQueries';
 import staticKathaData from '../lib/kathaData';
 import { KathaCategory } from '../backend';
 import type { Katha } from '../backend';
-import { Search } from 'lucide-react';
+import { Search, BookOpen } from 'lucide-react';
 
 export default function Kathayen() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'puranik' | 'vrat'>('all');
 
-  const { data: backendKathayen, isLoading } = useGetAllKathayen();
+  const { data: backendKathayen, isLoading, isFetched } = useGetAllKathayen();
 
-  // Use backend data if available, otherwise fall back to static data
-  const allKathayen: Katha[] = (backendKathayen && backendKathayen.length > 0)
-    ? backendKathayen
-    : staticKathaData;
+  // Only fall back to static data AFTER loading completes and backend returned 0 results
+  // During loading: show skeleton
+  // After load with data: show backend data
+  // After load with 0 results: show static fallback
+  const allKathayen: Katha[] = (() => {
+    if (isLoading) return [];
+    if (backendKathayen && backendKathayen.length > 0) return backendKathayen;
+    if (isFetched) return staticKathaData;
+    return staticKathaData;
+  })();
 
   const filtered = allKathayen.filter((k) => {
     const matchesSearch =
@@ -33,6 +40,9 @@ export default function Kathayen() {
 
     return matchesSearch && matchesTab;
   });
+
+  const puranikCount = allKathayen.filter((k) => k.category === KathaCategory.puranik).length;
+  const vratCount = allKathayen.filter((k) => k.category === KathaCategory.vrat).length;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -69,21 +79,54 @@ export default function Kathayen() {
         {/* Category Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'puranik' | 'vrat')}>
           <TabsList className="mb-6 w-full">
-            <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-            <TabsTrigger value="puranik" className="flex-1">Puranik</TabsTrigger>
-            <TabsTrigger value="vrat" className="flex-1">Vrat</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1">
+              All
+              {!isLoading && allKathayen.length > 0 && (
+                <span className="ml-1.5 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                  {allKathayen.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="puranik" className="flex-1">
+              Puranik
+              {!isLoading && puranikCount > 0 && (
+                <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
+                  {puranikCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="vrat" className="flex-1">
+              Vrat
+              {!isLoading && vratCount > 0 && (
+                <span className="ml-1.5 text-xs bg-rose-500/20 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded-full">
+                  {vratCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab}>
             {isLoading ? (
+              /* Loading skeleton grid */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-48 rounded-xl bg-muted animate-pulse" />
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="rounded-xl border border-border overflow-hidden">
+                    <Skeleton className="h-32 w-full" />
+                    <div className="p-4 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <div className="flex gap-2 pt-1">
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
-                <p className="text-lg">No kathayen found</p>
+                <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-lg font-medium">No kathayen found</p>
                 <p className="text-sm mt-1">Try a different search or category</p>
               </div>
             ) : (

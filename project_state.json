@@ -1,30 +1,35 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Spiritual/religious app featuring Krishna Leela stories and Vrat Kathas with text-to-speech narration functionality.",
-  "architectural_notes": [
-    "App contains Krishna Leela stories section with AI text-to-speech narration feature",
-    "App contains Vrat Katha section with content that needs to be populated"
-  ],
+  "summary": "A Nam Jap (chanting counter) application with animation, persistent count saving, and support for multiple names including Radha Nam and Jai Shree Ram.",
+  "architectural_notes": [],
   "known_issues": [
-    "Vrat Katha content is missing/empty",
-    "AI text-to-speech narration not working in Krishna Leela section"
+    "Nam Jap count is not being saved (neither temporarily nor permanently)",
+    "Nam Jap section is missing Radha Nam and Jai Shree Ram name options"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-populate-complete-vrat-katha-content-for-all-major-vratas-in-the-static-katha-data-frontend-src-lib-kathadata-ts-each-vrat-katha-must-include-full-hindi-story-text-kathahindi-full-english-story-text-kathaenglish-correct-category-set-to-vrat-deity-name-title-and-all-required-metadata-fields-include-at-minimum-the-following-vratas-ekadashi-vrat-katha-somvar-monday-shiv-vrat-katha-mangalvar-tuesday-hanuman-vrat-katha-budh-wednesday-vrat-katha-brihaspativar-thursday-vrat-katha-shukravar-friday-santoshi-mata-vrat-katha-shanivar-saturday-shani-vrat-katha-karva-chauth-vrat-katha-teej-vrat-katha-navratri-vrat-katha-satyanarayan-vrat-katha-complete-version-pradosh-vrat-katha-ganesh-chaturthi-vrat-katha-ahoi-ashtami-vrat-katha-hartalika-teej-vrat-katha-jivitputrika-vrat-katha-vat-savitri-vrat-katha-surya-shashti-chhath-vrat-katha-nirjala-ekadashi-vrat-katha-and-purnima-vrat-katha-all-katha-text-must-be-meaningful-complete-religious-narratives-not-placeholder-or-truncated-text",
-      "title": "Populate complete Vrat Katha content for all major vratas in the static katha data (frontend/src/lib/kathaData.ts). Each Vrat Katha must include: full Hindi story text (kathaHindi), full English story text (kathaEnglish), correct category set to 'Vrat', deity name, title, and all required metadata fields. Include at minimum the following vratas: Ekadashi Vrat Katha, Somvar (Monday) Shiv Vrat Katha, Mangalvar (Tuesday) Hanuman Vrat Katha, Budh (Wednesday) Vrat Katha, Brihaspativar (Thursday) Vrat Katha, Shukravar (Friday) Santoshi Mata Vrat Katha, Shanivar (Saturday) Shani Vrat Katha, Karva Chauth Vrat Katha, Teej Vrat Katha, Navratri Vrat Katha, Satyanarayan Vrat Katha (complete version), Pradosh Vrat Katha, Ganesh Chaturthi Vrat Katha, Ahoi Ashtami Vrat Katha, Hartalika Teej Vrat Katha, Jivitputrika Vrat Katha, Vat Savitri Vrat Katha, Surya Shashti (Chhath) Vrat Katha, Nirjala Ekadashi Vrat Katha, and Purnima Vrat Katha. All katha text must be meaningful, complete religious narratives — not placeholder or truncated text.",
+      "id": "feature-add-radha-nam-and-jai-shree-ram-as-selectable-mantra-name-options-in-the-nam-jap-jap-tsx-page-alongside-existing-options-each-option-must-be-selectable-and-update-the-jap-counter-context-accordingly",
+      "title": "Add Radha Nam (राधा नाम) and Jai Shree Ram (जय श्री राम) as selectable mantra/name options in the Nam Jap (Jap.tsx) page, alongside existing options. Each option must be selectable and update the Jap counter context accordingly.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-the-ai-text-to-speech-tts-narration-feature-in-the-krishna-leela-katha-detail-page-frontend-src-pages-kathadetail-tsx-the-usespeechnarration-hook-frontend-src-hooks-usespeechnarration-ts-must-be-correctly-invoked-with-the-currently-displayed-katha-text-hindi-or-english-based-on-the-active-language-toggle-ensure-1-the-narration-play-button-is-visible-and-enabled-for-krishna-leela-kathas-2-clicking-play-triggers-speech-synthesis-using-the-web-speech-api-3-pause-resume-and-stop-controls-work-as-expected-4-when-the-language-is-toggled-while-narration-is-active-the-current-narration-stops-and-restarts-in-the-new-language-5-appropriate-error-handling-is-shown-if-the-browser-does-not-support-speech-synthesis",
-      "title": "Fix the AI text-to-speech (TTS) narration feature in the Krishna Leela katha detail page (frontend/src/pages/KathaDetail.tsx). The useSpeechNarration hook (frontend/src/hooks/useSpeechNarration.ts) must be correctly invoked with the currently displayed katha text (Hindi or English based on the active language toggle). Ensure: (1) the narration play button is visible and enabled for Krishna Leela kathas, (2) clicking play triggers speech synthesis using the Web Speech API, (3) pause, resume, and stop controls work as expected, (4) when the language is toggled while narration is active, the current narration stops and restarts in the new language, (5) appropriate error handling is shown if the browser does not support speech synthesis.",
+      "id": "feature-fix-the-nam-jap-count-persistence-so-that-a-the-count-is-saved-to-localstorage-for-session-temporary-persistence-so-it-survives-page-refreshes-and-b-for-authenticated-users-the-count-is-synced-and-saved-to-the-backend-canister-for-permanent-persistence-on-page-load-restore-the-count-from-backend-if-authenticated-or-localstorage-if-guest",
+      "title": "Fix the Nam Jap count persistence so that: (a) the count is saved to localStorage for session/temporary persistence so it survives page refreshes, and (b) for authenticated users the count is synced and saved to the backend canister for permanent persistence. On page load, restore the count from backend (if authenticated) or localStorage (if guest).",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-meaningful-animations-to-the-nam-jap-jap-tsx-section-this-should-include-a-smooth-ripple-or-glow-pulse-effect-on-the-main-tap-count-button-each-time-it-is-pressed-a-subtle-entrance-animation-for-the-mala-bead-ring-and-counter-display-when-the-page-loads-and-a-celebratory-animation-e-g-divine-light-burst-or-petal-shower-when-a-full-mala-108-counts-is-completed",
+      "title": "Add meaningful animations to the Nam Jap (Jap.tsx) section. This should include: a smooth ripple or glow pulse effect on the main tap/count button each time it is pressed, a subtle entrance animation for the mala bead ring and counter display when the page loads, and a celebratory animation (e.g., divine light burst or petal shower) when a full mala (108 counts) is completed.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -32,27 +37,25 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fill in all Vrat Katha content (currently missing/empty)",
+      "summary": "Add animation to Nam Jap section",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Fix AI text-to-speech narration option not working in Krishna Leela section",
+      "summary": "Fix Nam Jap count saving - both temporary (session) and permanent (persistent) storage",
       "reqIds": [],
       "status": "pending"
     },
     {
-      "id": "AR-5",
-      "summary": "Ensure the backend (backend/main.mo) katha storage and seed data includes complete Krishna Leela katha entries and all 20 Vrat Kathas with full text fields populated (hindText, englishText, category, deity, title, isApproved = true). If the backend katha list is empty or incomplete, seed it with the same content defined in the frontend static data so that the Kathayen page shows all stories when the backend is available.",
-      "reqIds": [
-        "REQ-3"
-      ],
+      "id": "AR-3",
+      "summary": "Add Radha Nam and Jai Shree Ram options to Nam Jap name selection",
+      "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Sanatan Spiritual",
+  "projectName": "Nam Jap",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

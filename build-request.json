@@ -1,78 +1,76 @@
 {
   "kind": "build_request",
-  "title": "Fill Vrat Katha content and fix Krishna Leela TTS narration",
-  "projectName": "Sanatan Spiritual",
+  "title": "Fix Nam Jap count saving, add Radha Nam & Jai Shree Ram options, and add animations",
+  "projectName": "Divya Darshan",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Populate complete Vrat Katha content for all major vratas in the static katha data (frontend/src/lib/kathaData.ts). Each Vrat Katha must include: full Hindi story text (kathaHindi), full English story text (kathaEnglish), correct category set to 'Vrat', deity name, title, and all required metadata fields. Include at minimum the following vratas: Ekadashi Vrat Katha, Somvar (Monday) Shiv Vrat Katha, Mangalvar (Tuesday) Hanuman Vrat Katha, Budh (Wednesday) Vrat Katha, Brihaspativar (Thursday) Vrat Katha, Shukravar (Friday) Santoshi Mata Vrat Katha, Shanivar (Saturday) Shani Vrat Katha, Karva Chauth Vrat Katha, Teej Vrat Katha, Navratri Vrat Katha, Satyanarayan Vrat Katha (complete version), Pradosh Vrat Katha, Ganesh Chaturthi Vrat Katha, Ahoi Ashtami Vrat Katha, Hartalika Teej Vrat Katha, Jivitputrika Vrat Katha, Vat Savitri Vrat Katha, Surya Shashti (Chhath) Vrat Katha, Nirjala Ekadashi Vrat Katha, and Purnima Vrat Katha. All katha text must be meaningful, complete religious narratives — not placeholder or truncated text.",
+      "text": "Add Radha Nam (राधा नाम) and Jai Shree Ram (जय श्री राम) as selectable mantra/name options in the Nam Jap (Jap.tsx) page, alongside existing options. Each option must be selectable and update the Jap counter context accordingly.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Fill all again there is no vrat katha"
+          "isme radha nam or jai shree ram nam bhi nahi hai nam jap ke liye to isse thik kro"
         ]
       },
       "acceptanceCriteria": [
-        "The Kathayen page with 'Vrat' category tab shows at least 20 Vrat Kathas",
-        "Each Vrat Katha card displays the correct title, deity, and category badge",
-        "Opening any Vrat Katha detail page shows full Hindi and English story text — no empty or placeholder content",
-        "Hindi/English language toggle works correctly for all Vrat Kathas"
+        "Radha Nam (राधा नाम) option appears in the name/mantra selector on the Jap page",
+        "Jai Shree Ram (जय श्री राम) option appears in the name/mantra selector on the Jap page",
+        "Selecting either option updates the displayed mantra name and the Jap counter context",
+        "Previously existing mantra options remain functional"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix the AI text-to-speech (TTS) narration feature in the Krishna Leela katha detail page (frontend/src/pages/KathaDetail.tsx). The useSpeechNarration hook (frontend/src/hooks/useSpeechNarration.ts) must be correctly invoked with the currently displayed katha text (Hindi or English based on the active language toggle). Ensure: (1) the narration play button is visible and enabled for Krishna Leela kathas, (2) clicking play triggers speech synthesis using the Web Speech API, (3) pause, resume, and stop controls work as expected, (4) when the language is toggled while narration is active, the current narration stops and restarts in the new language, (5) appropriate error handling is shown if the browser does not support speech synthesis.",
+      "text": "Fix the Nam Jap count persistence so that: (a) the count is saved to localStorage for session/temporary persistence so it survives page refreshes, and (b) for authenticated users the count is synced and saved to the backend canister for permanent persistence. On page load, restore the count from backend (if authenticated) or localStorage (if guest).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "ye save nahi kr raha hai isme nam jap count na hi temporary or na hi permanant"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Jap count persists in localStorage so refreshing the page does not reset the count for guest users",
+        "For authenticated users, the Jap count is saved to the backend canister and restored on page load",
+        "Switching between mantras saves and restores the correct count per mantra",
+        "Count is not lost when navigating away from the Jap page and returning"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add meaningful animations to the Nam Jap (Jap.tsx) section. This should include: a smooth ripple or glow pulse effect on the main tap/count button each time it is pressed, a subtle entrance animation for the mala bead ring and counter display when the page loads, and a celebratory animation (e.g., divine light burst or petal shower) when a full mala (108 counts) is completed.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "narration text to speech ai option not working in krishna leela"
+          "Thoda animation kro nam jap me"
         ]
       },
       "acceptanceCriteria": [
-        "Narration play button is visible on Krishna Leela katha detail pages",
-        "Clicking play begins audio narration of the displayed katha text",
-        "Pause, resume, and stop buttons function correctly during narration",
-        "Switching language (Hindi/English) while narrating stops the current speech and restarts in the new language",
-        "No console errors related to speech synthesis when using the narration feature",
-        "A user-facing message is shown if the browser does not support Web Speech API"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Ensure the backend (backend/main.mo) katha storage and seed data includes complete Krishna Leela katha entries and all 20 Vrat Kathas with full text fields populated (hindText, englishText, category, deity, title, isApproved = true). If the backend katha list is empty or incomplete, seed it with the same content defined in the frontend static data so that the Kathayen page shows all stories when the backend is available.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Fill all again there is no vrat katha"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend returns at least 20 Vrat Kathas and multiple Krishna Leela kathas when queried",
-        "All returned kathas have non-empty hindText and englishText fields",
-        "All returned kathas have isApproved set to true so they display in the frontend listing"
+        "Each tap on the Jap count button triggers a visible ripple or glow pulse animation on the button",
+        "The mala ring and counter display animate in smoothly when the Jap page first loads",
+        "Completing 108 counts triggers a celebratory visual animation (light burst, petal shower, or similar devotional effect)",
+        "Animations are smooth and do not cause layout shifts or performance degradation"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any file under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
-    "Do not remove or replace the useSpeechNarration hook — fix its integration instead",
-    "All katha content must be authentic Hindu religious narratives in proper Hindi and English"
+    "Do not modify files listed in frontend.immutablePaths",
+    "All Motoko logic must remain in the single backend/main.mo actor file",
+    "Existing mantra options must not be removed"
   ],
   "nonGoals": [
-    "Adding new app sections or pages beyond Kathayen and KathaDetail",
-    "Integrating external TTS APIs — use the existing Web Speech API via useSpeechNarration",
-    "Changing the overall app design or color theme",
-    "Adding payment or premium subscription features"
+    "Redesigning the overall visual theme of the app",
+    "Changes to other pages (Home, Panchang, AI Guru, etc.)",
+    "Adding new backend data types unrelated to Jap count persistence"
   ],
   "imageRequirements": {
     "required": [],

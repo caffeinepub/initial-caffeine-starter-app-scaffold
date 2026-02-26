@@ -1,59 +1,67 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T14:51:49.640Z",
+  "generatedAt": "2026-02-26T16:50:19.064Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 2,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Populate complete Vrat Katha content for all major vratas in the static katha data (frontend/src/lib/kathaData.ts). Each Vrat Katha must include: full Hindi story text (kathaHindi), full English story text (kathaEnglish), correct category set to 'Vrat', deity name, title, and all required metadata fields. Include at minimum the following vratas: Ekadashi Vrat Katha, Somvar (Monday) Shiv Vrat Katha, Mangalvar (Tuesday) Hanuman Vrat Katha, Budh (Wednesday) Vrat Katha, Brihaspativar (Thursday) Vrat Katha, Shukravar (Friday) Santoshi Mata Vrat Katha, Shanivar (Saturday) Shani Vrat Katha, Karva Chauth Vrat Katha, Teej Vrat Katha, Navratri Vrat Katha, Satyanarayan Vrat Katha (complete version), Pradosh Vrat Katha, Ganesh Chaturthi Vrat Katha, Ahoi Ashtami Vrat Katha, Hartalika Teej Vrat Katha, Jivitputrika Vrat Katha, Vat Savitri Vrat Katha, Surya Shashti (Chhath) Vrat Katha, Nirjala Ekadashi Vrat Katha, and Purnima Vrat Katha. All katha text must be meaningful, complete religious narratives — not placeholder or truncated text.",
+        "summary": "Add Radha Nam (राधा नाम) and Jai Shree Ram (जय श्री राम) as selectable mantra/name options in the Nam Jap (Jap.tsx) page, alongside existing options. Each option must be selectable and update the Jap counter context accordingly.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/kathaData.ts"
+          "frontend/src/pages/Jap.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/kathaData.ts"
+          "frontend/src/pages/Jap.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix the AI text-to-speech (TTS) narration feature in the Krishna Leela katha detail page (frontend/src/pages/KathaDetail.tsx). The useSpeechNarration hook (frontend/src/hooks/useSpeechNarration.ts) must be correctly invoked with the currently displayed katha text (Hindi or English based on the active language toggle). Ensure: (1) the narration play button is visible and enabled for Krishna Leela kathas, (2) clicking play triggers speech synthesis using the Web Speech API, (3) pause, resume, and stop controls work as expected, (4) when the language is toggled while narration is active, the current narration stops and restarts in the new language, (5) appropriate error handling is shown if the browser does not support speech synthesis.",
+        "summary": "Fix the Nam Jap count persistence so that: (a) the count is saved to localStorage for session/temporary persistence so it survives page refreshes, and (b) for authenticated users the count is synced and saved to the backend canister for permanent persistence. On page load, restore the count from backend (if authenticated) or localStorage (if guest).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/hooks/useSpeechNarration.ts"
+          "frontend/src/pages/Jap.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/hooks/useSpeechNarration.ts"
+          "frontend/src/pages/Jap.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Ensure the backend (backend/main.mo) katha storage and seed data includes complete Krishna Leela katha entries and all 20 Vrat Kathas with full text fields populated (hindText, englishText, category, deity, title, isApproved = true). If the backend katha list is empty or incomplete, seed it with the same content defined in the frontend static data so that the Kathayen page shows all stories when the backend is available.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Add meaningful animations to the Nam Jap (Jap.tsx) section. This should include: a smooth ripple or glow pulse effect on the main tap/count button each time it is pressed, a subtle entrance animation for the mala bead ring and counter display when the page loads, and a celebratory animation (e.g., divine light burst or petal shower) when a full mala (108 counts) is completed.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/Jap.tsx",
+          "frontend/src/components/SacredRipple.tsx",
+          "frontend/src/components/LotusBloomOverlay.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/Jap.tsx",
+          "frontend/src/components/SacredRipple.tsx",
+          "frontend/src/components/LotusBloomOverlay.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/hooks/useSpeechNarration.ts",
-    "frontend/src/lib/kathaData.ts",
-    "frontend/src/pages/KathaDetail.tsx",
-    "frontend/src/pages/Kathayen.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/LotusBloomOverlay.tsx",
+    "frontend/src/components/SacredRipple.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/pages/Jap.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -4,10 +4,8 @@ import {
   useIsCallerAdmin,
   useListApprovals,
   useSetApproval,
-  useAssignCallerUserRole,
+  useAssignUserRole,
   useAddDharmaQuote,
-  useAddPanchang,
-  type ApprovalStatus,
 } from '../hooks/useQueries';
 import { UserRole } from '../backend';
 import type { UserApprovalInfo } from '../backend';
@@ -16,35 +14,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Shield, Users, BookOpen, Calendar, Loader2 } from 'lucide-react';
+import { Shield, Users, BookOpen, Calendar, Loader2, Info } from 'lucide-react';
 import type { Principal } from '@dfinity/principal';
+
+// Local ApprovalStatus type
+type ApprovalStatus = { approved: null } | { rejected: null } | { pending: null };
 
 export default function AdminPanel() {
   const { identity } = useInternetIdentity();
   const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
   const { data: approvals, isLoading: approvalsLoading } = useListApprovals();
   const setApprovalMutation = useSetApproval();
-  const assignRoleMutation = useAssignCallerUserRole();
+  const assignRoleMutation = useAssignUserRole();
   const addQuoteMutation = useAddDharmaQuote();
-  const addPanchangMutation = useAddPanchang();
 
-  // Dharma Quote form
   const [quoteId, setQuoteId] = useState('');
   const [quoteEnglish, setQuoteEnglish] = useState('');
   const [quoteHindi, setQuoteHindi] = useState('');
   const [quoteAuthor, setQuoteAuthor] = useState('');
-
-  // Panchang form
-  const [panchangDay, setPanchangDay] = useState('');
-  const [panchangTithi, setPanchangTithi] = useState('');
-  const [panchangNakshatra, setPanchangNakshatra] = useState('');
-  const [panchangRahu, setPanchangRahu] = useState('');
-  const [panchangMuhurat, setPanchangMuhurat] = useState('');
-  const [panchangSunrise, setPanchangSunrise] = useState('');
-  const [panchangSunset, setPanchangSunset] = useState('');
 
   if (!identity) {
     return (
@@ -134,37 +124,6 @@ export default function AdminPanel() {
           setQuoteAuthor('');
         },
         onError: () => toast.error('Failed to add quote'),
-      }
-    );
-  };
-
-  const handleAddPanchang = async () => {
-    if (!panchangDay || !panchangTithi) {
-      toast.error('Please fill required fields');
-      return;
-    }
-    addPanchangMutation.mutate(
-      {
-        day: BigInt(panchangDay),
-        tithi: panchangTithi,
-        nakshatra: panchangNakshatra,
-        rahuKaal: panchangRahu,
-        muhurat: panchangMuhurat,
-        sunrise: panchangSunrise,
-        sunset: panchangSunset,
-      },
-      {
-        onSuccess: () => {
-          toast.success('Panchang data added');
-          setPanchangDay('');
-          setPanchangTithi('');
-          setPanchangNakshatra('');
-          setPanchangRahu('');
-          setPanchangMuhurat('');
-          setPanchangSunrise('');
-          setPanchangSunset('');
-        },
-        onError: () => toast.error('Failed to add panchang data'),
       }
     );
   };
@@ -331,79 +290,33 @@ export default function AdminPanel() {
           <TabsContent value="panchang">
             <Card>
               <CardHeader>
-                <CardTitle>Add Panchang Data</CardTitle>
+                <CardTitle>Panchang Information</CardTitle>
+                <CardDescription>
+                  Panchang data is now computed client-side using astronomical algorithms.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent>
+                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200/50">
+                  <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <Label>Day (0-364)</Label>
-                    <Input
-                      type="number"
-                      placeholder="Day number"
-                      value={panchangDay}
-                      onChange={(e) => setPanchangDay(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Tithi</Label>
-                    <Input
-                      placeholder="e.g. Pratipada"
-                      value={panchangTithi}
-                      onChange={(e) => setPanchangTithi(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Nakshatra</Label>
-                    <Input
-                      placeholder="e.g. Ashwini"
-                      value={panchangNakshatra}
-                      onChange={(e) => setPanchangNakshatra(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Rahu Kaal</Label>
-                    <Input
-                      placeholder="e.g. 7:30 - 9:00"
-                      value={panchangRahu}
-                      onChange={(e) => setPanchangRahu(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Muhurat</Label>
-                    <Input
-                      placeholder="e.g. 12:00 - 12:48"
-                      value={panchangMuhurat}
-                      onChange={(e) => setPanchangMuhurat(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Sunrise</Label>
-                    <Input
-                      placeholder="e.g. 6:15 AM"
-                      value={panchangSunrise}
-                      onChange={(e) => setPanchangSunrise(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Sunset</Label>
-                    <Input
-                      placeholder="e.g. 6:45 PM"
-                      value={panchangSunset}
-                      onChange={(e) => setPanchangSunset(e.target.value)}
-                    />
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                      Automatic Calculation Enabled
+                    </p>
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      Tithi, Nakshatra, Yoga, Karana, Rahu Kaal, Muhurat, Sunrise, and Sunset are now
+                      computed in real-time using Jean Meeus astronomical algorithms for central India
+                      (23°N, 80°E, IST). No manual data entry is required.
+                    </p>
+                    <ul className="text-xs text-amber-600 dark:text-amber-500 mt-2 space-y-0.5 list-disc list-inside">
+                      <li>Tithi based on Moon–Sun angular difference</li>
+                      <li>Nakshatra based on Moon's ecliptic longitude</li>
+                      <li>Yoga based on sum of Sun + Moon longitudes</li>
+                      <li>Rahu/Gulika/Yamaganda Kaal from weekday + sunrise/sunset</li>
+                      <li>Brahma Muhurat &amp; Abhijit Muhurat from solar timing</li>
+                      <li>Vikram Samvat, Hindu month, and Ayana from Sun position</li>
+                    </ul>
                   </div>
                 </div>
-                <Button
-                  onClick={handleAddPanchang}
-                  disabled={addPanchangMutation.isPending}
-                  className="w-full"
-                >
-                  {addPanchangMutation.isPending ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</>
-                  ) : (
-                    'Add Panchang Data'
-                  )}
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>

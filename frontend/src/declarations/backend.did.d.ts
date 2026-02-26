@@ -51,14 +51,29 @@ export type KathaApprovalStatus = { 'pending' : null } |
   { 'rejected' : null };
 export type KathaCategory = { 'vrat' : null } |
   { 'puranik' : null };
+export interface KrishnaLeela { 'id' : bigint, 'hindiText' : string }
+export type Mantra = { 'saiRam' : null } |
+  { 'hareKrishna' : null } |
+  { 'mahamrityunjayaMantra' : null } |
+  { 'omMantra' : null } |
+  { 'jaiShreeRamNamJap' : null } |
+  { 'sitaram' : null } |
+  { 'gayatriMantra' : null } |
+  { 'omNamahShivaya' : null } |
+  { 'radhaNamJap' : null };
 export interface UserApprovalInfo {
   'status' : ApprovalStatus,
   'principal' : Principal,
 }
-export interface UserProfile { 'name' : string }
+export interface UserProfile { 'selectedMantra' : Mantra, 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface VratKatha {
+  'id' : bigint,
+  'title' : string,
+  'hindiText' : string,
+}
 export interface _CaffeineStorageCreateCertificateResult {
   'method' : string,
   'blob_hash' : string,
@@ -93,13 +108,10 @@ export interface _SERVICE {
     [string, KathaCategory, string, string, string, Array<string>],
     bigint
   >,
-  'addPanchang' : ActorMethod<
-    [bigint, string, string, string, string, string, string],
-    undefined
-  >,
   'approveKatha' : ActorMethod<[bigint], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'getAllKathayen' : ActorMethod<[], Array<Katha>>,
+  'getAllVratKathas' : ActorMethod<[], Array<VratKatha>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDharmaQuoteOfDay' : ActorMethod<[], [] | [DharmaQuote]>,
@@ -107,21 +119,21 @@ export interface _SERVICE {
   'getJapLeaderboard' : ActorMethod<[], Array<JapStats>>,
   'getJapStats' : ActorMethod<[], JapStatsInternal>,
   'getKatha' : ActorMethod<[bigint], [] | [Katha]>,
-  'getPanchang' : ActorMethod<
-    [bigint],
-    { 'tithi' : [] | [string], 'muhurat' : [] | [string] }
-  >,
+  'getKrishnaLeelaStory' : ActorMethod<[], KrishnaLeela>,
+  'getUserMantra' : ActorMethod<[], Mantra>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getVratKathaById' : ActorMethod<[bigint], [] | [VratKatha]>,
   'incrementJap' : ActorMethod<[bigint], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'listKathayenByCategory' : ActorMethod<[KathaCategory], Array<Katha>>,
   'requestApproval' : ActorMethod<[], undefined>,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'resetJapStats' : ActorMethod<[], undefined>,
   'searchKathayenByDeity' : ActorMethod<[string], Array<Katha>>,
   'searchKathayenByTitle' : ActorMethod<[string], Array<Katha>>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
+  'setUserProfile' : ActorMethod<[UserProfile], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

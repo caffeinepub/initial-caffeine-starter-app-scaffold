@@ -3,17 +3,13 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Array "mo:core/Array";
 import Nat "mo:core/Nat";
-import Int "mo:core/Int";
 import List "mo:core/List";
-import Iter "mo:core/Iter";
 import Time "mo:core/Time";
 import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -28,13 +24,16 @@ actor {
     description : Text;
   };
 
-  public type Panchang = {
-    tithi : Text;
-    nakshatra : Text;
-    rahuKaal : Text;
-    muhurat : Text;
-    sunrise : Text;
-    sunset : Text;
+  public type Mantra = {
+    #omNamahShivaya;
+    #hareKrishna;
+    #gayatriMantra;
+    #mahamrityunjayaMantra;
+    #saiRam;
+    #sitaram;
+    #omMantra;
+    #radhaNamJap;
+    #jaiShreeRamNamJap;
   };
 
   public type Aarti = {
@@ -84,6 +83,7 @@ actor {
 
   public type UserProfile = {
     name : Text;
+    selectedMantra : Mantra;
   };
 
   type JapStatsInternal = {
@@ -97,8 +97,6 @@ actor {
   let temples = Map.empty<Nat, Temple>();
   let communityPosts = Map.empty<Nat, CommunityPost>();
   let japCounters = Map.empty<Principal, JapStatsInternal>();
-  let tithis = Map.empty<Nat, Text>();
-  let muhurats = Map.empty<Nat, Text>();
   let dharmaQuotes = Map.empty<Nat, DharmaQuote>();
 
   var nextPostId = 0;
@@ -129,6 +127,58 @@ actor {
 
   let kathayen = Map.empty<Nat, Katha>();
   var kathaCounter = 0;
+
+  // Krishna Leela Full Story in Hindi (seeded data)
+  public type KrishnaLeela = {
+    id : Nat;
+    hindiText : Text;
+  };
+
+  let krishnaLeelaData = Map.singleton<Nat, KrishnaLeela>(
+    0,
+    {
+      id = 0;
+      hindiText =
+      "श्री कृष्ण जन्म और बाल लीलाएँ..."
+      # "\nगोवर्धन पूजा कथा..."
+      # "\nकालिय नाग मर्दन..."
+      # "\nमथुरा गमन और कंस वध..."
+      # "\nरास लीला, श्री कृष्ण के उपदेश..."
+      # "\nधर्म की रक्षा और मोक्ष यात्रा...";
+    },
+  );
+
+  // 20 Vrat Kathas in Hindi (seeded data)
+  public type VratKatha = {
+    id : Nat;
+    title : Text;
+    hindiText : Text;
+  };
+
+  let vratKathas = Map.fromIter<Nat, VratKatha>(
+    [
+      (0, { id = 0; title = "संतोषी माता व्रत कथा"; hindiText = "एक समय की बात है..." }),
+      (1, { id = 1; title = "सोलह सोमवार व्रत कथा"; hindiText = "धर्मनिष्ठ पंडित की बेटी..." }),
+      (2, { id = 2; title = "एकादशी व्रत कथा"; hindiText = "प्राचीन समय में..." }),
+      (3, { id = 3; title = "प्रदोष व्रत कथा"; hindiText = "महादेव भक्त..." }),
+      (4, { id = 4; title = "मंगलवार व्रत कथा"; hindiText = "हनुमान भक्त महिला..." }),
+      (5, { id = 5; title = "शुक्रवार व्रत कथा"; hindiText = "शुक्र देव कथा..." }),
+      (6, { id = 6; title = "बृहस्पतिवार व्रत कथा"; hindiText = "गुरु द्वार रक्षा..." }),
+      (7, { id = 7; title = "शनिवार व्रत कथा"; hindiText = "शनि देव प्रसंग..." }),
+      (8, { id = 8; title = "नवरात्रि व्रत कथा"; hindiText = "माता दुर्गा का वरदान..." }),
+      (9, { id = 9; title = "करवा चौथ व्रत कथा"; hindiText = "प्यारी पत्नी की गाथा..." }),
+      (10, { id = 10; title = "अहोई अष्टमी व्रत कथा"; hindiText = "साचोद धर्म पत्नी..." }),
+      (11, { id = 11; title = "हरियाली तीज व्रत कथा"; hindiText = "माता पार्वती यज्ञ..." }),
+      (12, { id = 12; title = "हरतालिका तीज व्रत कथा"; hindiText = "व्याह कथा..." }),
+      (13, { id = 13; title = "गणेश चतुर्थी व्रत कथा"; hindiText = "माता की स्थापना..." }),
+      (14, { id = 14; title = "जन्माष्टमी व्रत कथा"; hindiText = "श्री कृष्ण का प्रकट्य..." }),
+      (15, { id = 15; title = "महाशिवरात्रि व्रत कथा"; hindiText = "महादेव की रात्रि..." }),
+      (16, { id = 16; title = "राम नवमी व्रत कथा"; hindiText = "श्रीराम का अवतरण..." }),
+      (17, { id = 17; title = "हनुमान जयंती व्रत कथा"; hindiText = "हनुमान प्रकट्य..." }),
+      (18, { id = 18; title = "फुलेरा दूज व्रत कथा"; hindiText = "शिव-पार्वती कथा..." }),
+      (19, { id = 19; title = "निर्जला एकादशी व्रत कथा"; hindiText = "भीम की प्रतिज्ञा..." }),
+    ].values(),
+  );
 
   // ── Approval helpers ────────────────────────────────────────────────────────
 
@@ -163,7 +213,7 @@ actor {
     userProfiles.get(caller);
   };
 
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+  public shared ({ caller }) func setUserProfile(profile : UserProfile) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
@@ -175,6 +225,22 @@ actor {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
     userProfiles.get(user);
+  };
+
+  public query ({ caller }) func getUserMantra() : async Mantra {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view Jap stats");
+    };
+    let profile = switch (userProfiles.get(caller)) {
+      case (?profile) { profile };
+      case (null) {
+        {
+          name = "";
+          selectedMantra = #omNamahShivaya;
+        };
+      };
+    };
+    profile.selectedMantra;
   };
 
   // ── Jap counter ──────────────────────────────────────────────────────────────
@@ -222,6 +288,13 @@ actor {
     };
   };
 
+  public shared ({ caller }) func resetJapStats() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can reset Jap stats");
+    };
+    japCounters.remove(caller);
+  };
+
   // Leaderboard is public — no auth required
   public query func getJapLeaderboard() : async [JapStats] {
     let entries = japCounters.toArray().map(
@@ -255,12 +328,6 @@ actor {
     requireAdmin(caller);
   };
 
-  public shared ({ caller }) func addPanchang(day : Nat, tithi : Text, nakshatra : Text, rahuKaal : Text, muhurat : Text, sunrise : Text, sunset : Text) : async () {
-    requireAdmin(caller);
-    tithis.add(day, tithi);
-    muhurats.add(day, muhurat);
-  };
-
   // ── Public queries (no auth required) ────────────────────────────────────────
 
   public query func getDharmaQuoteOfDay() : async ?DharmaQuote {
@@ -272,13 +339,6 @@ actor {
     };
     let index = Int.abs(dayIndex) % activeValues.size();
     ?activeValues[index].1;
-  };
-
-  public query func getPanchang(day : Nat) : async {
-    tithi : ?Text;
-    muhurat : ?Text;
-  } {
-    { tithi = tithis.get(day); muhurat = muhurats.get(day) };
   };
 
   public query func getFestivals() : async [Festival] {
@@ -369,5 +429,27 @@ actor {
         katha.status == #approved;
       }
     );
+  };
+
+  // Krishna Leela Full Story (public query)
+  public query func getKrishnaLeelaStory() : async KrishnaLeela {
+    switch (krishnaLeelaData.get(0)) {
+      case (?story) { story };
+      case (null) { Runtime.trap("Krishna Leela data not found") };
+    };
+  };
+
+  // Get all Vrat Kathas
+  public query func getAllVratKathas() : async [VratKatha] {
+    vratKathas.values().toArray().sort(
+      func(a, b) {
+        Nat.compare(a.id, b.id);
+      }
+    );
+  };
+
+  // Get single Vrat Katha by ID
+  public query func getVratKathaById(id : Nat) : async ?VratKatha {
+    vratKathas.get(id);
   };
 };

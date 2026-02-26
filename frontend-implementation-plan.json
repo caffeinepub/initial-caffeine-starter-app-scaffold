@@ -1,46 +1,66 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fill Vrat Katha content and fix Krishna Leela TTS narration",
+  "title": "Fix Nam Jap count saving, add Radha Nam & Jai Shree Ram options, and add animations",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Populate complete Vrat Katha content for all major vratas in the static katha data with full Hindi and English narratives",
+      "summary": "Add Radha Nam (राधा नाम) and Jai Shree Ram (जय श्री राम) as selectable mantra/name options in the Nam Jap page",
       "acceptanceCriteria": [
-        "The Kathayen page with 'Vrat' category tab shows at least 20 Vrat Kathas",
-        "Each Vrat Katha card displays the correct title, deity, and category badge",
-        "Opening any Vrat Katha detail page shows full Hindi and English story text — no empty or placeholder content",
-        "Hindi/English language toggle works correctly for all Vrat Kathas"
+        "Radha Nam (राधा नाम) option appears in the name/mantra selector on the Jap page",
+        "Jai Shree Ram (जय श्री राम) option appears in the name/mantra selector on the Jap page",
+        "Selecting either option updates the displayed mantra name and the Jap counter context",
+        "Previously existing mantra options remain functional"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/kathaData.ts",
+          "path": "frontend/src/pages/Jap.tsx",
           "operation": "modify",
-          "description": "Replace the existing staticKathaData array with complete Vrat Katha entries for at least 20 vratas. Each entry must include: full meaningful Hindi story text in kathaHindi field (minimum 300 words), full meaningful English story text in kathaEnglish field (minimum 300 words), category set to 'Vrat', correct deity name, proper title, tags array, and isApproved set to true. Include the following vratas: Ekadashi Vrat Katha, Somvar (Monday) Shiv Vrat Katha, Mangalvar (Tuesday) Hanuman Vrat Katha, Budh (Wednesday) Vrat Katha, Brihaspativar (Thursday) Vrat Katha, Shukravar (Friday) Santoshi Mata Vrat Katha, Shanivar (Saturday) Shani Vrat Katha, Karva Chauth Vrat Katha, Teej Vrat Katha, Navratri Vrat Katha, Satyanarayan Vrat Katha (complete version), Pradosh Vrat Katha, Ganesh Chaturthi Vrat Katha, Ahoi Ashtami Vrat Katha, Hartalika Teej Vrat Katha, Jivitputrika Vrat Katha, Vat Savitri Vrat Katha, Surya Shashti (Chhath) Vrat Katha, Nirjala Ekadashi Vrat Katha, and Purnima Vrat Katha. All katha text must be authentic Hindu religious narratives — not placeholder or truncated text. Preserve existing Krishna Leela and other Puranik kathas. Ensure the file exports the staticKathaData array as the default export."
+          "description": "Add Radha Nam and Jai Shree Ram as selectable mantra options in the mantra selector UI. Update the mantra display logic to show the selected mantra name in both Hindi and transliteration. Ensure the mantra selection state updates the Jap counter context with the selected mantra. The backend already defines radhaNamJap and jaiShreeRamNamJap in the Mantra enum, so wire these options into the frontend selector dropdown/list alongside existing mantras like hareKrishna, omNamahShivaya, etc."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Fix the AI text-to-speech (TTS) narration feature in the Krishna Leela katha detail page to correctly invoke speech synthesis with the currently displayed katha text",
+      "summary": "Fix Nam Jap count persistence with localStorage for guest users and backend sync for authenticated users",
       "acceptanceCriteria": [
-        "Narration play button is visible on Krishna Leela katha detail pages",
-        "Clicking play begins audio narration of the displayed katha text",
-        "Pause, resume, and stop buttons function correctly during narration",
-        "Switching language (Hindi/English) while narrating stops the current speech and restarts in the new language",
-        "No console errors related to speech synthesis when using the narration feature",
-        "A user-facing message is shown if the browser does not support Web Speech API"
+        "Jap count persists in localStorage so refreshing the page does not reset the count for guest users",
+        "For authenticated users, the Jap count is saved to the backend canister and restored on page load",
+        "Switching between mantras saves and restores the correct count per mantra",
+        "Count is not lost when navigating away from the Jap page and returning"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/KathaDetail.tsx",
+          "path": "frontend/src/pages/Jap.tsx",
           "operation": "modify",
-          "description": "Fix the useSpeechNarration hook invocation to correctly pass the currently displayed katha text based on the active language toggle (language === 'hindi' ? katha.hindiText : katha.englishText). Ensure the narration controls (play, pause, resume, stop buttons) are wired to the hook's returned functions. Add a useEffect that calls stopNarration when the language state changes to ensure the current narration stops and can be restarted in the new language. Verify that the narration controls are visible when the katha text is available. Add error handling UI to display a toast or alert if speechSupported is false. Ensure the narration play button is conditionally rendered based on whether the browser supports speech synthesis."
+          "description": "Implement dual-persistence logic for the Jap count: (a) For guest (unauthenticated) users, save the count per mantra to localStorage on each increment and restore from localStorage on page load. Use a localStorage key structure like 'jap_count_<mantraName>' to store counts separately per mantra. (b) For authenticated users, continue using the existing backend incrementJap and getJapStats queries/mutations, and ensure the count is fetched from the backend on mount and synced on increment. Add useEffect hooks to handle restoration from localStorage when the user is not authenticated, and to restore from backend JapStats when authenticated. Ensure switching mantras retrieves the correct persisted count for that mantra. The existing debounced backend sync in Jap.tsx should remain for authenticated users; add localStorage writes for guest users immediately on count changes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add meaningful animations to the Nam Jap page: ripple on tap, entrance animations, and celebratory animation on 108 completion",
+      "acceptanceCriteria": [
+        "Each tap on the Jap count button triggers a visible ripple or glow pulse animation on the button",
+        "The mala ring and counter display animate in smoothly when the Jap page first loads",
+        "Completing 108 counts triggers a celebratory visual animation (light burst, petal shower, or similar devotional effect)",
+        "Animations are smooth and do not cause layout shifts or performance degradation"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/Jap.tsx",
+          "operation": "modify",
+          "description": "Add entrance animations for the mala ring and counter display when the Jap page first loads using CSS transitions or Tailwind animation classes (e.g., fade-in, slide-up). On each tap of the Jap count button, trigger the existing SacredRipple component by incrementing its trigger prop, and optionally add a brief scale or glow pulse effect using Tailwind classes or inline animations. On completing 108 counts (when count % 108 === 0 and count > 0), trigger the existing LotusBloomOverlay component to display a celebratory lotus bloom animation. Ensure all animations are smooth and do not block the UI thread or cause layout shifts."
         },
         {
-          "path": "frontend/src/hooks/useSpeechNarration.ts",
+          "path": "frontend/src/components/SacredRipple.tsx",
           "operation": "modify",
-          "description": "Review and ensure the hook correctly implements the Web Speech API with proper error handling. Verify that the play function initializes speech synthesis with the provided text, pause/resume functions control the utterance state, and stop function cancels synthesis. Ensure the hook returns speechSupported, isPlaying, and isPaused state flags along with the control functions. Add defensive checks to prevent crashes if the Web Speech API is unavailable in the browser. Ensure the hook can handle language changes by allowing the caller to call stopNarration before restarting with new text."
+          "description": "Ensure the SacredRipple component renders concentric ripple rings that expand and fade out smoothly on each trigger. Verify the animation duration and easing provide a visually pleasing ripple effect suitable for the devotional context. No major changes needed if the existing implementation is sufficient; otherwise, refine the animation timing or styling."
+        },
+        {
+          "path": "frontend/src/components/LotusBloomOverlay.tsx",
+          "operation": "modify",
+          "description": "Ensure the LotusBloomOverlay component displays a full-screen celebratory animation (lotus bloom image with a congratulatory message) when triggered. Verify the animation auto-hides after a short duration and does not interfere with further Jap counting. Confirm the existing implementation uses the generated lotus bloom asset at frontend/public/assets/generated/lotus-bloom.dim_400x400.png. No major changes needed if the existing implementation is sufficient."
         }
       ]
     }

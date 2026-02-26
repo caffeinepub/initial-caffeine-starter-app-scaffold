@@ -89,7 +89,9 @@ export default function KathaDetail() {
     // Guard: ensure text is not empty
     if (!text || text.trim() === '') return;
 
-    playNarration(text);
+    // Use hi-IN for Hindi text, en-IN for English text in an Indian context
+    const lang = effectiveLanguage === 'hindi' ? 'hi-IN' : 'en-IN';
+    playNarration(text, lang);
   };
 
   if (isLoading) {
@@ -318,6 +320,9 @@ export default function KathaDetail() {
             </div>
             <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
               इस कथा को आवाज़ में सुनने के लिए ऊपर "🎙️ सुनें" बटन दबाएं।
+              {effectiveLanguage === 'hindi' && (
+                <span className="block mt-1 text-xs opacity-75">हिंदी आवाज़ (hi-IN) में सुनाई जाएगी।</span>
+              )}
             </p>
             <Button
               size="sm"

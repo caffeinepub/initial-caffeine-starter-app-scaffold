@@ -1,58 +1,67 @@
-import { Link, useLocation } from '@tanstack/react-router';
-import { Home, Calendar, Circle, Building2, User, Sparkles, BookOpen } from 'lucide-react';
+import React from 'react';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { Home, Calendar, BookOpen, MapPin, User, Sparkles } from 'lucide-react';
 
-const navItems = [
-  { path: '/', label: 'Home', icon: Home },
-  { path: '/panchang', label: 'Panchang', icon: Calendar },
-  { path: '/jap', label: 'Jap', icon: Circle },
-  { path: '/kathayen', label: 'Kathayen', icon: BookOpen },
-  { path: '/mandir', label: 'Mandir', icon: Building2 },
-  { path: '/ai-guru', label: 'AI Guru', icon: Sparkles },
-  { path: '/profile', label: 'Profile', icon: User },
+const NAV_ITEMS = [
+  { icon: Home, label: 'होम', path: '/' },
+  { icon: Calendar, label: 'पंचांग', path: '/panchang' },
+  { icon: () => <span className="text-lg">📿</span>, label: 'जप', path: '/jap' },
+  { icon: BookOpen, label: 'कथाएँ', path: '/kathayen' },
+  { icon: MapPin, label: 'मंदिर', path: '/mandir' },
+  { icon: Sparkles, label: 'AI गुरु', path: '/ai-guru' },
+  { icon: User, label: 'प्रोफ़ाइल', path: '/profile' },
 ];
 
 export default function BottomNav() {
-  const location = useLocation();
-
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path);
-  };
+  const navigate = useNavigate();
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 bg-white border-t-2 border-saffron/20 bottom-nav-safe shadow-lg">
-      <div className="flex items-center justify-around py-1 px-0.5">
-        {navItems.map(({ path, label, icon: Icon }) => {
-          const active = isActive(path);
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 px-2 py-2"
+      style={{
+        background: 'linear-gradient(135deg, oklch(0.35 0.14 20), oklch(0.42 0.15 28))',
+        borderTop: '1px solid oklch(0.82 0.18 80 / 0.3)',
+        boxShadow: '0 -4px 20px oklch(0.35 0.14 20 / 0.5)',
+      }}
+    >
+      <div className="flex items-center justify-around max-w-lg mx-auto">
+        {NAV_ITEMS.map(item => {
+          const isActive = currentPath === item.path;
+          const IconComponent = item.icon;
+
           return (
-            <Link
-              key={path}
-              to={path}
-              className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all duration-200 min-w-[40px] ${
-                active
-                  ? 'text-saffron bg-saffron/10'
-                  : 'text-muted-foreground hover:text-saffron hover:bg-saffron/5'
-              }`}
+            <button
+              key={item.path}
+              onClick={() => navigate({ to: item.path })}
+              className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all duration-200"
+              style={{
+                background: isActive ? 'oklch(0.82 0.18 80 / 0.15)' : 'transparent',
+                border: isActive ? '1px solid oklch(0.82 0.18 80 / 0.3)' : '1px solid transparent',
+                minWidth: '44px',
+              }}
             >
-              {path === '/jap' ? (
-                <span className={`text-xl leading-none ${active ? 'text-saffron' : ''}`}>📿</span>
-              ) : path === '/ai-guru' ? (
-                <span className={`relative flex items-center justify-center`}>
-                  <Icon className={`h-5 w-5 ${active ? 'text-saffron' : ''}`} />
-                  {active && (
-                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                  )}
-                </span>
-              ) : (
-                <Icon className={`h-5 w-5 ${active ? 'text-saffron' : ''}`} />
-              )}
-              <span className={`text-[8px] font-medium font-body ${active ? 'text-saffron font-semibold' : ''}`}>
-                {label}
+              <div
+                style={{
+                  color: isActive ? '#FFD700' : 'oklch(0.82 0.18 80 / 0.5)',
+                  filter: isActive ? 'drop-shadow(0 0 6px oklch(0.82 0.18 80 / 0.6))' : 'none',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <IconComponent size={18} />
+              </div>
+              <span
+                className="text-xs"
+                style={{
+                  color: isActive ? '#FFD700' : 'oklch(0.82 0.18 80 / 0.5)',
+                  fontSize: '0.6rem',
+                  fontWeight: isActive ? 600 : 400,
+                }}
+              >
+                {item.label}
               </span>
-              {active && (
-                <div className="w-1 h-1 rounded-full bg-saffron mt-0.5" />
-              )}
-            </Link>
+            </button>
           );
         })}
       </div>

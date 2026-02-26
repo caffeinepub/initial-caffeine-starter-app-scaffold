@@ -1,327 +1,444 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetJapStats, useGetJapLeaderboard, useIncrementJap } from '../hooks/useQueries';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Music, VolumeX, Trophy } from 'lucide-react';
-import { toast } from 'sonner';
+import { useGetJapStats, useIncrementJap } from '../hooks/useQueries';
+import MalaRing from '../components/MalaRing';
+import LotusBloomOverlay from '../components/LotusBloomOverlay';
+import SacredRipple from '../components/SacredRipple';
 
-const MANTRAS = [
-  { id: 'om-namah-shivaya', label: 'ॐ नमः शिवाय', english: 'Om Namah Shivaya' },
-  { id: 'hare-krishna', label: 'हरे कृष्ण', english: 'Hare Krishna' },
-  { id: 'jai-shri-ram', label: 'जय श्री राम', english: 'Jai Shri Ram' },
-  { id: 'radhe-radhe', label: 'राधे राधे', english: 'Radhe Radhe' },
+const MALA_SIZE = 108;
+
+interface MantraOption {
+  key: string;
+  label: string;
+  subLabel: string;
+  emoji: string;
+}
+
+const MANTRA_OPTIONS: MantraOption[] = [
+  { key: 'omNamahShivaya', label: 'ॐ नमः शिवाय', subLabel: 'Om Namah Shivaya', emoji: '🔱' },
+  { key: 'hareKrishna', label: 'हरे कृष्ण हरे राम', subLabel: 'Hare Krishna Hare Ram', emoji: '🦚' },
+  { key: 'radhaNamJap', label: 'राधे राधे', subLabel: 'Radha Nam Jap', emoji: '🌸' },
+  { key: 'jaiShreeRamNamJap', label: 'जय श्री राम', subLabel: 'Jai Shree Ram', emoji: '🏹' },
+  { key: 'gayatriMantra', label: 'ॐ भूर्भुवः स्वः', subLabel: 'Gayatri Mantra', emoji: '☀️' },
+  { key: 'mahamrityunjayaMantra', label: 'ॐ त्र्यम्बकं यजामहे', subLabel: 'Mahamrityunjaya', emoji: '🌙' },
+  { key: 'saiRam', label: 'ॐ साईं राम', subLabel: 'Sai Ram', emoji: '✨' },
+  { key: 'sitaram', label: 'सीताराम सीताराम', subLabel: 'Sita Ram', emoji: '🪷' },
+  { key: 'omMantra', label: 'ॐ', subLabel: 'Om Mantra', emoji: '🕉️' },
 ];
 
-interface Petal {
-  id: number;
-  left: number;
-  delay: number;
-  duration: number;
+function getLocalStorageKey(mantraKey: string) {
+  return `jap_count_${mantraKey}`;
+}
+
+function loadLocalCount(mantraKey: string): number {
+  try {
+    const val = localStorage.getItem(getLocalStorageKey(mantraKey));
+    return val ? parseInt(val, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveLocalCount(mantraKey: string, count: number) {
+  try {
+    localStorage.setItem(getLocalStorageKey(mantraKey), String(count));
+  } catch {
+    // ignore
+  }
 }
 
 export default function Jap() {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  const [count, setCount] = useState(0);
-  const [selectedMantra, setSelectedMantra] = useState(MANTRAS[0]);
-  const [musicOn, setMusicOn] = useState(false);
-  const [petals, setPetals] = useState<Petal[]>([]);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [localLifetime, setLocalLifetime] = useState(() => {
-    const stored = localStorage.getItem('japLocalStats');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed.lifetime || 0;
-    }
-    return 0;
-  });
-  const [localDaily, setLocalDaily] = useState(() => {
-    const stored = localStorage.getItem('japLocalStats');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const today = new Date().toDateString();
-      return parsed.date === today ? (parsed.daily || 0) : 0;
-    }
-    return 0;
-  });
+  const { data: japStats } = useGetJapStats();
+  const incrementJapMutation = useIncrementJap();
 
-  const { data: japStats, isLoading: statsLoading } = useGetJapStats();
-  const { data: leaderboard, isLoading: leaderboardLoading } = useGetJapLeaderboard();
-  const incrementJap = useIncrementJap();
+  // Selected mantra
+  const [selectedMantra, setSelectedMantra] = useState<string>(() => {
+    try {
+      return localStorage.getItem('jap_selected_mantra') || 'omNamahShivaya';
+    } catch {
+      return 'omNamahShivaya';
+    }
+  });
+  const [showMantraSelector, setShowMantraSelector] = useState(false);
 
-  const triggerPetals = useCallback(() => {
-    const newPetals: Petal[] = Array.from({ length: 20 }, (_, i) => ({
-      id: Date.now() + i,
-      left: Math.random() * 100,
-      delay: Math.random() * 2,
-      duration: 2 + Math.random() * 2,
-    }));
-    setPetals(newPetals);
-    setShowCelebration(true);
-    setTimeout(() => {
-      setPetals([]);
-      setShowCelebration(false);
-    }, 4000);
+  // Local optimistic state
+  const [sessionCount, setSessionCount] = useState<number>(() => loadLocalCount(selectedMantra));
+  const [localLifetime, setLocalLifetime] = useState<number>(0);
+
+  // Trigger counter for LotusBloomOverlay (increments on each mala completion)
+  const [bloomTrigger, setBloomTrigger] = useState(0);
+  const [rippleTrigger, setRippleTrigger] = useState(0);
+  const [isPressed, setIsPressed] = useState(false);
+  const [completingMala, setCompletingMala] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Pending increments to batch-sync to backend
+  const pendingRef = useRef(0);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevSessionRef = useRef(sessionCount);
+
+  // Entrance animation
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(t);
   }, []);
 
-  const handleChant = useCallback(async () => {
-    const newCount = count + 1;
-
-    if (newCount >= 108) {
-      setCount(0);
-      triggerPetals();
-      toast.success('🙏 108 जप पूर्ण! Jai Shri Ram!', { duration: 3000 });
-
-      if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200, 100, 400]);
-      }
-
-      if (isAuthenticated) {
-        try {
-          await incrementJap.mutateAsync(BigInt(108));
-        } catch {
-          // silently fail
-        }
-      } else {
-        const today = new Date().toDateString();
-        const stored = localStorage.getItem('japLocalStats');
-        const parsed = stored ? JSON.parse(stored) : { lifetime: 0, daily: 0, date: today };
-        const newLifetime = (parsed.lifetime || 0) + 108;
-        const newDaily = parsed.date === today ? (parsed.daily || 0) + 108 : 108;
-        const updated = { lifetime: newLifetime, daily: newDaily, date: today };
-        localStorage.setItem('japLocalStats', JSON.stringify(updated));
-        setLocalLifetime(newLifetime);
-        setLocalDaily(newDaily);
-      }
-    } else {
-      setCount(newCount);
+  // Initialize lifetime from backend stats (authenticated users)
+  useEffect(() => {
+    if (japStats && isAuthenticated) {
+      setLocalLifetime(Number(japStats.lifetime));
     }
-  }, [count, isAuthenticated, incrementJap, triggerPetals]);
+  }, [japStats, isAuthenticated]);
 
-  const displayDaily = isAuthenticated
-    ? (japStats ? Number(japStats.daily) : 0)
-    : localDaily;
-  const displayWeekly = isAuthenticated
-    ? (japStats ? Number(japStats.weekly) : 0)
-    : 0;
-  const displayLifetime = isAuthenticated
-    ? (japStats ? Number(japStats.lifetime) : 0)
-    : localLifetime;
+  // For guest users, compute lifetime from all mantra localStorage counts
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const total = MANTRA_OPTIONS.reduce((sum, m) => sum + loadLocalCount(m.key), 0);
+      setLocalLifetime(total);
+    }
+  }, [isAuthenticated, sessionCount]);
 
-  const progress = (count / 108) * 100;
+  // When mantra changes, load its persisted count
+  const handleMantraChange = useCallback((key: string) => {
+    // Save current count before switching
+    saveLocalCount(selectedMantra, sessionCount);
+    setSelectedMantra(key);
+    try {
+      localStorage.setItem('jap_selected_mantra', key);
+    } catch { /* ignore */ }
+    const saved = loadLocalCount(key);
+    setSessionCount(saved);
+    prevSessionRef.current = saved;
+    setShowMantraSelector(false);
+  }, [selectedMantra, sessionCount]);
+
+  // Derived values
+  const beadsInRound = sessionCount % MALA_SIZE;
+  const progressPercent = (beadsInRound / MALA_SIZE) * 100;
+  const sessionMalaCount = Math.floor(sessionCount / MALA_SIZE);
+
+  // Detect mala completion
+  useEffect(() => {
+    if (sessionCount > 0 && sessionCount > prevSessionRef.current) {
+      const prevMalas = Math.floor(prevSessionRef.current / MALA_SIZE);
+      const currMalas = Math.floor(sessionCount / MALA_SIZE);
+      if (currMalas > prevMalas) {
+        setCompletingMala(true);
+        setTimeout(() => {
+          setCompletingMala(false);
+          setBloomTrigger((t) => t + 1);
+        }, 300);
+      }
+    }
+    prevSessionRef.current = sessionCount;
+  }, [sessionCount]);
+
+  // Async backend sync (debounced, non-blocking)
+  const scheduleSyncToBackend = useCallback(() => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      if (pendingRef.current > 0 && isAuthenticated) {
+        const toSync = pendingRef.current;
+        pendingRef.current = 0;
+        incrementJapMutation.mutate(BigInt(toSync), {
+          onError: (err) => {
+            console.error('Jap sync error:', err);
+          },
+        });
+      }
+    }, 1500);
+  }, [isAuthenticated, incrementJapMutation]);
+
+  const handleJap = useCallback(() => {
+    const newCount = sessionCount + 1;
+
+    // Immediate optimistic update
+    setSessionCount(newCount);
+    setRippleTrigger((t) => t + 1);
+
+    // Persist to localStorage immediately
+    saveLocalCount(selectedMantra, newCount);
+
+    // Queue backend sync for authenticated users
+    pendingRef.current += 1;
+    scheduleSyncToBackend();
+  }, [sessionCount, selectedMantra, scheduleSyncToBackend]);
+
+  const handleReset = () => {
+    setSessionCount(0);
+    saveLocalCount(selectedMantra, 0);
+    prevSessionRef.current = 0;
+  };
+
+  const progressWidth = completingMala ? 100 : progressPercent;
+  const currentMantra = MANTRA_OPTIONS.find((m) => m.key === selectedMantra) || MANTRA_OPTIONS[0];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Falling Petals */}
-      {petals.map(petal => (
-        <div
-          key={petal.id}
-          className="petal"
-          style={{
-            left: `${petal.left}%`,
-            animationDelay: `${petal.delay}s`,
-            animationDuration: `${petal.duration}s`,
-          }}
-        >
-          🌸
-        </div>
-      ))}
+    <div className="min-h-screen bg-background pb-24 overflow-hidden">
+      {/* LotusBloomOverlay uses trigger-based API */}
+      <LotusBloomOverlay trigger={bloomTrigger} />
 
       {/* Header */}
-      <div className="bg-gradient-to-b from-saffron to-saffron/80 px-4 pt-6 pb-8 text-white text-center relative">
-        <img
-          src="/assets/generated/mala-bg.dim_800x800.png"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-10"
-        />
-        <div className="relative z-10">
-          <h1 className="font-devanagari text-2xl font-bold">📿 जप काउंटर</h1>
-          <p className="text-sm font-body opacity-90 mt-1">Jap Counter — Mala Beads</p>
-        </div>
+      <div
+        className="bg-primary/10 border-b border-primary/20 px-4 py-4"
+        style={{
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0)' : 'translateY(-16px)',
+          transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+        }}
+      >
+        <h1 className="text-2xl font-bold text-primary text-center">नाम जप</h1>
+        <p className="text-center text-muted-foreground text-sm mt-1">{currentMantra.label}</p>
       </div>
 
-      <div className="px-4 -mt-4 space-y-4 pb-6">
-        {/* Mantra Selector */}
-        <div className="bg-white rounded-2xl border-2 border-saffron/20 p-3 shadow-sm">
-          <p className="text-xs text-muted-foreground font-body mb-2 text-center">Select Mantra / मंत्र चुनें</p>
-          <div className="grid grid-cols-2 gap-2">
-            {MANTRAS.map(mantra => (
-              <button
-                key={mantra.id}
-                onClick={() => setSelectedMantra(mantra)}
-                className={`py-2 px-3 rounded-xl text-xs font-body font-medium transition-all ${
-                  selectedMantra.id === mantra.id
-                    ? 'bg-saffron text-white shadow-saffron'
-                    : 'bg-saffron/10 text-saffron border border-saffron/20'
-                }`}
-              >
-                <span className="font-devanagari block text-sm">{mantra.label}</span>
-                <span className="opacity-70 text-[10px]">{mantra.english}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="max-w-md mx-auto px-4 py-6 space-y-5">
 
-        {/* Counter Display */}
-        <div className="bg-white rounded-2xl border-2 border-gold/30 p-6 text-center shadow-gold">
-          {/* Circular Progress */}
-          <div className="relative w-40 h-40 mx-auto mb-4">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-              <circle
-                cx="80" cy="80" r="70"
-                fill="none"
-                stroke="oklch(0.95 0.04 75)"
-                strokeWidth="12"
-              />
-              <circle
-                cx="80" cy="80" r="70"
-                fill="none"
-                stroke="oklch(0.72 0.19 50)"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 70}`}
-                strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 100)}`}
-                className="transition-all duration-300"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-bold text-saffron font-body">{count}</span>
-              <span className="text-xs text-muted-foreground font-body">/ 108</span>
-            </div>
-          </div>
-
-          {/* Selected Mantra Display */}
-          <p className={`font-devanagari text-xl font-bold text-saffron mb-1 ${showCelebration ? 'animate-bounce' : ''}`}>
-            {selectedMantra.label}
-          </p>
-          <p className="text-xs text-muted-foreground font-body">{selectedMantra.english}</p>
-        </div>
-
-        {/* CHANT Button */}
-        <button
-          onClick={handleChant}
-          className="w-full py-6 rounded-2xl bg-gradient-to-b from-saffron to-saffron-dark text-white font-devanagari text-3xl font-bold shadow-saffron active:scale-95 transition-transform mala-pulse"
+        {/* Mantra Selector Button */}
+        <div
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity 0.5s ease-out 0.1s, transform 0.5s ease-out 0.1s',
+          }}
         >
-          🙏 जप करें
-          <span className="block text-sm font-body font-normal opacity-90 mt-1">CHANT</span>
-        </button>
-
-        {/* Music Toggle */}
-        <div className="flex items-center justify-between bg-white rounded-2xl border-2 border-border p-4">
-          <div className="flex items-center gap-2">
-            {musicOn ? (
-              <Music className="h-5 w-5 text-saffron" />
-            ) : (
-              <VolumeX className="h-5 w-5 text-muted-foreground" />
-            )}
-            <div>
-              <p className="text-sm font-semibold font-body text-foreground">Background Music</p>
-              <p className="text-xs text-muted-foreground font-body">
-                {musicOn ? 'Mantra music playing' : 'Music off'}
-              </p>
-            </div>
-          </div>
           <button
-            onClick={() => {
-              setMusicOn(!musicOn);
-              toast.info(musicOn ? 'Music off' : '🎵 Music feature coming soon!');
-            }}
-            className={`w-12 h-6 rounded-full transition-all ${
-              musicOn ? 'bg-saffron' : 'bg-muted'
-            } relative`}
+            onClick={() => setShowMantraSelector((v) => !v)}
+            className="w-full flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
           >
-            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow ${
-              musicOn ? 'left-6' : 'left-0.5'
-            }`} />
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{currentMantra.emoji}</span>
+              <div className="text-left">
+                <div className="font-semibold text-foreground text-sm">{currentMantra.label}</div>
+                <div className="text-xs text-muted-foreground">{currentMantra.subLabel}</div>
+              </div>
+            </div>
+            <span
+              className="text-muted-foreground text-lg transition-transform duration-300"
+              style={{ transform: showMantraSelector ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            >
+              ▾
+            </span>
+          </button>
+
+          {/* Mantra Dropdown */}
+          {showMantraSelector && (
+            <div className="mt-1 bg-card border border-border rounded-xl overflow-hidden shadow-lg z-10 relative">
+              {MANTRA_OPTIONS.map((m, i) => (
+                <button
+                  key={m.key}
+                  onClick={() => handleMantraChange(m.key)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60 transition-colors ${
+                    m.key === selectedMantra ? 'bg-primary/10' : ''
+                  } ${i < MANTRA_OPTIONS.length - 1 ? 'border-b border-border/50' : ''}`}
+                  style={{
+                    opacity: 1,
+                    animation: `slideDown 0.2s ease-out ${i * 0.04}s both`,
+                  }}
+                >
+                  <span className="text-xl">{m.emoji}</span>
+                  <div>
+                    <div className="font-medium text-foreground text-sm">{m.label}</div>
+                    <div className="text-xs text-muted-foreground">{m.subLabel}</div>
+                  </div>
+                  {m.key === selectedMantra && (
+                    <span className="ml-auto text-primary text-sm">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Mala Ring */}
+        <div
+          className="flex justify-center"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'scale(1)' : 'scale(0.85)',
+            transition: 'opacity 0.6s ease-out 0.2s, transform 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s',
+          }}
+        >
+          <MalaRing count={beadsInRound} />
+        </div>
+
+        {/* Progress Bar */}
+        <div
+          className="space-y-2"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(16px)',
+            transition: 'opacity 0.5s ease-out 0.35s, transform 0.5s ease-out 0.35s',
+          }}
+        >
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>माला प्रगति</span>
+            <span>{beadsInRound} / {MALA_SIZE}</span>
+          </div>
+          <div className="h-3 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+              style={{
+                width: `${progressWidth}%`,
+                transition: completingMala
+                  ? 'width 0.3s ease-out'
+                  : 'width 0.15s ease-out',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div
+          className="grid grid-cols-3 gap-3"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(16px)',
+            transition: 'opacity 0.5s ease-out 0.45s, transform 0.5s ease-out 0.45s',
+          }}
+        >
+          <div className="bg-card border border-border rounded-xl p-3 text-center">
+            <div className="text-2xl font-bold text-primary tabular-nums">{sessionCount}</div>
+            <div className="text-xs text-muted-foreground mt-1">इस सत्र में</div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3 text-center">
+            <div className="text-2xl font-bold text-accent tabular-nums">{sessionMalaCount}</div>
+            <div className="text-xs text-muted-foreground mt-1">माला</div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3 text-center">
+            <div className="text-2xl font-bold text-foreground tabular-nums">{localLifetime}</div>
+            <div className="text-xs text-muted-foreground mt-1">जीवनकाल</div>
+          </div>
+        </div>
+
+        {/* JAP Button */}
+        <div
+          className="flex justify-center py-4 relative"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'scale(1)' : 'scale(0.7)',
+            transition: 'opacity 0.6s ease-out 0.55s, transform 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.55s',
+          }}
+        >
+          {/* Ripple container */}
+          <div className="relative">
+            <SacredRipple trigger={rippleTrigger} />
+            <button
+              onPointerDown={() => setIsPressed(true)}
+              onPointerUp={() => {
+                setIsPressed(false);
+                handleJap();
+              }}
+              onPointerLeave={() => setIsPressed(false)}
+              className="relative w-40 h-40 rounded-full select-none touch-none flex flex-col items-center justify-center gap-1"
+              style={{
+                background:
+                  'radial-gradient(circle at 35% 35%, oklch(0.85 0.18 60), oklch(0.65 0.22 40))',
+                boxShadow: isPressed
+                  ? '0 2px 8px oklch(0.5 0.2 40 / 0.4), inset 0 2px 6px oklch(0.3 0.1 40 / 0.3)'
+                  : '0 8px 32px oklch(0.5 0.2 40 / 0.6), 0 2px 8px oklch(0.4 0.15 40 / 0.3), 0 0 0 4px oklch(0.75 0.18 60 / 0.3)',
+                transform: isPressed ? 'scale(0.93)' : 'scale(1)',
+                transition: 'transform 0.1s ease-out, box-shadow 0.15s ease-out',
+              }}
+            >
+              <span
+                className="text-4xl select-none pointer-events-none"
+                style={{
+                  animation: isPressed ? 'none' : 'omPulse 2.5s ease-in-out infinite',
+                }}
+              >
+                {currentMantra.emoji}
+              </span>
+              <span
+                className="text-xs font-bold select-none pointer-events-none"
+                style={{ color: 'oklch(0.25 0.08 30)' }}
+              >
+                जप करें
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mantra text display */}
+        <div
+          className="text-center"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 0.5s ease-out 0.65s',
+          }}
+        >
+          <p
+            className="text-lg font-semibold text-primary"
+            style={{ animation: 'textGlow 3s ease-in-out infinite' }}
+          >
+            {currentMantra.label}
+          </p>
+        </div>
+
+        {/* Reset Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleReset}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-muted"
+          >
+            सत्र रीसेट करें
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="bg-white rounded-2xl border-2 border-gold/20 p-4">
-          <h3 className="font-devanagari text-sm font-bold text-saffron mb-3">📊 जप आँकड़े (Stats)</h3>
-          {statsLoading && isAuthenticated ? (
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center bg-saffron/5 rounded-xl p-3">
-                <p className="text-2xl font-bold text-saffron font-body">{displayDaily}</p>
-                <p className="text-xs text-muted-foreground font-body">Today</p>
-              </div>
-              <div className="text-center bg-saffron/5 rounded-xl p-3">
-                <p className="text-2xl font-bold text-saffron font-body">{displayWeekly}</p>
-                <p className="text-xs text-muted-foreground font-body">This Week</p>
-              </div>
-              <div className="text-center bg-saffron/5 rounded-xl p-3">
-                <p className="text-2xl font-bold text-saffron font-body">{displayLifetime}</p>
-                <p className="text-xs text-muted-foreground font-body">Lifetime</p>
-              </div>
-            </div>
-          )}
-          {!isAuthenticated && (
-            <p className="text-xs text-muted-foreground font-body text-center mt-2">
-              Login to sync stats across devices
+        {/* Login prompt */}
+        {!isAuthenticated && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              💾 जप गिनती स्वचालित रूप से सहेजी जा रही है (स्थानीय)
             </p>
-          )}
-        </div>
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+              क्लाउड में सहेजने के लिए लॉगिन करें
+            </p>
+          </div>
+        )}
 
-        {/* Leaderboard */}
-        <div className="bg-white rounded-2xl border-2 border-gold/20 p-4">
-          <h3 className="font-devanagari text-sm font-bold text-saffron mb-3 flex items-center gap-2">
-            <Trophy className="h-4 w-4" /> Top Bhakts — लीडरबोर्ड
-          </h3>
-          {leaderboardLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 rounded-xl" />)}
-            </div>
-          ) : (leaderboard && leaderboard.length > 0) ? (
-            <div className="space-y-2">
-              {leaderboard.slice(0, 5).map((entry, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '🏅'}
-                    </span>
-                    <span className="text-sm font-body text-foreground">Bhakt #{idx + 1}</span>
-                  </div>
-                  <span className="text-sm font-bold text-saffron font-body">
-                    {Number(entry.lifetime).toLocaleString()} jap
-                  </span>
+        {/* Daily stats from backend */}
+        {isAuthenticated && japStats && (
+          <div className="bg-card border border-border rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3">☁️ क्लाउड प्रगति</h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-lg font-bold text-primary tabular-nums">
+                  {Number(japStats.daily)}
                 </div>
-              ))}
+                <div className="text-xs text-muted-foreground">आज</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-accent tabular-nums">
+                  {Number(japStats.weekly)}
+                </div>
+                <div className="text-xs text-muted-foreground">इस सप्ताह</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-primary tabular-nums">{localLifetime}</div>
+                <div className="text-xs text-muted-foreground">जीवनकाल</div>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground font-body">
-                🙏 Be the first on the leaderboard!
-              </p>
-              <p className="text-xs text-muted-foreground font-body mt-1">
-                Login and complete your first mala
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center py-2">
-          <p className="text-xs text-muted-foreground font-body">
-            © {new Date().getFullYear()} Sanatan Pro — Built with{' '}
-            <span className="text-saffron">🙏</span> using{' '}
-            <a
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.hostname : 'sanatan-pro'
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-saffron underline"
-            >
-              caffeine.ai
-            </a>
-          </p>
-        </div>
+          </div>
+        )}
       </div>
+
+      <style>{`
+        @keyframes omPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        @keyframes textGlow {
+          0%, 100% { opacity: 0.85; text-shadow: 0 0 8px oklch(0.65 0.22 40 / 0.3); }
+          50% { opacity: 1; text-shadow: 0 0 16px oklch(0.65 0.22 40 / 0.6); }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

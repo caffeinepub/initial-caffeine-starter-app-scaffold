@@ -1,161 +1,271 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetCallerUserProfile, useGetJapStats } from '../hooks/useQueries';
-import LoginButton from '../components/LoginButton';
-import VratModeToggle from '../components/VratModeToggle';
-import PremiumBanner from '../components/PremiumBanner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Link } from '@tanstack/react-router';
-import { Settings, Shield } from 'lucide-react';
+import { useGetCallerUserProfile, useSetUserProfile, useGetJapStats } from '../hooks/useQueries';
+import { Mantra } from '../backend';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+import Loader from '../components/Loader';
+
+const MANTRA_OPTIONS = [
+  { key: 'omNamahShivaya', hindi: 'ॐ नमः शिवाय', english: 'Om Namah Shivaya', deity: 'शिव', emoji: '🔱' },
+  { key: 'hareKrishna', hindi: 'हरे कृष्ण हरे कृष्ण', english: 'Hare Krishna', deity: 'कृष्ण', emoji: '🦚' },
+  { key: 'gayatriMantra', hindi: 'ॐ भूर्भुवः स्वः', english: 'Gayatri Mantra', deity: 'सूर्य', emoji: '☀️' },
+  { key: 'mahamrityunjayaMantra', hindi: 'ॐ त्र्यम्बकं यजामहे', english: 'Mahamrityunjaya', deity: 'शिव', emoji: '🌙' },
+  { key: 'saiRam', hindi: 'ॐ साईं राम', english: 'Sai Ram', deity: 'साईं बाबा', emoji: '🙏' },
+  { key: 'sitaram', hindi: 'सीताराम सीताराम', english: 'Sita Ram', deity: 'राम', emoji: '🏹' },
+  { key: 'omMantra', hindi: 'ॐ', english: 'Om Mantra', deity: 'ब्रह्म', emoji: '🕉️' },
+];
+
+function getStoredMantra(): string {
+  return localStorage.getItem('selectedMantra') || 'omNamahShivaya';
+}
 
 export default function Profile() {
-  const { identity } = useInternetIdentity();
+  const { identity, clear } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
-  const { data: japStats, isLoading: statsLoading } = useGetJapStats();
+  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const { data: japStats } = useGetJapStats();
+  const setUserProfile = useSetUserProfile();
 
-  const [vratMode, setVratMode] = useState(() => {
-    return localStorage.getItem('vratMode') === 'true';
-  });
+  const [isVratMode, setIsVratMode] = useState(false);
+  const [selectedMantra, setSelectedMantra] = useState<string>(getStoredMantra());
+  const [isSavingMantra, setIsSavingMantra] = useState(false);
 
-  const handleVratToggle = (val: boolean) => {
-    setVratMode(val);
-    localStorage.setItem('vratMode', val.toString());
+  useEffect(() => {
+    if (isAuthenticated && userProfile?.selectedMantra) {
+      setSelectedMantra(userProfile.selectedMantra as string);
+    } else if (!isAuthenticated) {
+      setSelectedMantra(getStoredMantra());
+    }
+  }, [isAuthenticated, userProfile]);
+
+  const handleMantraSelect = async (mantraKey: string) => {
+    setSelectedMantra(mantraKey);
+
+    if (isAuthenticated && userProfile) {
+      setIsSavingMantra(true);
+      try {
+        await setUserProfile.mutateAsync({
+          name: userProfile.name,
+          selectedMantra: mantraKey as Mantra,
+        });
+        toast.success('मंत्र सहेजा गया! 🙏');
+      } catch (e) {
+        toast.error('मंत्र सहेजने में त्रुटि');
+      } finally {
+        setIsSavingMantra(false);
+      }
+    } else {
+      localStorage.setItem('selectedMantra', mantraKey);
+      window.dispatchEvent(new Event('storage'));
+      toast.success('मंत्र चुना गया! 🙏');
+    }
   };
 
-  const displayName = userProfile?.name || (isAuthenticated ? 'Bhakt' : 'Guest');
-  const initials = displayName.slice(0, 2).toUpperCase();
-  const principalShort = identity
-    ? identity.getPrincipal().toString().slice(0, 8) + '...'
-    : null;
+  const handleLogout = async () => {
+    await clear();
+  };
+
+  if (isAuthenticated && profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{
+        background: 'linear-gradient(180deg, oklch(0.97 0.025 85) 0%, oklch(0.93 0.04 80) 100%)'
+      }}>
+        <Loader text="प्रोफ़ाइल लोड हो रही है..." />
+      </div>
+    );
+  }
+
+  const displayName = userProfile?.name || 'भक्त';
+  const principal = identity?.getPrincipal().toString() || '';
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-saffron to-saffron/80 px-4 pt-6 pb-12 text-white text-center relative overflow-hidden">
-        <img
-          src="/assets/generated/om-logo.dim_256x256.png"
-          alt="Om"
-          className="absolute right-4 top-4 w-16 h-16 opacity-20"
-        />
-        <h1 className="font-devanagari text-xl font-bold relative z-10">👤 प्रोफाइल</h1>
-        <p className="text-sm font-body opacity-90 mt-1 relative z-10">Profile</p>
-      </div>
+    <div className="min-h-screen relative overflow-hidden pb-24" style={{
+      background: 'linear-gradient(180deg, oklch(0.97 0.025 85) 0%, oklch(0.93 0.04 80) 100%)'
+    }}>
+      {/* Mandala background */}
+      <div className="mandala-bg" />
 
-      <div className="px-4 -mt-8 space-y-4 pb-6">
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl border-2 border-gold/20 p-5 shadow-gold text-center">
-          {/* Avatar */}
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-saffron to-gold flex items-center justify-center text-white text-2xl font-bold font-devanagari mx-auto mb-3 shadow-saffron">
-            {initials}
-          </div>
-
-          {profileLoading ? (
-            <Skeleton className="h-6 w-32 mx-auto mb-2" />
-          ) : (
-            <h2 className="font-devanagari text-xl font-bold text-foreground mb-1">
-              {displayName}
-            </h2>
-          )}
-
-          {isAuthenticated ? (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-body">
-                🔐 Internet Identity
-              </p>
-              {principalShort && (
-                <p className="text-xs text-muted-foreground font-mono">
-                  ID: {principalShort}
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground font-body">
-              👤 Guest Mode — Login to save progress
-            </p>
-          )}
-
-          <div className="mt-4">
-            <LoginButton />
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="text-center mb-6 animate-divine-entrance">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <img
+              src="/assets/generated/om-symbol.dim_256x256.png"
+              alt="Om"
+              className="w-6 h-6 animate-mandala-spin"
+              style={{ filter: 'sepia(1) saturate(3) hue-rotate(10deg)' }}
+            />
+            <h1 className="font-heading text-2xl" style={{ color: 'oklch(0.35 0.14 20)' }}>
+              मेरी प्रोफ़ाइल
+            </h1>
           </div>
         </div>
 
-        {/* Stats */}
-        {isAuthenticated && (
-          <div className="bg-white rounded-2xl border-2 border-gold/20 p-4">
-            <h3 className="font-devanagari text-sm font-bold text-saffron mb-3">📊 आपके आँकड़े</h3>
-            {statsLoading ? (
-              <div className="grid grid-cols-2 gap-3">
-                <Skeleton className="h-16 rounded-xl" />
-                <Skeleton className="h-16 rounded-xl" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center bg-saffron/5 rounded-xl p-3">
-                  <p className="text-2xl font-bold text-saffron font-body">
-                    {japStats ? Number(japStats.lifetime).toLocaleString() : 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-body">Total Jap</p>
+        {/* Avatar & Name */}
+        <div className="flex flex-col items-center mb-6">
+          <div
+            className="w-24 h-24 rounded-full flex items-center justify-center text-4xl mb-3 animate-golden-halo"
+            style={{
+              background: 'linear-gradient(135deg, oklch(0.82 0.18 80), oklch(0.72 0.19 55))',
+              border: '3px solid oklch(0.82 0.18 80)',
+            }}
+          >
+            🙏
+          </div>
+          <h2 className="font-heading text-2xl" style={{ color: 'oklch(0.35 0.14 20)' }}>
+            {displayName}
+          </h2>
+          {isAuthenticated && (
+            <p className="text-xs mt-1 font-mono" style={{ color: 'oklch(0.55 0.05 40)' }}>
+              {principal.slice(0, 20)}...
+            </p>
+          )}
+          {!isAuthenticated && (
+            <p className="text-sm mt-1" style={{ color: 'oklch(0.55 0.05 40)' }}>
+              अतिथि भक्त
+            </p>
+          )}
+        </div>
+
+        {/* Jap Stats */}
+        {isAuthenticated && japStats && (
+          <div className="mb-6">
+            <div className="sacred-divider">
+              <span className="sacred-divider-text">🕉️</span>
+            </div>
+            <h3 className="font-heading text-center text-lg mb-3" style={{ color: 'oklch(0.35 0.14 20)' }}>
+              जप आँकड़े
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'आज', value: Number(japStats.daily) },
+                { label: 'इस सप्ताह', value: Number(japStats.weekly) },
+                { label: 'कुल', value: Number(japStats.lifetime) },
+              ].map(stat => (
+                <div
+                  key={stat.label}
+                  className="text-center p-3 rounded-xl devotional-card"
+                >
+                  <div className="font-heading text-2xl" style={{ color: 'oklch(0.62 0.18 45)' }}>
+                    {stat.value.toLocaleString()}
+                  </div>
+                  <div className="text-xs mt-1" style={{ color: 'oklch(0.48 0.05 40)' }}>
+                    {stat.label}
+                  </div>
                 </div>
-                <div className="text-center bg-saffron/5 rounded-xl p-3">
-                  <p className="text-2xl font-bold text-saffron font-body">
-                    {japStats ? Number(japStats.daily) : 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-body">Today's Jap</p>
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Premium Banner */}
-        <PremiumBanner />
+        {/* Mantra Selection */}
+        <div className="mb-6">
+          <div className="sacred-divider">
+            <span className="sacred-divider-text">🔱</span>
+          </div>
+          <h3 className="font-heading text-center text-lg mb-1" style={{ color: 'oklch(0.35 0.14 20)' }}>
+            अपना मंत्र चुनें
+          </h3>
+          <p className="text-center text-xs mb-4" style={{ color: 'oklch(0.55 0.05 40)' }}>
+            यह मंत्र जप पृष्ठ पर उपयोग होगा
+          </p>
 
-        {/* Vrat Mode Toggle */}
-        <VratModeToggle enabled={vratMode} onToggle={handleVratToggle} />
+          {isSavingMantra && (
+            <div className="text-center mb-3">
+              <span className="text-sm animate-pulse" style={{ color: 'oklch(0.62 0.18 45)' }}>
+                मंत्र सहेजा जा रहा है...
+              </span>
+            </div>
+          )}
 
-        {/* Settings Links */}
-        <div className="bg-white rounded-2xl border-2 border-border p-2">
-          <Link
-            to="/admin"
-            className="flex items-center gap-3 p-3 rounded-xl hover:bg-saffron/5 transition-colors"
-          >
-            <Shield className="h-5 w-5 text-saffron" />
-            <div>
-              <p className="text-sm font-semibold font-body text-foreground">Admin Panel</p>
-              <p className="text-xs text-muted-foreground font-body">Manage content (admins only)</p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-3 p-3 rounded-xl">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-semibold font-body text-foreground">App Version</p>
-              <p className="text-xs text-muted-foreground font-body">Sanatan Pro v1.0</p>
-            </div>
+          <div className="space-y-2">
+            {MANTRA_OPTIONS.map(mantra => {
+              const isSelected = selectedMantra === mantra.key;
+              return (
+                <button
+                  key={mantra.key}
+                  onClick={() => handleMantraSelect(mantra.key)}
+                  disabled={isSavingMantra}
+                  className="w-full text-left p-4 rounded-xl transition-all duration-200"
+                  style={{
+                    background: isSelected
+                      ? 'linear-gradient(135deg, oklch(0.82 0.18 80 / 0.2), oklch(0.72 0.19 55 / 0.1))'
+                      : 'oklch(0.97 0.025 85)',
+                    border: isSelected
+                      ? '2px solid oklch(0.82 0.18 80 / 0.7)'
+                      : '1px solid oklch(0.82 0.18 80 / 0.2)',
+                    boxShadow: isSelected
+                      ? '0 0 15px oklch(0.82 0.18 80 / 0.2)'
+                      : 'none',
+                    transform: isSelected ? 'scale(1.01)' : 'scale(1)',
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{mantra.emoji}</span>
+                    <div className="flex-1">
+                      <p className="font-heading text-base" style={{ color: isSelected ? 'oklch(0.62 0.18 45)' : 'oklch(0.35 0.14 20)' }}>
+                        {mantra.hindi}
+                      </p>
+                      <p className="text-xs" style={{ color: 'oklch(0.55 0.05 40)' }}>
+                        {mantra.english} • {mantra.deity}
+                      </p>
+                    </div>
+                    {isSelected && (
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                        style={{ background: 'oklch(0.62 0.18 45)', color: 'white' }}
+                      >
+                        ✓
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center py-4 border-t border-border/40">
-          <p className="text-xs text-muted-foreground font-body">
-            🙏 Jai Shri Ram — Sanatan Pro
-          </p>
-          <p className="text-xs text-muted-foreground font-body mt-1">
-            © {new Date().getFullYear()} Built with{' '}
-            <span className="text-saffron">🙏</span> using{' '}
-            <a
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.hostname : 'sanatan-pro'
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-saffron underline"
-            >
-              caffeine.ai
-            </a>
-          </p>
+        {/* Vrat Mode */}
+        <div className="mb-6">
+          <div className="sacred-divider">
+            <span className="sacred-divider-text">🌙</span>
+          </div>
+          <div
+            className="p-4 rounded-xl devotional-card flex items-center justify-between"
+          >
+            <div>
+              <h3 className="font-heading text-base" style={{ color: 'oklch(0.35 0.14 20)' }}>
+                व्रत मोड
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: 'oklch(0.55 0.05 40)' }}>
+                व्रत के दिन विशेष सामग्री दिखाएं
+              </p>
+            </div>
+            <Switch
+              checked={isVratMode}
+              onCheckedChange={setIsVratMode}
+            />
+          </div>
         </div>
+
+        {/* Logout */}
+        {isAuthenticated && (
+          <div className="text-center">
+            <button
+              onClick={handleLogout}
+              className="px-8 py-3 rounded-full font-medium transition-all"
+              style={{
+                background: 'oklch(0.55 0.22 25 / 0.1)',
+                border: '1px solid oklch(0.55 0.22 25 / 0.3)',
+                color: 'oklch(0.55 0.22 25)',
+              }}
+            >
+              लॉगआउट
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

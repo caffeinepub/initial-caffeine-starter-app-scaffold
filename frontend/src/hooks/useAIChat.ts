@@ -1,79 +1,106 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { getAIResponse } from '../lib/aiEngine';
+import { useState, useRef, useCallback } from 'react';
+import { getAIResponse, type ChatMessage } from '../lib/aiEngine';
 
-export interface ChatMessage {
+export interface ChatEntry {
   id: string;
-  role: 'user' | 'ai';
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
 
-const WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'ai',
-  content:
-    '🙏 Namaste! I am **AI Guru** — your all-knowing digital companion.\n\nI can answer questions on **any topic**: Hindu philosophy, scriptures, festivals, science, history, technology, health, mathematics, and much more.\n\nAsk me anything — I am here to guide you on your journey of knowledge! ✨',
-  timestamp: new Date(),
-};
-
 export function useAIChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<ChatEntry[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content:
+        'नमस्ते! 🙏 मैं आपका AI गुरु हूँ। मैं आपको हिंदू दर्शन, ध्यान, मंत्र, योग और आध्यात्मिक मार्गदर्शन में सहायता कर सकता हूँ। आप मुझसे कोई भी प्रश्न पूछ सकते हैं।',
+      timestamp: new Date(),
+    },
+  ]);
   const [isLoading, setIsLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 50);
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
-
   const sendMessage = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || isLoading) return;
+    async (text?: string) => {
+      const messageText = (text ?? inputValue).trim();
+      if (!messageText || isLoading) return;
 
-      const userMsg: ChatMessage = {
+      // Clear input immediately
+      setInputValue('');
+
+      // Add user message optimistically
+      const userEntry: ChatEntry = {
         id: `user-${Date.now()}`,
         role: 'user',
-        content: trimmed,
+        content: messageText,
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, userMsg]);
+      setMessages((prev) => [...prev, userEntry]);
       setIsLoading(true);
       scrollToBottom();
 
+      // Build conversation history for context (last 6 messages)
+      const historyForAPI: ChatMessage[] = messages
+        .slice(-6)
+        .map((m) => ({ role: m.role, content: m.content }));
+
       try {
-        const response = await getAIResponse(trimmed);
-        const aiMsg: ChatMessage = {
-          id: `ai-${Date.now()}`,
-          role: 'ai',
+        const response = await getAIResponse(messageText, historyForAPI);
+
+        const assistantEntry: ChatEntry = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
           content: response,
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, aiMsg]);
-      } catch {
-        const errorMsg: ChatMessage = {
+
+        setMessages((prev) => [...prev, assistantEntry]);
+      } catch (_err) {
+        const errorEntry: ChatEntry = {
           id: `error-${Date.now()}`,
-          role: 'ai',
-          content: '🙏 I apologize, something went wrong. Please try asking again.',
+          role: 'assistant',
+          content:
+            'क्षमा करें, AI गुरु से संपर्क नहीं हो पा रहा। कृपया पुनः प्रयास करें। 🙏',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, errorMsg]);
+        setMessages((prev) => [...prev, errorEntry]);
       } finally {
         setIsLoading(false);
+        scrollToBottom();
       }
     },
-    [isLoading, scrollToBottom]
+    [inputValue, isLoading, messages, scrollToBottom]
   );
 
   const clearChat = useCallback(() => {
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([
+      {
+        id: 'welcome-new',
+        role: 'assistant',
+        content:
+          'नमस्ते! 🙏 मैं आपका AI गुरु हूँ। मैं आपको हिंदू दर्शन, ध्यान, मंत्र, योग और आध्यात्मिक मार्गदर्शन में सहायता कर सकता हूँ। आप मुझसे कोई भी प्रश्न पूछ सकते हैं।',
+        timestamp: new Date(),
+      },
+    ]);
+    setInputValue('');
   }, []);
 
-  return { messages, isLoading, sendMessage, clearChat, bottomRef };
+  return {
+    messages,
+    isLoading,
+    inputValue,
+    setInputValue,
+    sendMessage,
+    clearChat,
+    messagesEndRef,
+  };
 }

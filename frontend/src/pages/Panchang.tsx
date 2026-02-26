@@ -1,23 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useGetPanchang, useGetFestivals } from '../hooks/useQueries';
-import { getHinduDate, getTodaysTithi, getTodaysNakshatra } from '../lib/staticData';
-import { MapPin, Sun, Bell } from 'lucide-react';
-
-function getRahuKaal(dayOfWeek: number): string {
-  const rahuKaalTimes: Record<number, string> = {
-    0: '4:30 PM – 6:00 PM', // Sunday
-    1: '7:30 AM – 9:00 AM', // Monday
-    2: '3:00 PM – 4:30 PM', // Tuesday
-    3: '12:00 PM – 1:30 PM', // Wednesday
-    4: '1:30 PM – 3:00 PM', // Thursday
-    5: '10:30 AM – 12:00 PM', // Friday
-    6: '9:00 AM – 10:30 AM', // Saturday
-  };
-  return rahuKaalTimes[dayOfWeek] || '12:00 PM – 1:30 PM';
-}
+import { Bell, Sun, Moon, ChevronLeft, ChevronRight, MapPin, Star, Calendar } from 'lucide-react';
+import { useGetFestivals } from '../hooks/useQueries';
+import { getPanchangData, formatTimeIST, formatDateReadable } from '../lib/panchangEngine';
 
 function getDaysUntil(dateStr: string): number {
   const today = new Date();
@@ -27,28 +12,78 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((festDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function InfoRow({
+  icon,
+  label,
+  value,
+  valueClass = '',
+  subValue,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  valueClass?: string;
+  subValue?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-gold/20 last:border-0">
+      <div className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-muted-foreground font-body">{label}</p>
+        <p className={`text-sm font-bold font-devanagari truncate ${valueClass || 'text-foreground'}`}>
+          {value}
+        </p>
+        {subValue && <p className="text-xs text-muted-foreground font-body">{subValue}</p>}
+      </div>
+    </div>
+  );
+}
+
+function TimeRangeRow({
+  icon,
+  label,
+  start,
+  end,
+  valueClass = '',
+}: {
+  icon: React.ReactNode;
+  label: string;
+  start: Date;
+  end: Date;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-gold/20 last:border-0">
+      <div className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-muted-foreground font-body">{label}</p>
+        <p className={`text-sm font-bold font-body ${valueClass || 'text-foreground'}`}>
+          {formatTimeIST(start)} – {formatTimeIST(end)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Panchang() {
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
   const [ekadashiReminder, setEkadashiReminder] = useState(() => {
     return localStorage.getItem('ekadashiReminder') === 'true';
   });
 
-  const today = new Date();
-  const dayOfYear = Math.floor(
-    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-
-  const { data: panchangData, isLoading } = useGetPanchang(BigInt(dayOfYear));
   const { data: festivals } = useGetFestivals();
 
-  const hinduDate = getHinduDate();
-  const todaysTithi = getTodaysTithi();
-  const todaysNakshatra = getTodaysNakshatra();
-  const rahuKaal = getRahuKaal(today.getDay());
-
-  // Use backend data if available, otherwise use static fallback
-  const tithi = panchangData?.tithi || todaysTithi;
-  const nakshatra = todaysNakshatra;
-  const muhurat = panchangData?.muhurat || '11:48 AM – 12:36 PM';
+  // Compute all panchang data for the selected date
+  const panchang = useMemo(() => getPanchangData(selectedDate), [selectedDate]);
 
   const upcomingFestivals = festivals
     ? festivals
@@ -58,97 +93,244 @@ export default function Panchang() {
         .slice(0, 3)
     : [];
 
+  const isToday = (() => {
+    const today = new Date();
+    return (
+      selectedDate.getDate() === today.getDate() &&
+      selectedDate.getMonth() === today.getMonth() &&
+      selectedDate.getFullYear() === today.getFullYear()
+    );
+  })();
+
+  function prevDay() {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d);
+  }
+
+  function nextDay() {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d);
+  }
+
+  function goToToday() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    setSelectedDate(d);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-b from-saffron to-saffron/80 px-4 pt-6 pb-8 text-white">
+      <div className="bg-gradient-to-b from-saffron to-saffron/80 px-4 pt-6 pb-10 text-white">
         <div className="flex items-center justify-between mb-1">
           <h1 className="font-devanagari text-2xl font-bold">🗓️ पंचांग</h1>
           <div className="flex items-center gap-1 text-xs font-body opacity-80">
             <MapPin className="h-3 w-3" />
-            <span>India</span>
+            <span>मध्य भारत</span>
           </div>
         </div>
-        <p className="text-sm font-body opacity-90">{hinduDate}</p>
+        <p className="text-sm font-body opacity-90 mb-1">
+          विक्रम संवत {panchang.vikramSamvat} • {panchang.hinduMonth.name} • {panchang.ayana.name}
+        </p>
+        <p className="text-xs font-body opacity-75">
+          {panchang.hinduMonth.nameEn} • {panchang.ayana.nameEn}
+        </p>
       </div>
 
-      <div className="px-4 -mt-4 space-y-3 pb-6">
+      <div className="px-4 -mt-6 space-y-3 pb-24">
+        {/* Date Navigation */}
+        <div className="bg-white rounded-2xl border-2 border-gold/20 shadow-gold p-3 flex items-center justify-between">
+          <button
+            onClick={prevDay}
+            className="w-9 h-9 rounded-full bg-saffron/10 hover:bg-saffron/20 flex items-center justify-center transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="h-5 w-5 text-saffron" />
+          </button>
+
+          <div className="text-center flex-1 px-2">
+            <p className="text-sm font-bold text-foreground font-body leading-tight">
+              {formatDateReadable(selectedDate)}
+            </p>
+            {!isToday && (
+              <button
+                onClick={goToToday}
+                className="text-xs text-saffron underline font-body mt-0.5"
+              >
+                Go to Today
+              </button>
+            )}
+            {isToday && (
+              <p className="text-xs text-saffron font-body mt-0.5">Today</p>
+            )}
+          </div>
+
+          <button
+            onClick={nextDay}
+            className="w-9 h-9 rounded-full bg-saffron/10 hover:bg-saffron/20 flex items-center justify-center transition-colors"
+            aria-label="Next day"
+          >
+            <ChevronRight className="h-5 w-5 text-saffron" />
+          </button>
+        </div>
+
+        {/* Samvat / Month / Ayana Banner */}
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-2xl border border-gold/30 p-3">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground font-body">संवत</p>
+              <p className="text-sm font-bold text-saffron font-devanagari">{panchang.vikramSamvat}</p>
+            </div>
+            <div className="border-x border-gold/30">
+              <p className="text-xs text-muted-foreground font-body">माह</p>
+              <p className="text-sm font-bold text-saffron font-devanagari">{panchang.hinduMonth.name}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-body">अयन</p>
+              <p className="text-sm font-bold text-saffron font-devanagari">{panchang.ayana.name}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Main Panchang Card */}
-        {isLoading ? (
-          <div className="bg-white rounded-2xl border-2 border-gold/20 p-4 space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-12 rounded-xl" />
-            ))}
+        <div className="bg-white dark:bg-card rounded-2xl border-2 border-gold/20 p-4 shadow-gold">
+          <h3 className="font-devanagari text-sm font-bold text-saffron mb-2 flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            पंचांग विवरण
+          </h3>
+
+          <InfoRow
+            icon={<Moon className="h-4 w-4 text-saffron" />}
+            label="तिथि (Tithi)"
+            value={`${panchang.tithi.name} (${panchang.tithi.number})`}
+            subValue={`${panchang.tithi.paksha} • ${panchang.tithi.nameEn}`}
+          />
+
+          <InfoRow
+            icon={<Star className="h-4 w-4 text-saffron" />}
+            label="नक्षत्र (Nakshatra)"
+            value={panchang.nakshatra.name}
+            subValue={`${panchang.nakshatra.nameEn} (${panchang.nakshatra.number}/27)`}
+          />
+
+          <InfoRow
+            icon={<span className="text-sm">🔯</span>}
+            label="योग (Yoga)"
+            value={panchang.yoga.name}
+            subValue={`${panchang.yoga.nameEn} (${panchang.yoga.number}/27)`}
+          />
+
+          <InfoRow
+            icon={<span className="text-sm">⚡</span>}
+            label="करण (Karana)"
+            value={panchang.karana.name}
+            subValue={panchang.karana.nameEn}
+          />
+
+          <InfoRow
+            icon={<span className="text-sm">📅</span>}
+            label="वार (Vara)"
+            value={panchang.vara.name}
+            subValue={panchang.vara.nameEn}
+          />
+
+          <InfoRow
+            icon={<span className="text-sm">🌓</span>}
+            label="पक्ष (Paksha)"
+            value={panchang.tithi.paksha}
+            subValue={panchang.tithi.number <= 15 ? 'Shukla Paksha (Waxing Moon)' : 'Krishna Paksha (Waning Moon)'}
+          />
+        </div>
+
+        {/* Sunrise / Sunset */}
+        <div className="bg-white dark:bg-card rounded-2xl border-2 border-gold/20 p-4 shadow-gold">
+          <h3 className="font-devanagari text-sm font-bold text-saffron mb-2 flex items-center gap-2">
+            <Sun className="h-4 w-4" />
+            सूर्योदय / सूर्यास्त
+          </h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 flex-1">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <Sun className="h-4 w-4 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-body">सूर्योदय</p>
+                <p className="text-sm font-bold text-foreground font-body">{formatTimeIST(panchang.sunrise)}</p>
+              </div>
+            </div>
+            <div className="w-px h-10 bg-gold/30" />
+            <div className="flex items-center gap-2 flex-1">
+              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                <Sun className="h-4 w-4 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-body">सूर्यास्त</p>
+                <p className="text-sm font-bold text-foreground font-body">{formatTimeIST(panchang.sunset)}</p>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl border-2 border-gold/20 p-4 shadow-gold space-y-3">
-            {/* Tithi */}
-            <div className="flex items-center justify-between py-2 border-b border-gold/20">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🌙</span>
-                <div>
-                  <p className="text-xs text-muted-foreground font-body">Tithi</p>
-                  <p className="font-devanagari text-sm font-bold text-foreground">{tithi}</p>
-                </div>
-              </div>
-            </div>
+        </div>
 
-            {/* Nakshatra */}
-            <div className="flex items-center justify-between py-2 border-b border-gold/20">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⭐</span>
-                <div>
-                  <p className="text-xs text-muted-foreground font-body">Nakshatra</p>
-                  <p className="font-devanagari text-sm font-bold text-foreground">{nakshatra}</p>
-                </div>
-              </div>
-            </div>
+        {/* Auspicious Timings */}
+        <div className="bg-white dark:bg-card rounded-2xl border-2 border-gold/20 p-4 shadow-gold">
+          <h3 className="font-devanagari text-sm font-bold text-green-700 mb-2 flex items-center gap-2">
+            <span>✨</span>
+            शुभ मुहूर्त
+          </h3>
 
-            {/* Rahu Kaal */}
-            <div className="flex items-center justify-between py-2 border-b border-gold/20">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⚠️</span>
-                <div>
-                  <p className="text-xs text-muted-foreground font-body">Rahu Kaal</p>
-                  <p className="text-sm font-bold text-red-600 font-body">{rahuKaal}</p>
-                </div>
-              </div>
-            </div>
+          <TimeRangeRow
+            icon={<span className="text-sm">🌅</span>}
+            label="ब्रह्म मुहूर्त (Brahma Muhurat)"
+            start={panchang.brahmaMuhurat.start}
+            end={panchang.brahmaMuhurat.end}
+            valueClass="text-green-700"
+          />
 
-            {/* Abhijit Muhurat */}
-            <div className="flex items-center justify-between py-2 border-b border-gold/20">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">✨</span>
-                <div>
-                  <p className="text-xs text-muted-foreground font-body">Abhijit Muhurat</p>
-                  <p className="text-sm font-bold text-green-700 font-body">{muhurat}</p>
-                </div>
-              </div>
-            </div>
+          <TimeRangeRow
+            icon={<span className="text-sm">☀️</span>}
+            label="अभिजित मुहूर्त (Abhijit Muhurat)"
+            start={panchang.abhijitMuhurat.start}
+            end={panchang.abhijitMuhurat.end}
+            valueClass="text-green-700"
+          />
+        </div>
 
-            {/* Sunrise / Sunset */}
-            <div className="flex items-center gap-4 py-2">
-              <div className="flex items-center gap-2 flex-1">
-                <Sun className="h-5 w-5 text-saffron" />
-                <div>
-                  <p className="text-xs text-muted-foreground font-body">Sunrise</p>
-                  <p className="text-sm font-bold text-foreground font-body">6:15 AM</p>
-                </div>
-              </div>
-              <div className="w-px h-8 bg-gold/30" />
-              <div className="flex items-center gap-2 flex-1">
-                <Sun className="h-5 w-5 text-orange-400" />
-                <div>
-                  <p className="text-xs text-muted-foreground font-body">Sunset</p>
-                  <p className="text-sm font-bold text-foreground font-body">6:45 PM</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Inauspicious Timings */}
+        <div className="bg-white dark:bg-card rounded-2xl border-2 border-red-100 p-4">
+          <h3 className="font-devanagari text-sm font-bold text-red-600 mb-2 flex items-center gap-2">
+            <span>⚠️</span>
+            अशुभ काल
+          </h3>
+
+          <TimeRangeRow
+            icon={<span className="text-sm">🐍</span>}
+            label="राहु काल (Rahu Kaal)"
+            start={panchang.rahuKaal.start}
+            end={panchang.rahuKaal.end}
+            valueClass="text-red-600"
+          />
+
+          <TimeRangeRow
+            icon={<span className="text-sm">🌑</span>}
+            label="गुलिक काल (Gulika Kaal)"
+            start={panchang.gulikaKaal.start}
+            end={panchang.gulikaKaal.end}
+            valueClass="text-red-600"
+          />
+
+          <TimeRangeRow
+            icon={<span className="text-sm">⚡</span>}
+            label="यमगण्ड काल (Yamaganda Kaal)"
+            start={panchang.yamagandaKaal.start}
+            end={panchang.yamagandaKaal.end}
+            valueClass="text-red-600"
+          />
+        </div>
 
         {/* Ekadashi Reminder Toggle */}
-        <div className="bg-white rounded-2xl border-2 border-gold/20 p-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-card rounded-2xl border-2 border-gold/20 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Bell className="h-5 w-5 text-saffron" />
             <div>
@@ -167,11 +349,14 @@ export default function Panchang() {
 
         {/* Festival Countdown */}
         {upcomingFestivals.length > 0 && (
-          <div className="bg-white rounded-2xl border-2 border-gold/20 p-4">
+          <div className="bg-white dark:bg-card rounded-2xl border-2 border-gold/20 p-4">
             <h3 className="font-devanagari text-sm font-bold text-saffron mb-3">🎉 आगामी त्योहार</h3>
             <div className="space-y-2">
               {upcomingFestivals.map((festival, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 border-b border-gold/10 last:border-0">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between py-2 border-b border-gold/10 last:border-0"
+                >
                   <div>
                     <p className="text-sm font-semibold font-body text-foreground">{festival.name}</p>
                     <p className="text-xs text-muted-foreground font-body">{festival.description}</p>
@@ -186,6 +371,16 @@ export default function Panchang() {
             </div>
           </div>
         )}
+
+        {/* Accuracy Note */}
+        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 p-3">
+          <p className="text-xs text-amber-700 dark:text-amber-400 font-body text-center">
+            📍 गणना स्थान: मध्य भारत (23°N, 80°E) • IST (UTC+5:30)
+          </p>
+          <p className="text-xs text-amber-600/70 dark:text-amber-500/70 font-body text-center mt-0.5">
+            Calculations based on Jean Meeus astronomical algorithms
+          </p>
+        </div>
 
         {/* Footer */}
         <div className="text-center py-2">
