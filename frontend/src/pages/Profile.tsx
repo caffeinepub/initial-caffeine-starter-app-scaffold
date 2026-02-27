@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useSetUserProfile, useGetJapStats } from '../hooks/useQueries';
 import { Mantra } from '../backend';
-import { User, Settings, LogOut, Flame, Heart, BookOpen, Bell, BellOff, BellRing } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { User, Settings, Flame, Heart, BookOpen, Bell, BellOff, BellRing } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { useQueryClient } from '@tanstack/react-query';
 import VratModeToggle from '../components/VratModeToggle';
 import VratModeDashboard from '../components/VratModeDashboard';
 import { useDailyNotifications } from '../hooks/useDailyNotifications';
@@ -32,8 +29,6 @@ const PERMISSION_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function Profile() {
-  const { identity, clear } = useInternetIdentity();
-  const queryClient = useQueryClient();
   const { data: userProfile } = useGetCallerUserProfile();
   const { mutate: setUserProfile } = useSetUserProfile();
   const { data: japStats, isLoading: japStatsLoading } = useGetJapStats();
@@ -74,11 +69,6 @@ export default function Profile() {
     }
   };
 
-  const handleLogout = async () => {
-    await clear();
-    queryClient.clear();
-  };
-
   const handleNotificationToggle = async (checked: boolean) => {
     if (checked) {
       await enableNotifications();
@@ -87,8 +77,6 @@ export default function Profile() {
     }
   };
 
-  const isAuthenticated = !!identity;
-  const principalId = identity?.getPrincipal().toString();
   const displayName = userProfile?.name || 'भक्त';
 
   const lifetimeCount = japStats ? Number(japStats.lifetime) : 0;
@@ -96,22 +84,6 @@ export default function Profile() {
   const streakCount = japStats ? Number(japStats.streak) : 0;
 
   const permInfo = PERMISSION_LABELS[permissionStatus] ?? PERMISSION_LABELS['default'];
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-6 pb-24">
-        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-          <User className="w-10 h-10 text-muted-foreground" />
-        </div>
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-foreground">प्रोफ़ाइल</h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            अपनी प्रोफ़ाइल देखने के लिए लॉगिन करें
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -124,11 +96,7 @@ export default function Profile() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">{displayName}</h1>
-              {principalId && (
-                <p className="text-xs text-muted-foreground mt-0.5 font-mono truncate max-w-[200px]">
-                  {principalId.slice(0, 20)}...
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-0.5">भक्त</p>
             </div>
           </div>
         </div>
@@ -313,16 +281,6 @@ export default function Profile() {
             ))}
           </div>
         </div>
-
-        {/* Logout */}
-        <Button
-          variant="outline"
-          className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-4 h-4" />
-          लॉगआउट
-        </Button>
       </div>
     </div>
   );

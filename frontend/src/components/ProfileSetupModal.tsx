@@ -10,97 +10,83 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSetUserProfile } from '../hooks/useQueries';
-import type { UserProfile } from '../backend';
 import { Mantra } from '../backend';
 import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface ProfileSetupModalProps {
   open?: boolean;
-  onComplete?: () => void;
 }
 
-export default function ProfileSetupModal({ open = true, onComplete }: ProfileSetupModalProps) {
+export default function ProfileSetupModal({ open = true }: ProfileSetupModalProps) {
   const [name, setName] = useState('');
-  const saveProfile = useSetUserProfile();
+  const { mutate: setProfile, isPending } = useSetUserProfile();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed) {
-      toast.error('Please enter your name');
-      return;
-    }
-
-    const profile: UserProfile = {
-      name: trimmed,
-      selectedMantra: Mantra.omNamahShivaya,
-    };
-
-    saveProfile.mutate(profile, {
-      onSuccess: () => {
-        toast.success('🙏 Profile saved! Jai Shri Ram!');
-        onComplete?.();
-      },
-      onError: () => {
-        toast.error('Failed to save profile. Please try again.');
-      },
-    });
+    if (!name.trim()) return;
+    setProfile({ name: name.trim(), selectedMantra: Mantra.omNamahShivaya });
   };
 
   return (
     <Dialog open={open}>
       <DialogContent
-        className="sm:max-w-md"
-        onInteractOutside={(e) => e.preventDefault()}
+        className="sm:max-w-md border-border/50"
         style={{
-          background: 'linear-gradient(135deg, oklch(0.97 0.025 85), oklch(0.94 0.04 80))',
-          border: '2px solid oklch(0.82 0.18 80 / 0.4)',
+          background: 'linear-gradient(135deg, oklch(14% 0.025 240), oklch(18% 0.03 250))',
         }}
       >
         <DialogHeader>
-          <DialogTitle className="font-heading text-xl text-center" style={{ color: 'oklch(0.35 0.14 20)' }}>
-            🙏 स्वागत है! प्रोफ़ाइल बनाएं
+          <div className="flex items-center justify-center mb-3">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(245,158,11,0.15))',
+                border: '2px solid rgba(249,115,22,0.4)',
+                boxShadow: '0 0 20px rgba(249,115,22,0.3)',
+              }}
+            >
+              🙏
+            </div>
+          </div>
+          <DialogTitle className="text-center text-foreground text-xl">
+            स्वागत है!
           </DialogTitle>
-          <DialogDescription className="text-center" style={{ color: 'oklch(0.55 0.05 40)' }}>
-            अपना नाम दर्ज करें और अपनी आध्यात्मिक यात्रा शुरू करें।
+          <DialogDescription className="text-center text-muted-foreground">
+            अपना नाम दर्ज करें और अपनी आध्यात्मिक यात्रा शुरू करें
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <div className="space-y-1">
-            <Label htmlFor="name" style={{ color: 'oklch(0.35 0.14 20)' }}>
-              आपका नाम (Your Name)
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-foreground font-medium">
+              आपका नाम
             </Label>
             <Input
               id="name"
-              placeholder="अपना नाम लिखें..."
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="अपना नाम लिखें..."
+              className="bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-saffron-500/60 focus:ring-saffron-500/30"
               autoFocus
-              disabled={saveProfile.isPending}
-              style={{
-                border: '1px solid oklch(0.82 0.18 80 / 0.4)',
-                background: 'oklch(0.99 0.01 85)',
-              }}
             />
           </div>
           <Button
             type="submit"
-            className="w-full font-heading"
-            disabled={saveProfile.isPending || !name.trim()}
+            disabled={!name.trim() || isPending}
+            className="w-full font-semibold text-white border-0"
             style={{
-              background: 'linear-gradient(135deg, oklch(0.62 0.18 45), oklch(0.72 0.19 55))',
-              border: 'none',
-              color: '#FFF8DC',
+              background: name.trim() && !isPending
+                ? 'linear-gradient(135deg, #f97316, #f59e0b)'
+                : undefined,
+              boxShadow: name.trim() && !isPending ? '0 0 20px rgba(249,115,22,0.4)' : undefined,
             }}
           >
-            {saveProfile.isPending ? (
+            {isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 size={16} className="mr-2 animate-spin" />
                 सहेज रहे हैं...
               </>
             ) : (
-              '🙏 प्रोफ़ाइल सहेजें'
+              '🙏 शुरू करें'
             )}
           </Button>
         </form>

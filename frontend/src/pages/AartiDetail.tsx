@@ -1,134 +1,205 @@
+import React, { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Share2, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronLeft, Copy, Share2 } from 'lucide-react';
 import { AARTIS } from '../lib/staticData';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useSpeechNarration } from '../hooks/useSpeechNarration';
 
 export default function AartiDetail() {
   const { id } = useParams({ from: '/aarti/$id' });
   const navigate = useNavigate();
-  const [copied, setCopied] = useState(false);
   const [showHindi, setShowHindi] = useState(true);
+  const [copied, setCopied] = useState(false);
 
-  const aarti = AARTIS.find(a => a.id === id);
+  const aarti = AARTIS.find((a) => String(a.id) === String(id));
+
+  const textToDisplay = aarti
+    ? showHindi
+      ? aarti.hindiText
+      : aarti.englishText
+    : '';
+
+  const { narrationState, speak, stop } = useSpeechNarration();
+  const isPlaying = narrationState === 'playing';
+  const isPaused = narrationState === 'paused';
+
+  const handleCopy = async () => {
+    if (!aarti) return;
+    await navigator.clipboard.writeText(textToDisplay);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = async () => {
+    if (!aarti) return;
+    const text = `🪔 ${aarti.name}\n\n${textToDisplay}`;
+    if (navigator.share) {
+      await navigator.share({ title: aarti.name, text });
+    } else {
+      await handleCopy();
+    }
+  };
+
+  const handleTTS = () => {
+    if (isPlaying || isPaused) {
+      stop();
+    } else {
+      speak(textToDisplay, `aarti-${id}`);
+    }
+  };
 
   if (!aarti) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
-        <span className="text-5xl mb-4">🙏</span>
-        <h2 className="font-devanagari text-xl font-bold text-foreground mb-2">Aarti not found</h2>
-        <Button onClick={() => navigate({ to: '/' })} className="bg-saffron text-white">
-          Go Home
-        </Button>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF8E7' }}>
+        <div className="text-center">
+          <div className="text-4xl mb-3">🪔</div>
+          <p className="font-devanagari text-lg" style={{ color: '#8B3A00' }}>
+            आरती नहीं मिली
+          </p>
+          <button
+            onClick={() => navigate({ to: '/aarti' })}
+            className="mt-4 px-4 py-2 rounded-full text-white text-sm"
+            style={{ background: 'linear-gradient(135deg, #FF6B00, #FFD700)' }}
+          >
+            वापस जाएँ
+          </button>
+        </div>
       </div>
     );
   }
 
-  const handleCopy = async () => {
-    const text = `${aarti.name}\n\n${showHindi ? aarti.hindiText : aarti.englishText}\n\n— Sanatan Pro 🙏`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      toast.success('Aarti copied!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Could not copy');
-    }
-  };
-
-  const handleShare = async () => {
-    const text = `${aarti.name}\n\n${showHindi ? aarti.hindiText : aarti.englishText}\n\n— Sanatan Pro 🙏`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: aarti.name, text });
-      } catch {
-        // cancelled
-      }
-    } else {
-      handleCopy();
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FFF8E7 0%, #FFF3D4 100%)' }}>
+
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-saffron/20 px-4 py-3 flex items-center gap-3">
+      <div
+        className="sticky top-0 z-10 px-4 py-3 flex items-center gap-3"
+        style={{
+          background: 'linear-gradient(135deg, #FF6B00, #FFD700)',
+          boxShadow: '0 2px 10px rgba(255,107,0,0.3)',
+        }}
+      >
         <button
-          onClick={() => navigate({ to: '/' })}
-          className="p-2 rounded-full hover:bg-saffron/10 text-saffron transition-colors"
+          onClick={() => navigate({ to: '/aarti' })}
+          className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.25)' }}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ChevronLeft size={18} color="white" />
         </button>
-        <div className="flex items-center gap-2 flex-1">
-          <span className="text-2xl">{aarti.emoji}</span>
-          <h1 className="font-devanagari text-lg font-bold text-foreground">{aarti.name}</h1>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={handleCopy}
-            className="p-2 rounded-full hover:bg-saffron/10 text-saffron transition-colors"
+        <div className="flex-1 min-w-0">
+          <h1
+            className="font-devanagari text-white font-bold text-base truncate"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
           >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={handleShare}
-            className="p-2 rounded-full hover:bg-saffron/10 text-saffron transition-colors"
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
+            {aarti.name}
+          </h1>
         </div>
+        <span className="text-xl animate-flame-flicker">🪔</span>
       </div>
 
-      {/* Language Toggle */}
-      <div className="px-4 pt-4">
-        <div className="flex bg-muted rounded-xl p-1 gap-1">
+      {/* Controls */}
+      <div className="px-4 py-3 flex items-center gap-2 flex-wrap">
+        {/* Hindi/English Toggle */}
+        <div
+          className="flex rounded-full overflow-hidden"
+          style={{ border: '1.5px solid #FFD700' }}
+        >
           <button
             onClick={() => setShowHindi(true)}
-            className={`flex-1 py-2 rounded-lg text-sm font-body font-medium transition-all ${
-              showHindi ? 'bg-saffron text-white shadow-saffron' : 'text-muted-foreground'
-            }`}
+            className="px-3 py-1.5 text-xs font-medium font-devanagari transition-all"
+            style={{
+              background: showHindi ? 'linear-gradient(135deg, #FF6B00, #FFD700)' : 'transparent',
+              color: showHindi ? 'white' : '#8B3A00',
+            }}
           >
             हिंदी
           </button>
           <button
             onClick={() => setShowHindi(false)}
-            className={`flex-1 py-2 rounded-lg text-sm font-body font-medium transition-all ${
-              !showHindi ? 'bg-saffron text-white shadow-saffron' : 'text-muted-foreground'
-            }`}
+            className="px-3 py-1.5 text-xs font-medium transition-all"
+            style={{
+              background: !showHindi ? 'linear-gradient(135deg, #FF6B00, #FFD700)' : 'transparent',
+              color: !showHindi ? 'white' : '#8B3A00',
+            }}
           >
             English
           </button>
         </div>
+
+        {/* TTS Button */}
+        <button
+          onClick={handleTTS}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+          style={{
+            background: (isPlaying || isPaused)
+              ? 'linear-gradient(135deg, #C0392B, #E74C3C)'
+              : 'linear-gradient(135deg, #FF6B00, #FFD700)',
+            color: 'white',
+          }}
+        >
+          {(isPlaying || isPaused) ? '⏹ रोकें' : '▶ सुनें'}
+        </button>
+
+        {/* Copy */}
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+          style={{
+            background: copied ? 'rgba(255,107,0,0.2)' : 'rgba(255,215,0,0.15)',
+            color: '#8B3A00',
+            border: '1px solid #FFD700',
+          }}
+        >
+          <Copy size={12} />
+          {copied ? 'कॉपी!' : 'कॉपी'}
+        </button>
+
+        {/* Share */}
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+          style={{
+            background: 'rgba(192,57,43,0.1)',
+            color: '#C0392B',
+            border: '1px solid rgba(192,57,43,0.3)',
+          }}
+        >
+          <Share2 size={12} />
+          शेयर
+        </button>
       </div>
 
-      {/* Aarti Content */}
-      <div className="px-4 py-4">
-        <div className="bg-gradient-to-br from-saffron/5 to-gold/5 rounded-2xl border-2 border-gold/20 p-5">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="h-px flex-1 bg-gold/30" />
-            <span className="text-3xl">{aarti.emoji}</span>
-            <div className="h-px flex-1 bg-gold/30" />
-          </div>
-          <pre className={`whitespace-pre-wrap leading-relaxed text-foreground/90 ${
-            showHindi ? 'font-devanagari text-base' : 'font-body text-sm'
-          }`}>
-            {showHindi ? aarti.hindiText : aarti.englishText}
-          </pre>
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <div className="h-px flex-1 bg-gold/30" />
-            <span className="text-saffron font-devanagari text-sm">🙏 हरि ॐ</span>
-            <div className="h-px flex-1 bg-gold/30" />
-          </div>
-        </div>
-
-        <Button
-          onClick={handleShare}
-          className="w-full mt-4 bg-saffron hover:bg-saffron-dark text-white font-body gap-2"
+      {/* Aarti Text */}
+      <div className="px-4 pb-6">
+        <div
+          className="rounded-2xl p-5 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #FFF8E7 0%, #FFF3D4 100%)',
+            border: '2px solid #FFD700',
+            boxShadow: '0 4px 20px rgba(255,215,0,0.2)',
+          }}
         >
-          <Share2 className="h-4 w-4" />
-          Share this Aarti
-        </Button>
+          {/* Corner decorations */}
+          <div className="absolute top-2 left-2 text-lg opacity-30" style={{ color: '#FFD700' }}>✦</div>
+          <div className="absolute top-2 right-2 text-lg opacity-30" style={{ color: '#FFD700' }}>✦</div>
+
+          {/* Diya watermark */}
+          <div
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage: 'url(/assets/generated/diya-glow.dim_256x256.png)',
+              backgroundSize: '150px',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+
+          <p
+            className="relative z-10 font-devanagari text-base leading-loose whitespace-pre-line"
+            style={{ color: '#5D2E0C' }}
+          >
+            {textToDisplay}
+          </p>
+        </div>
       </div>
     </div>
   );

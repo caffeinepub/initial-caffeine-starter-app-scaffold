@@ -1,124 +1,131 @@
-import { Link } from '@tanstack/react-router';
-import { BookOpen, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { KathaCategory } from '../backend';
 
-interface KathaCardProps {
-  katha: {
-    id: number | bigint;
-    title: string;
-    category: string | { vrat: null } | { puranik: null };
-    deity: string;
-    hindiText: string;
-    englishText?: string;
-    tags?: string[];
-  };
+interface KathaData {
+  id: number | bigint;
+  title: string;
+  category: KathaCategory | string | { puranik?: null; vrat?: null; krishna?: null };
+  deity: string;
+  hindiText: string;
+  englishText?: string;
+  tags?: string[];
 }
 
-function getCategoryString(category: KathaCardProps['katha']['category']): string {
-  if (typeof category === 'string') return category;
-  if (typeof category === 'object' && category !== null) {
-    if ('vrat' in category) return 'vrat';
-    if ('puranik' in category) return 'puranik';
+interface KathaCardProps {
+  katha: KathaData;
+}
+
+function getCategoryLabel(category: KathaData['category']): string {
+  if (typeof category === 'string') {
+    if (category === 'puranik') return 'पौराणिक';
+    if (category === 'vrat') return 'व्रत कथा';
+    if (category === 'krishna') return 'कृष्ण लीला';
+    return category;
   }
-  return 'puranik';
+  if (typeof category === 'object' && category !== null) {
+    if ('puranik' in category) return 'पौराणिक';
+    if ('vrat' in category) return 'व्रत कथा';
+    if ('krishna' in category) return 'कृष्ण लीला';
+  }
+  return 'कथा';
+}
+
+function getDeityEmoji(deity: string): string {
+  const d = deity.toLowerCase();
+  if (d.includes('krishna') || d.includes('कृष्ण')) return '🦚';
+  if (d.includes('ram') || d.includes('राम')) return '🏹';
+  if (d.includes('shiv') || d.includes('शिव')) return '🔱';
+  if (d.includes('durga') || d.includes('दुर्गा')) return '🌺';
+  if (d.includes('ganesh') || d.includes('गणेश')) return '🐘';
+  if (d.includes('hanuman') || d.includes('हनुमान')) return '🙏';
+  if (d.includes('lakshmi') || d.includes('लक्ष्मी')) return '🪷';
+  if (d.includes('saraswati') || d.includes('सरस्वती')) return '🎵';
+  return '🕉️';
 }
 
 export default function KathaCard({ katha }: KathaCardProps) {
-  const categoryStr = getCategoryString(katha.category);
-  const isVrat = categoryStr === 'vrat';
-
-  const previewText = katha.hindiText
-    ? katha.hindiText.replace(/\n/g, ' ').slice(0, 100) + '...'
-    : katha.englishText
-    ? katha.englishText.replace(/\n/g, ' ').slice(0, 100) + '...'
-    : '';
-
-  const categoryLabel = isVrat ? 'व्रत कथा' : 'पौराणिक';
-  const categoryStyle = isVrat
-    ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
-
-  const deityEmoji: Record<string, string> = {
-    शिव: '🕉️',
-    Shiva: '🕉️',
-    विष्णु: '🪷',
-    Vishnu: '🪷',
-    कृष्ण: '🦚',
-    Krishna: '🦚',
-    राम: '🏹',
-    Ram: '🏹',
-    दुर्गा: '🌺',
-    Durga: '🌺',
-    लक्ष्मी: '🌸',
-    Lakshmi: '🌸',
-    सत्यनारायण: '🪷',
-    Satyanarayan: '🪷',
-    संतोषी: '🌼',
-    Santoshi: '🌼',
-  };
-
-  const emoji = Object.entries(deityEmoji).find(([key]) =>
-    katha.deity?.includes(key)
-  )?.[1] || '📖';
+  const navigate = useNavigate();
+  const categoryLabel = getCategoryLabel(katha.category);
+  const deityEmoji = getDeityEmoji(katha.deity);
 
   return (
-    <Link to="/kathayen/$id" params={{ id: String(katha.id) }}>
+    <button
+      onClick={() => navigate({ to: '/kathayen/$id', params: { id: String(katha.id) } })}
+      className="w-full text-left rounded-2xl p-4 transition-all duration-200 active:scale-95 relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, #FFF8E7 0%, #FFF3D4 100%)',
+        border: '2px solid #FFD700',
+        boxShadow: '0 4px 15px rgba(255,215,0,0.2)',
+      }}
+    >
+      {/* Decorative corner */}
       <div
-        className={`group flex items-start gap-3 p-4 rounded-xl border transition-all hover:shadow-md cursor-pointer ${
-          isVrat
-            ? 'bg-amber-50/50 border-amber-200 hover:border-amber-400 dark:bg-amber-950/20 dark:border-amber-800 dark:hover:border-amber-600'
-            : 'bg-card border-border hover:border-primary/40'
-        }`}
-      >
-        {/* Icon */}
+        className="absolute top-0 right-0 w-10 h-10 opacity-20"
+        style={{
+          background: 'linear-gradient(225deg, #C0392B, transparent)',
+          borderRadius: '0 0 0 100%',
+        }}
+      />
+
+      <div className="flex items-start gap-3">
+        {/* Deity Emoji */}
         <div
-          className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${
-            isVrat
-              ? 'bg-amber-100 dark:bg-amber-900/40'
-              : 'bg-orange-100 dark:bg-orange-900/40'
-          }`}
+          className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, #FFF3D4, #FFE0A0)',
+            border: '2px solid #FFD700',
+          }}
         >
-          {emoji}
+          {deityEmoji}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
-              {katha.title}
-            </h3>
-            <ChevronRight className="shrink-0 w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors mt-0.5" />
-          </div>
-
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${categoryStyle}`}>
+          <h3
+            className="font-devanagari font-bold text-base leading-tight mb-1"
+            style={{ color: '#8B3A00' }}
+          >
+            {katha.title}
+          </h3>
+          <p
+            className="font-devanagari text-xs leading-relaxed line-clamp-2 mb-2"
+            style={{ color: '#A0522D' }}
+          >
+            {katha.hindiText.substring(0, 90)}...
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                background: 'rgba(255,107,0,0.12)',
+                color: '#FF6B00',
+                border: '1px solid rgba(255,107,0,0.3)',
+              }}
+            >
               {categoryLabel}
             </span>
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <BookOpen className="w-3 h-3" />
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                background: 'rgba(192,57,43,0.1)',
+                color: '#C0392B',
+                border: '1px solid rgba(192,57,43,0.25)',
+              }}
+            >
               {katha.deity}
             </span>
           </div>
+        </div>
 
-          {previewText && (
-            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
-              {previewText}
-            </p>
-          )}
-
-          {katha.tags && katha.tags.length > 0 && (
-            <div className="flex gap-1 mt-2 flex-wrap">
-              {katha.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+        {/* Arrow */}
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-white"
+          style={{ background: 'linear-gradient(135deg, #FF6B00, #FFD700)' }}
+        >
+          ›
         </div>
       </div>
-    </Link>
+    </button>
   );
 }

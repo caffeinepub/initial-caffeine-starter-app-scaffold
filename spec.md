@@ -1,17 +1,18 @@
 # Specification
 
 ## Summary
-**Goal:** Fix bugs in the Jap section's nam jap counting, make counting smooth and lag-free, and add a progress bar for the 108-bead mala cycle.
+**Goal:** Redesign the entire frontend of the Divya Darshan devotional app to use a warm saffron/gold Hindu temple theme, replacing all dark styling with a light, devotional aesthetic.
 
 **Planned changes:**
-- Fix state management issues in `Jap.tsx` that cause incorrect, skipped, or double-counted taps
-- Ensure session count and daily count update correctly and consistently on every tap
-- Prevent race conditions between local state and backend sync from reverting or resetting the counter
-- Implement optimistic local state updates so the counter increments instantly on each tap (within one animation frame)
-- Debounce/batch backend sync calls to avoid excessive re-renders and network-induced UI jank
-- Add a circular or linear progress bar on the Jap page that fills from 0% to 100% as the count goes from 0 to 108
-- Progress bar resets and refills for each new mala cycle, displays current count and target (e.g., "45 / 108")
-- Style the progress bar with saffron/gold colors consistent with the app's devotional theme
-- Preserve all existing visual effects: SacredRipple, OmParticleBurst, LotusBloomOverlay, and MalaRing
+- Update global CSS (`index.css`) and `tailwind.config.js` to replace dark theme with saffron (`#FF6B00`), gold (`#FFD700`), red (`#C0392B`), warm yellow (`#FFA500`), and cream (`#FFF8E7`) palette as defaults
+- Redesign `AppLayout.tsx` header with saffron-to-gold gradient, gold Om logo, and devotional typography
+- Redesign `BottomNav.tsx` with warm cream/saffron background and gold active state with soft golden halo
+- Redesign `Home.tsx` with grand hero banner (Om symbol, Sanskrit greeting, Panchang tithi), category cards (Mantras, Aarti, Puja Vidhi, Bhajans), and ornate gold-bordered Shloka/Dharma Quote cards
+- Redesign all card components (`AartiCard`, `KathaCard`, `ShlokaCard`, `FestivalCountdownCard`, `DailyDharmaQuote`) with cream/gold backgrounds, gold/saffron borders, and dark maroon text
+- Redesign `Jap.tsx` with saffron/gold gradient background, gold/amber MalaRing beads, ornate golden count circle, and saffron LotusBloomOverlay
+- Redesign `Aarti.tsx` and `AartiDetail.tsx` with saffron hero banner, diya imagery, and gold-bordered aarti text cards on cream background
+- Redesign `Kathayen.tsx` and `KathaDetail.tsx` with saffron active tab filters, cream/gold story cards, and dark maroon text on cream for reading
+- Redesign `Panchang.tsx` with warm amber/cream card styling and gold borders
+- Redesign `Profile.tsx` with saffron accents for mantra selection and stats display
 
-**User-visible outcome:** Users can tap to chant nam jap with an instantly responsive counter that never skips or double-counts, and a devotionally styled progress bar shows their progress toward completing each 108-bead mala cycle.
+**User-visible outcome:** The entire app displays a warm, light devotional Hindu temple aesthetic with saffron, gold, and cream colors throughout every page and component — no dark backgrounds remain anywhere.

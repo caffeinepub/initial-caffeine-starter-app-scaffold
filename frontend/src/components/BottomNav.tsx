@@ -1,67 +1,73 @@
 import React from 'react';
-import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { Home, Calendar, BookOpen, MapPin, User, Sparkles } from 'lucide-react';
+import { useNavigate, useLocation } from '@tanstack/react-router';
 
-const NAV_ITEMS = [
-  { icon: Home, label: 'होम', path: '/' },
-  { icon: Calendar, label: 'पंचांग', path: '/panchang' },
-  { icon: () => <span className="text-lg">📿</span>, label: 'जप', path: '/jap' },
-  { icon: () => <span className="text-lg">🪔</span>, label: 'आरती', path: '/aarti' },
-  { icon: BookOpen, label: 'कथाएँ', path: '/kathayen' },
-  { icon: MapPin, label: 'मंदिर', path: '/mandir' },
-  { icon: Sparkles, label: 'AI गुरु', path: '/ai-guru' },
-  { icon: User, label: 'प्रोफ़ाइल', path: '/profile' },
+const navItems = [
+  { path: '/', label: 'होम', emoji: '🏠' },
+  { path: '/panchang', label: 'पंचांग', emoji: '📅' },
+  { path: '/jap', label: 'जप', emoji: '📿' },
+  { path: '/aarti', label: 'आरती', emoji: '🪔' },
+  { path: '/kathayen', label: 'कथाएँ', emoji: '📖' },
+  { path: '/mandir', label: 'मंदिर', emoji: '🛕' },
+  { path: '/ai-guru', label: 'AI गुरु', emoji: '🤖' },
+  { path: '/profile', label: 'प्रोफ़ाइल', emoji: '👤' },
 ];
 
 export default function BottomNav() {
   const navigate = useNavigate();
-  const routerState = useRouterState();
-  const currentPath = routerState.location.pathname;
+  const location = useLocation();
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 px-1 py-2"
+      className="fixed bottom-0 left-0 right-0 z-50 shadow-lg"
       style={{
-        background: 'linear-gradient(135deg, oklch(0.35 0.14 20), oklch(0.42 0.15 28))',
-        borderTop: '1px solid oklch(0.82 0.18 80 / 0.3)',
-        boxShadow: '0 -4px 20px oklch(0.35 0.14 20 / 0.5)',
+        background: 'linear-gradient(180deg, #FFF8E7 0%, #FFF3D4 100%)',
+        borderTop: '2px solid #FFD700',
+        boxShadow: '0 -4px 20px rgba(255, 107, 0, 0.15)',
       }}
     >
-      <div className="flex items-center justify-around max-w-lg mx-auto">
-        {NAV_ITEMS.map(item => {
-          const isActive = currentPath === item.path;
-          const IconComponent = item.icon;
-
+      {/* Decorative top line */}
+      <div className="h-0.5" style={{ background: 'linear-gradient(90deg, #C0392B, #FF6B00, #FFD700, #FF6B00, #C0392B)' }} />
+      
+      <div className="flex items-center justify-around px-1 py-1">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
           return (
             <button
               key={item.path}
               onClick={() => navigate({ to: item.path })}
-              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl transition-all duration-200"
+              className="flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-xl transition-all duration-200 min-w-0 flex-1"
               style={{
-                background: isActive ? 'oklch(0.82 0.18 80 / 0.15)' : 'transparent',
-                border: isActive ? '1px solid oklch(0.82 0.18 80 / 0.3)' : '1px solid transparent',
-                minWidth: '38px',
+                background: isActive
+                  ? 'linear-gradient(135deg, rgba(255,107,0,0.15), rgba(255,215,0,0.2))'
+                  : 'transparent',
+                border: isActive ? '1px solid rgba(255,107,0,0.3)' : '1px solid transparent',
               }}
             >
-              <div
+              <span
+                className="text-base leading-none"
                 style={{
-                  color: isActive ? '#FFD700' : 'oklch(0.82 0.18 80 / 0.5)',
-                  filter: isActive ? 'drop-shadow(0 0 6px oklch(0.82 0.18 80 / 0.6))' : 'none',
-                  transition: 'all 0.2s',
+                  filter: isActive ? 'drop-shadow(0 0 4px rgba(255,107,0,0.6))' : 'none',
+                  transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                <IconComponent size={18} />
-              </div>
+                {item.emoji}
+              </span>
               <span
-                className="text-xs"
+                className="text-[9px] font-medium leading-none font-devanagari truncate w-full text-center"
                 style={{
-                  color: isActive ? '#FFD700' : 'oklch(0.82 0.18 80 / 0.5)',
-                  fontSize: '0.55rem',
-                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? '#FF6B00' : '#8B5E3C',
+                  fontWeight: isActive ? '700' : '500',
                 }}
               >
                 {item.label}
               </span>
+              {isActive && (
+                <div
+                  className="w-1 h-1 rounded-full mt-0.5"
+                  style={{ background: '#FFD700', boxShadow: '0 0 4px #FFD700' }}
+                />
+              )}
             </button>
           );
         })}

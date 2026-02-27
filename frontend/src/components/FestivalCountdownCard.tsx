@@ -1,110 +1,91 @@
-import { useGetFestivals } from '../hooks/useQueries';
-import { Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import React from 'react';
+import { Share2 } from 'lucide-react';
 
-function getDaysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const festDate = new Date(dateStr);
-  festDate.setHours(0, 0, 0, 0);
-  const diff = festDate.getTime() - today.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+interface Festival {
+  name: string;
+  date: string;
+  description: string;
+  daysLeft?: number;
 }
 
-export default function FestivalCountdownCard() {
-  const { data: festivals } = useGetFestivals();
+interface FestivalCountdownCardProps {
+  festival: Festival;
+}
 
-  const upcomingFestivals = (festivals || [])
-    .map(f => ({ ...f, daysUntil: getDaysUntil(f.date) }))
-    .filter(f => f.daysUntil >= 0)
-    .sort((a, b) => a.daysUntil - b.daysUntil);
+export default function FestivalCountdownCard({ festival }: FestivalCountdownCardProps) {
+  const festivalDate = new Date(festival.date);
+  const today = new Date();
+  const diffTime = festivalDate.getTime() - today.getTime();
+  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  const nextFestival = upcomingFestivals[0];
-
-  const handleShareCard = () => {
-    if (!nextFestival) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 540;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const grad = ctx.createLinearGradient(0, 0, 1080, 540);
-    grad.addColorStop(0, '#FF9933');
-    grad.addColorStop(1, '#FFD700');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1080, 540);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.beginPath();
-    ctx.arc(900, 100, 200, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.font = 'bold 80px serif';
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.fillText('🎉', 540, 120);
-
-    ctx.font = 'bold 56px serif';
-    ctx.fillText(nextFestival.name, 540, 220);
-
-    ctx.font = 'bold 100px sans-serif';
-    ctx.fillText(nextFestival.daysUntil === 0 ? 'TODAY!' : `${nextFestival.daysUntil}`, 540, 360);
-
-    ctx.font = '36px sans-serif';
-    ctx.fillText(nextFestival.daysUntil === 0 ? '' : 'days remaining', 540, 420);
-
-    ctx.font = 'bold 28px serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.fillText('🙏 Sanatan Pro', 540, 500);
-
-    const link = document.createElement('a');
-    link.download = `${nextFestival.name}-countdown.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    toast.success('Festival card downloaded!');
+  const handleShare = async () => {
+    const text = `🎉 ${festival.name} आ रहा है! ${daysLeft > 0 ? `${daysLeft} दिन बाकी` : 'आज है!'}\n${festival.description}`;
+    if (navigator.share) {
+      await navigator.share({ text });
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
   };
 
-  if (!nextFestival) {
-    return (
-      <div className="bg-gradient-to-r from-saffron to-gold rounded-2xl p-4 text-white text-center">
-        <p className="font-devanagari text-lg">🎉 Har Har Mahadev!</p>
-        <p className="text-sm font-body opacity-90">Every day is a celebration of Dharma</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-gradient-to-r from-saffron to-gold rounded-2xl p-4 text-white relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-      <div className="relative z-10">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs font-body opacity-80 mb-1">🎉 Upcoming Festival</p>
-            <h3 className="font-devanagari text-xl font-bold">{nextFestival.name}</h3>
-            <p className="text-sm font-body opacity-90 mt-1">{nextFestival.description}</p>
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, #FFF8E7 0%, #FFF3D4 100%)',
+        border: '2px solid #FFD700',
+        boxShadow: '0 4px 20px rgba(255,215,0,0.25)',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="px-4 py-3"
+        style={{ background: 'linear-gradient(135deg, #FF6B00, #FFD700)' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎊</span>
+            <span className="font-devanagari text-white font-bold text-sm">
+              {festival.name}
+            </span>
           </div>
-          <div className="text-center bg-white/20 rounded-xl px-3 py-2 min-w-[64px]">
-            <p className="text-3xl font-bold font-body">
-              {nextFestival.daysUntil === 0 ? '🎊' : nextFestival.daysUntil}
-            </p>
-            <p className="text-xs font-body opacity-90">
-              {nextFestival.daysUntil === 0 ? 'Today!' : 'days'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-xs font-body opacity-70">{nextFestival.date}</p>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleShareCard}
-            className="text-white hover:bg-white/20 gap-1 text-xs h-7 font-body"
+          <button
+            onClick={handleShare}
+            className="w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.25)' }}
           >
-            <Download className="h-3 w-3" />
-            Share Card
-          </Button>
+            <Share2 size={14} color="white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-4 py-3">
+        <p className="font-poppins text-xs mb-3" style={{ color: '#A0522D' }}>
+          {festival.description}
+        </p>
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-1 rounded-xl p-3 text-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,107,0,0.1), rgba(255,215,0,0.15))',
+              border: '1px solid #FFD700',
+            }}
+          >
+            <div
+              className="font-poppins text-2xl font-bold"
+              style={{ color: '#C0392B' }}
+            >
+              {daysLeft > 0 ? daysLeft : daysLeft === 0 ? '🎉' : '✓'}
+            </div>
+            <div className="font-devanagari text-xs" style={{ color: '#8B5E3C' }}>
+              {daysLeft > 0 ? 'दिन बाकी' : daysLeft === 0 ? 'आज!' : 'बीत गया'}
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="font-poppins text-xs" style={{ color: '#A0522D' }}>
+              📅 {festivalDate.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,108 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-interface EkadashiInfo {
-  name: string;
-  date: Date;
-  daysLeft: number;
-}
+const ekadashiDates2026 = [
+  new Date('2026-01-10'),
+  new Date('2026-01-26'),
+  new Date('2026-02-09'),
+  new Date('2026-02-24'),
+  new Date('2026-03-11'),
+  new Date('2026-03-25'),
+  new Date('2026-04-09'),
+  new Date('2026-04-24'),
+  new Date('2026-05-09'),
+  new Date('2026-05-23'),
+  new Date('2026-06-07'),
+  new Date('2026-06-22'),
+  new Date('2026-07-07'),
+  new Date('2026-07-21'),
+  new Date('2026-08-05'),
+  new Date('2026-08-20'),
+  new Date('2026-09-04'),
+  new Date('2026-09-18'),
+  new Date('2026-10-03'),
+  new Date('2026-10-18'),
+  new Date('2026-11-02'),
+  new Date('2026-11-16'),
+  new Date('2026-12-01'),
+  new Date('2026-12-16'),
+  new Date('2026-12-31'),
+];
 
-function getNextEkadashiInfo(): EkadashiInfo {
-  const ekadashiDates2026 = [
-    { name: 'षट्तिला एकादशी', date: new Date(2026, 0, 26) },
-    { name: 'जया एकादशी', date: new Date(2026, 1, 10) },
-    { name: 'विजया एकादशी', date: new Date(2026, 1, 25) },
-    { name: 'आमलकी एकादशी', date: new Date(2026, 2, 11) },
-    { name: 'पापमोचनी एकादशी', date: new Date(2026, 2, 26) },
-    { name: 'कामदा एकादशी', date: new Date(2026, 3, 10) },
-    { name: 'वरुथिनी एकादशी', date: new Date(2026, 3, 25) },
-    { name: 'मोहिनी एकादशी', date: new Date(2026, 4, 9) },
-    { name: 'अपरा एकादशी', date: new Date(2026, 4, 24) },
-    { name: 'निर्जला एकादशी', date: new Date(2026, 5, 8) },
-    { name: 'योगिनी एकादशी', date: new Date(2026, 5, 23) },
-    { name: 'देवशयनी एकादशी', date: new Date(2026, 6, 7) },
-    { name: 'कामिका एकादशी', date: new Date(2026, 6, 22) },
-    { name: 'श्रावण पुत्रदा एकादशी', date: new Date(2026, 7, 6) },
-    { name: 'अजा एकादशी', date: new Date(2026, 7, 21) },
-    { name: 'परिवर्तिनी एकादशी', date: new Date(2026, 8, 4) },
-    { name: 'इंदिरा एकादशी', date: new Date(2026, 8, 19) },
-    { name: 'पापांकुशा एकादशी', date: new Date(2026, 9, 4) },
-    { name: 'रमा एकादशी', date: new Date(2026, 9, 19) },
-    { name: 'देवउठनी एकादशी', date: new Date(2026, 10, 2) },
-    { name: 'उत्पन्ना एकादशी', date: new Date(2026, 10, 17) },
-    { name: 'मोक्षदा एकादशी', date: new Date(2026, 11, 2) },
-    { name: 'सफला एकादशी', date: new Date(2026, 11, 17) },
-  ];
-
+function getNextEkadashi(): { date: Date; daysLeft: number } | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  for (const e of ekadashiDates2026) {
-    const d = new Date(e.date);
-    d.setHours(0, 0, 0, 0);
-    const diff = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff >= 0) {
-      return { name: e.name, date: e.date, daysLeft: diff };
-    }
+  for (const d of ekadashiDates2026) {
+    const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+    if (diff >= 0 && diff <= 7) return { date: d, daysLeft: diff };
   }
-
-  return { name: 'एकादशी', date: new Date(2027, 0, 15), daysLeft: 30 };
+  return null;
 }
 
-function getDismissKey(): string {
-  const today = new Date();
-  return `ekadashi_banner_dismissed_${today.getFullYear()}_${today.getMonth()}_${today.getDate()}`;
-}
-
-function getMessage(daysLeft: number, name: string): string {
-  if (daysLeft === 0) return `🙏 आज ${name} है — उपवास और भजन का दिन`;
-  if (daysLeft === 1) return `🌸 कल ${name} है — तैयारी करें`;
-  if (daysLeft <= 3) return `⭐ ${daysLeft} दिन में ${name} — व्रत की तैयारी करें`;
-  if (daysLeft <= 7) return `📅 ${daysLeft} दिन बाद ${name}`;
-  return `🕉️ अगली एकादशी: ${name} — ${daysLeft} दिन बाद`;
+function getMessage(daysLeft: number): string {
+  if (daysLeft === 0) return '🙏 आज एकादशी है! व्रत रखें और भगवान विष्णु की पूजा करें।';
+  if (daysLeft === 1) return '⭐ कल एकादशी है! व्रत की तैयारी करें।';
+  if (daysLeft <= 3) return `✨ ${daysLeft} दिन बाद एकादशी है। व्रत का संकल्प लें।`;
+  return `📅 ${daysLeft} दिन बाद एकादशी है।`;
 }
 
 export default function EkadashiReminderBanner() {
   const [dismissed, setDismissed] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const next = getNextEkadashi();
 
   useEffect(() => {
-    const key = getDismissKey();
-    const isDismissed = sessionStorage.getItem(key) === 'true';
-    setDismissed(isDismissed);
-    setMounted(true);
+    const key = `ekadashi-dismissed-${new Date().toDateString()}`;
+    if (sessionStorage.getItem(key)) setDismissed(true);
   }, []);
 
+  if (!next || dismissed) return null;
+
   const handleDismiss = () => {
-    const key = getDismissKey();
-    sessionStorage.setItem(key, 'true');
+    const key = `ekadashi-dismissed-${new Date().toDateString()}`;
+    sessionStorage.setItem(key, '1');
     setDismissed(true);
   };
 
-  if (!mounted || dismissed) return null;
-
-  const ekadashi = getNextEkadashiInfo();
-
-  // Only show banner if Ekadashi is within 7 days
-  if (ekadashi.daysLeft > 7) return null;
-
-  const message = getMessage(ekadashi.daysLeft, ekadashi.name);
-
   return (
-    <div className="relative bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl px-4 py-3 mb-4 shadow-md">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-xl shrink-0">🕉️</span>
-          <p className="text-sm font-medium leading-snug">{message}</p>
-        </div>
-        <button
-          onClick={handleDismiss}
-          className="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"
-          aria-label="बंद करें"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+    <div
+      className="mx-4 mt-2 rounded-xl border p-3 flex items-center gap-3"
+      style={{
+        background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.08))',
+        borderColor: 'rgba(245,158,11,0.35)',
+        boxShadow: '0 4px 16px rgba(245,158,11,0.1)',
+      }}
+    >
+      <span className="text-xl flex-shrink-0">🌸</span>
+      <p className="flex-1 text-sm font-medium font-devanagari" style={{ color: '#fef3c7' }}>
+        {getMessage(next.daysLeft)}
+      </p>
+      <button
+        onClick={handleDismiss}
+        className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+        style={{ background: 'rgba(0,0,0,0.2)' }}
+      >
+        <X size={14} />
+      </button>
     </div>
   );
 }

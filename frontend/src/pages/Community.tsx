@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Flag, Plus, Send, Loader2, MessageCircle, Users, Lock } from 'lucide-react';
+import { Heart, Flag, Plus, Send, Loader2, MessageCircle, Users } from 'lucide-react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -174,7 +174,7 @@ function BackendPostCard({ post }: { post: BackendPost }) {
       <div className="flex items-center gap-4 pt-1">
         <button
           onClick={handleLike}
-          disabled={!identity || liked}
+          disabled={liked}
           className={`flex items-center gap-1.5 text-sm transition-colors ${
             liked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'
           } disabled:opacity-50`}
@@ -238,6 +238,13 @@ export default function Community() {
     }
   };
 
+  // Determine compose button visibility:
+  // - Authenticated + approved → show compose button
+  // - Authenticated + not approved → show approval request
+  // - Anonymous → show read-only message (no login prompt)
+  const showComposeButton = isAuthenticated && !approvalLoading && isApproved === true;
+  const showApprovalRequest = isAuthenticated && !approvalLoading && isApproved === false;
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -255,14 +262,16 @@ export default function Community() {
       </div>
 
       <div className="px-4 -mt-4 space-y-4">
-        {/* Compose button / Auth prompt */}
-        {!isAuthenticated ? (
-          <div className="bg-card border border-border rounded-xl p-4 text-center">
-            <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-foreground font-medium text-sm mb-1">समुदाय में शामिल हों</p>
-            <p className="text-muted-foreground text-xs">पोस्ट करने के लिए लॉगिन करें</p>
-          </div>
-        ) : !approvalLoading && isApproved === false ? (
+        {/* Compose / Approval section */}
+        {showComposeButton ? (
+          <button
+            onClick={() => setComposeOpen(true)}
+            className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl p-4 flex items-center gap-3 transition-all shadow-md"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">नई पोस्ट लिखें...</span>
+          </button>
+        ) : showApprovalRequest ? (
           <div className="bg-amber-950 border border-amber-800 rounded-xl p-4">
             <p className="text-amber-200 font-medium text-sm mb-1">🙏 अनुमोदन आवश्यक है</p>
             <p className="text-amber-400 text-xs mb-3">
@@ -285,14 +294,6 @@ export default function Community() {
               </Button>
             )}
           </div>
-        ) : isAuthenticated && isApproved ? (
-          <button
-            onClick={() => setComposeOpen(true)}
-            className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl p-4 flex items-center gap-3 transition-all shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            <span className="font-medium">नई पोस्ट लिखें...</span>
-          </button>
         ) : null}
 
         {/* Posts feed */}

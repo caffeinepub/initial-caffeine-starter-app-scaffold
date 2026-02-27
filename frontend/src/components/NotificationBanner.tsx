@@ -1,96 +1,96 @@
-import React, { useEffect } from 'react';
-import { X, Bell } from 'lucide-react';
-import { NotificationMessage } from '../hooks/useDailyNotifications';
+import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import type { NotificationMessage } from '../hooks/useDailyNotifications';
 
 interface NotificationBannerProps {
   message: NotificationMessage;
   onDismiss: () => void;
-  autoDismissMs?: number;
 }
 
-const TYPE_CONFIG = {
+const typeConfig = {
   namjap: {
-    emoji: '🕉️',
-    gradient: 'from-amber-600 to-orange-700',
-    border: 'border-amber-400/60',
-    label: 'नाम जप',
+    emoji: '📿',
+    gradient: 'linear-gradient(135deg, rgba(249,115,22,0.15), rgba(245,158,11,0.1))',
+    border: 'rgba(249,115,22,0.4)',
+    glow: 'rgba(249,115,22,0.2)',
+    bar: '#f97316',
   },
   aarti: {
     emoji: '🪔',
-    gradient: 'from-yellow-600 to-amber-700',
-    border: 'border-yellow-400/60',
-    label: 'आरती',
+    gradient: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,191,36,0.1))',
+    border: 'rgba(245,158,11,0.4)',
+    glow: 'rgba(245,158,11,0.2)',
+    bar: '#f59e0b',
   },
   vrat: {
-    emoji: '🌸',
-    gradient: 'from-rose-600 to-pink-700',
-    border: 'border-rose-400/60',
-    label: 'व्रत',
+    emoji: '🙏',
+    gradient: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(167,139,250,0.1))',
+    border: 'rgba(139,92,246,0.4)',
+    glow: 'rgba(139,92,246,0.2)',
+    bar: '#8b5cf6',
   },
 };
 
-const NotificationBanner: React.FC<NotificationBannerProps> = ({
-  message,
-  onDismiss,
-  autoDismissMs = 10000,
-}) => {
-  const config = TYPE_CONFIG[message.type];
+export default function NotificationBanner({ message, onDismiss }: NotificationBannerProps) {
+  const [progress, setProgress] = useState(100);
+  const config = typeConfig[message.type] || typeConfig.namjap;
 
   useEffect(() => {
-    const timer = setTimeout(onDismiss, autoDismissMs);
-    return () => clearTimeout(timer);
-  }, [onDismiss, autoDismissMs]);
+    const duration = 10000;
+    const interval = 100;
+    const step = (interval / duration) * 100;
+
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          onDismiss();
+          return 0;
+        }
+        return prev - step;
+      });
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [message.title, onDismiss]);
 
   return (
     <div
-      className={`fixed top-16 left-0 right-0 z-50 mx-3 rounded-2xl border ${config.border} shadow-2xl overflow-hidden animate-slide-down`}
+      className="mx-4 mt-2 mb-1 rounded-xl border overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, oklch(0.35 0.14 20), oklch(0.45 0.16 30))`,
-        boxShadow: '0 8px 32px oklch(0.35 0.14 20 / 0.6)',
+        background: config.gradient,
+        borderColor: config.border,
+        boxShadow: `0 4px 20px ${config.glow}`,
       }}
     >
-      <div className={`h-1 w-full bg-gradient-to-r ${config.gradient}`} />
-      <div className="flex items-start gap-3 px-4 py-3">
-        {/* Icon */}
+      <div className="flex items-start gap-3 p-3">
         <div
-          className={`w-10 h-10 rounded-full bg-gradient-to-br ${config.gradient} flex items-center justify-center text-lg shrink-0 shadow-md`}
+          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg"
+          style={{
+            background: 'rgba(0,0,0,0.2)',
+            border: `1px solid ${config.border}`,
+          }}
         >
           {config.emoji}
         </div>
-
-        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <Bell className="w-3 h-3 text-amber-300" />
-            <span className="text-xs text-amber-300 font-medium uppercase tracking-wide">
-              {config.label} स्मरण
-            </span>
-          </div>
-          <p className="text-sm font-semibold text-white leading-snug">{message.title}</p>
-          <p className="text-xs text-white/70 mt-0.5 leading-relaxed">{message.body}</p>
+          <p className="text-sm font-semibold text-foreground leading-snug">{message.title}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{message.body}</p>
         </div>
-
-        {/* Dismiss */}
         <button
           onClick={onDismiss}
-          className="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-          aria-label="Dismiss"
+          className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          style={{ background: 'rgba(0,0,0,0.2)' }}
         >
-          <X className="w-3.5 h-3.5 text-white/70" />
+          <X size={14} />
         </button>
       </div>
-
-      {/* Auto-dismiss progress bar */}
-      <div className="h-0.5 bg-white/10">
+      <div className="h-0.5 bg-black/20">
         <div
-          className={`h-full bg-gradient-to-r ${config.gradient} opacity-70`}
-          style={{
-            animation: `shrink-width ${autoDismissMs}ms linear forwards`,
-          }}
+          className="h-full transition-all duration-100 ease-linear rounded-full"
+          style={{ width: `${progress}%`, background: config.bar }}
         />
       </div>
     </div>
   );
-};
-
-export default NotificationBanner;
+}

@@ -1,15 +1,47 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T10:47:55.412Z",
-  "summary": "The diff implements all three requirements. REQ-1 is addressed by refactoring Jap.tsx to use useRef for stale-closure-free counting and fixing race conditions. REQ-2 is addressed by optimistic local state updates and debounced backend sync (1.5s). REQ-3 is addressed by adding a CircularProgress component with saffron/gold colors, 0–108 cycle, and count/target display. The index.css adds supporting animations. All existing visual effects (SacredRipple, OmParticleBurst, LotusBloomOverlay, MalaRing) are preserved per the imports visible in Jap.tsx. No missing requirements or hallucinated features are identified.",
-  "missing_requirements": [],
+  "generatedAt": "2026-02-27T12:54:44.882Z",
+  "summary": "The diff implements the saffron/gold devotional redesign across most required frontend files. REQ-1 through REQ-5, REQ-7, REQ-8, REQ-9, and REQ-10 are substantially implemented. REQ-6 (Jap page redesign) is not evidenced in the diff — Jap.tsx is not among the modified files. The index.css retains a .dark class block (though the default/root is light), which partially conflicts with REQ-8's requirement to remove dark mode overrides. The tailwind.config.js includes the full devotional palette. Profile.tsx and Panchang.tsx show saffron/gold styling in the diff. The three required images (mandala-hero, lotus-decoration, diya-icon) are referenced but not listed as added files.",
+  "missing_requirements": [
+    {
+      "id": "REQ-6",
+      "requirement": "Redesign the Jap counter page (frontend/src/pages/Jap.tsx) with saffron/gold background gradient, MalaRing with gold/amber beads, mantra text in large saffron Devanagari styling, ornate golden circle count display, and LotusBloomOverlay in golden/saffron colors.",
+      "reason": "frontend/src/pages/Jap.tsx does not appear in the list of modified files in the diff. The frontend-file-summaries.txt still describes it as having a 'dark theme', indicating it was not updated.",
+      "evidence": [
+        "frontend/src/pages/Jap.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "Remove dark mode class-based overrides that apply dark backgrounds.",
+      "reason": "The modified index.css still contains a full .dark block with dark background values (e.g., oklch(0.18 0.04 40)), which contradicts the requirement to remove dark mode class-based overrides applying dark backgrounds.",
+      "evidence": [
+        "frontend/src/index.css"
+      ]
+    }
+  ],
   "hallucinated_features": [],
-  "confidence": 0.88,
+  "confidence": 0.82,
   "changed_files": [
     "frontend-file-summaries.txt",
+    "frontend/src/components/AartiCard.tsx",
+    "frontend/src/components/AppLayout.tsx",
+    "frontend/src/components/BottomNav.tsx",
+    "frontend/src/components/DailyDharmaQuote.tsx",
+    "frontend/src/components/FestivalCountdownCard.tsx",
+    "frontend/src/components/KathaCard.tsx",
+    "frontend/src/components/LoginButton.tsx",
+    "frontend/src/components/ShlokaCard.tsx",
     "frontend/src/index.css",
-    "frontend/src/pages/Jap.tsx",
+    "frontend/src/pages/Aarti.tsx",
+    "frontend/src/pages/AartiDetail.tsx",
+    "frontend/src/pages/Home.tsx",
+    "frontend/src/pages/KathaDetail.tsx",
+    "frontend/src/pages/Kathayen.tsx",
+    "frontend/src/pages/Panchang.tsx",
+    "frontend/tailwind.config.js",
     "project_state.json"
   ]
 }

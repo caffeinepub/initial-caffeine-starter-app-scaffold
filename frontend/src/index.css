@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,52 +6,95 @@
 
 @layer base {
   :root {
-    --background: oklch(0.98 0.01 80);
-    --foreground: oklch(0.18 0.04 30);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.18 0.04 30);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.18 0.04 30);
-    --primary: oklch(0.55 0.18 40);
-    --primary-foreground: oklch(0.98 0.01 80);
-    --secondary: oklch(0.92 0.04 80);
-    --secondary-foreground: oklch(0.25 0.06 30);
-    --muted: oklch(0.94 0.02 80);
-    --muted-foreground: oklch(0.52 0.05 40);
-    --accent: oklch(0.88 0.10 80);
-    --accent-foreground: oklch(0.25 0.06 30);
+    /* Devotional Saffron/Gold Light Theme */
+    --background: oklch(0.98 0.02 80);
+    --foreground: oklch(0.25 0.05 40);
+
+    --card: oklch(0.97 0.03 75);
+    --card-foreground: oklch(0.25 0.05 40);
+
+    --popover: oklch(0.98 0.02 80);
+    --popover-foreground: oklch(0.25 0.05 40);
+
+    --primary: oklch(0.62 0.18 45);
+    --primary-foreground: oklch(0.99 0.01 80);
+
+    --secondary: oklch(0.88 0.08 75);
+    --secondary-foreground: oklch(0.35 0.08 40);
+
+    --muted: oklch(0.93 0.04 75);
+    --muted-foreground: oklch(0.55 0.06 50);
+
+    --accent: oklch(0.82 0.14 70);
+    --accent-foreground: oklch(0.25 0.05 40);
+
     --destructive: oklch(0.55 0.22 25);
-    --destructive-foreground: oklch(0.98 0.01 80);
-    --border: oklch(0.88 0.03 80);
-    --input: oklch(0.88 0.03 80);
-    --ring: oklch(0.55 0.18 40);
+    --destructive-foreground: oklch(0.99 0.01 80);
+
+    --border: oklch(0.85 0.07 70);
+    --input: oklch(0.90 0.05 75);
+    --ring: oklch(0.62 0.18 45);
+
+    --success: oklch(0.65 0.15 145);
+    --warning: oklch(0.78 0.16 65);
+
     --radius: 0.75rem;
-    --success: oklch(0.60 0.15 145);
-    --warning: oklch(0.75 0.18 80);
+
+    /* Sidebar */
+    --sidebar-background: oklch(0.96 0.04 75);
+    --sidebar-foreground: oklch(0.25 0.05 40);
+    --sidebar-primary: oklch(0.62 0.18 45);
+    --sidebar-primary-foreground: oklch(0.99 0.01 80);
+    --sidebar-accent: oklch(0.88 0.08 75);
+    --sidebar-accent-foreground: oklch(0.35 0.08 40);
+    --sidebar-border: oklch(0.85 0.07 70);
+    --sidebar-ring: oklch(0.62 0.18 45);
+
+    /* Chart colors */
+    --chart-1: oklch(0.62 0.18 45);
+    --chart-2: oklch(0.75 0.16 65);
+    --chart-3: oklch(0.55 0.15 30);
+    --chart-4: oklch(0.70 0.12 80);
+    --chart-5: oklch(0.65 0.14 55);
   }
 
   .dark {
-    --background: oklch(0.14 0.04 20);
-    --foreground: oklch(0.92 0.03 80);
-    --card: oklch(0.18 0.05 22);
-    --card-foreground: oklch(0.92 0.03 80);
-    --popover: oklch(0.18 0.05 22);
-    --popover-foreground: oklch(0.92 0.03 80);
-    --primary: oklch(0.72 0.18 55);
-    --primary-foreground: oklch(0.14 0.04 20);
-    --secondary: oklch(0.24 0.06 25);
-    --secondary-foreground: oklch(0.88 0.04 80);
-    --muted: oklch(0.22 0.05 22);
-    --muted-foreground: oklch(0.60 0.06 50);
-    --accent: oklch(0.28 0.08 30);
-    --accent-foreground: oklch(0.88 0.04 80);
+    --background: oklch(0.18 0.04 40);
+    --foreground: oklch(0.95 0.03 75);
+
+    --card: oklch(0.22 0.05 40);
+    --card-foreground: oklch(0.95 0.03 75);
+
+    --popover: oklch(0.22 0.05 40);
+    --popover-foreground: oklch(0.95 0.03 75);
+
+    --primary: oklch(0.75 0.16 65);
+    --primary-foreground: oklch(0.18 0.04 40);
+
+    --secondary: oklch(0.30 0.06 40);
+    --secondary-foreground: oklch(0.90 0.04 75);
+
+    --muted: oklch(0.28 0.05 40);
+    --muted-foreground: oklch(0.65 0.06 60);
+
+    --accent: oklch(0.35 0.08 45);
+    --accent-foreground: oklch(0.90 0.04 75);
+
     --destructive: oklch(0.55 0.22 25);
-    --destructive-foreground: oklch(0.98 0.01 80);
-    --border: oklch(0.28 0.06 25);
-    --input: oklch(0.28 0.06 25);
-    --ring: oklch(0.72 0.18 55);
-    --success: oklch(0.60 0.15 145);
-    --warning: oklch(0.75 0.18 80);
+    --destructive-foreground: oklch(0.99 0.01 80);
+
+    --border: oklch(0.32 0.06 45);
+    --input: oklch(0.28 0.05 40);
+    --ring: oklch(0.75 0.16 65);
+
+    --sidebar-background: oklch(0.20 0.04 40);
+    --sidebar-foreground: oklch(0.90 0.04 75);
+    --sidebar-primary: oklch(0.75 0.16 65);
+    --sidebar-primary-foreground: oklch(0.18 0.04 40);
+    --sidebar-accent: oklch(0.30 0.06 40);
+    --sidebar-accent-foreground: oklch(0.90 0.04 75);
+    --sidebar-border: oklch(0.32 0.06 45);
+    --sidebar-ring: oklch(0.75 0.16 65);
   }
 }
 
@@ -59,63 +102,157 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
+    font-family: 'Poppins', sans-serif;
+    background-color: oklch(0.98 0.02 80);
+  }
+
+  .font-devanagari {
+    font-family: 'Tiro Devanagari Hindi', serif;
   }
 }
 
-/* ── Jap Counter Animations ── */
-@keyframes jap-glow {
-  0%, 100% { text-shadow: 0 0 10px oklch(0.82 0.18 80 / 0.4); }
-  50%       { text-shadow: 0 0 30px oklch(0.82 0.18 80 / 0.9), 0 0 60px oklch(0.72 0.18 55 / 0.5); }
+/* Devotional Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-12px) rotate(2deg); }
+  66% { transform: translateY(-6px) rotate(-1deg); }
 }
 
-@keyframes jap-pulse {
-  0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.04); }
+@keyframes glow-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 10px oklch(0.75 0.16 65 / 0.4), 0 0 20px oklch(0.62 0.18 45 / 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 20px oklch(0.75 0.16 65 / 0.7), 0 0 40px oklch(0.62 0.18 45 / 0.4);
+  }
 }
 
-@keyframes tap-glow {
-  0%   { box-shadow: 0 0 0 0 oklch(0.82 0.18 80 / 0.7); }
-  70%  { box-shadow: 0 0 0 20px oklch(0.82 0.18 80 / 0); }
-  100% { box-shadow: 0 0 0 0 oklch(0.82 0.18 80 / 0); }
-}
-
-@keyframes mala-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50%       { transform: scale(1.03); opacity: 1; }
-}
-
-@keyframes bounce-subtle {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-4px); }
-}
-
-@keyframes mandala-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-@keyframes slide-down {
-  from { transform: translateY(-100%); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes shrink-width {
-  from { width: 100%; }
-  to   { width: 0%; }
+@keyframes lotus-bloom {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  60% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
-.animate-jap-glow    { animation: jap-glow 2s ease-in-out infinite; }
-.animate-jap-pulse   { animation: jap-pulse 1.5s ease-in-out infinite; }
-.animate-tap-glow    { animation: tap-glow 0.6s ease-out; }
-.animate-mala-breathe { animation: mala-breathe 4s ease-in-out infinite; }
-.animate-bounce-subtle { animation: bounce-subtle 2s ease-in-out infinite; }
-.animate-mandala-spin  { animation: mandala-spin 20s linear infinite; }
-.animate-slide-down    { animation: slide-down 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes sacred-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes divine-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  25% { transform: scaleY(1.05) scaleX(0.97); }
+  50% { transform: scaleY(0.97) scaleX(1.03); }
+  75% { transform: scaleY(1.03) scaleX(0.98); }
+}
+
+@keyframes petal-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-lotus-bloom { animation: lotus-bloom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-sacred-spin { animation: sacred-spin 20s linear infinite; }
+.animate-divine-pulse { animation: divine-pulse 3s ease-in-out infinite; }
+.animate-flame-flicker { animation: flame-flicker 1.5s ease-in-out infinite; }
+
+/* Gold shimmer text */
+.gold-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    oklch(0.62 0.18 45),
+    oklch(0.82 0.16 70),
+    oklch(0.75 0.20 60),
+    oklch(0.82 0.16 70),
+    oklch(0.62 0.18 45)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 3s linear infinite;
+}
+
+/* Devotional card styles */
+.devotional-card {
+  background: linear-gradient(135deg, oklch(0.98 0.03 80), oklch(0.95 0.05 75));
+  border: 2px solid oklch(0.82 0.14 70);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px oklch(0.62 0.18 45 / 0.15);
+}
+
+.devotional-card:hover {
+  box-shadow: 0 8px 30px oklch(0.62 0.18 45 / 0.25);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* Ornate border */
+.ornate-border {
+  border: 3px solid oklch(0.75 0.16 65);
+  position: relative;
+}
+
+.ornate-border::before {
+  content: '✦';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: oklch(0.98 0.02 80);
+  padding: 0 8px;
+  color: oklch(0.75 0.16 65);
+  font-size: 16px;
+}
+
+/* Saffron gradient backgrounds */
+.saffron-gradient {
+  background: linear-gradient(135deg, oklch(0.62 0.18 45), oklch(0.75 0.16 65));
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, oklch(0.75 0.16 65), oklch(0.82 0.14 70));
+}
+
+.devotional-gradient {
+  background: linear-gradient(135deg, oklch(0.62 0.18 45) 0%, oklch(0.70 0.17 55) 50%, oklch(0.75 0.16 65) 100%);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.95 0.03 75);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.16 65);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.62 0.18 45);
+}
