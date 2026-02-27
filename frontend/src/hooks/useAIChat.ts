@@ -1,103 +1,121 @@
-import { useState, useRef, useCallback } from 'react';
-import { getAIResponse, type ChatMessage } from '../lib/aiEngine';
+import { useState, useCallback, useEffect } from 'react';
+import {
+  generateAIResponse,
+  ConversationMessage
+} from '../lib/aiEngine';
 
-export interface ChatEntry {
+export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
-  imageUrl?: string;
-  imagePrompt?: string;
-  isImage?: boolean;
+  timestamp: number;
 }
 
-const WELCOME_MESSAGE: ChatEntry = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
-    "Hello! 👋 I'm your AI Assistant. I can answer questions on **any topic** — science, history, coding, philosophy, and more.\n\nI can also **generate images** for you! Just say something like:\n• *\"Generate an image of a sunset over mountains\"*\n• *\"Draw a lotus flower\"*\n\nConfigure your API key in settings above to unlock full chat capabilities.",
-  timestamp: new Date(),
-};
+const STORAGE_KEY = 'aiGuru_chatHistory';
+const MAX_HISTORY = 50;
+
+function loadHistory(): ChatMessage[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed.slice(-MAX_HISTORY);
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function saveHistory(messages: ChatMessage[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_HISTORY)));
+  } catch {
+    // ignore
+  }
+}
 
 export function useAIChat() {
-  const [messages, setMessages] = useState<ChatEntry[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadHistory);
   const [isLoading, setIsLoading] = useState(false);
-  const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retryInfo, setRetryInfo] = useState<string | null>(null);
 
-  const scrollToBottom = useCallback(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 50);
-  }, []);
+  useEffect(() => {
+    saveHistory(messages);
+  }, [messages]);
 
-  const sendMessage = useCallback(
-    async (text?: string) => {
-      const messageText = (text ?? inputValue).trim();
-      if (!messageText || isLoading) return;
-
-      setInputValue('');
-
-      const userEntry: ChatEntry = {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: messageText,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, userEntry]);
-      setIsLoading(true);
-      scrollToBottom();
-
-      // Build conversation history for context (last 8 messages, text only)
-      const historyForAPI: ChatMessage[] = messages
-        .filter((m) => !m.isImage)
-        .slice(-8)
-        .map((m) => ({ role: m.role, content: m.content }));
-
-      try {
-        const response = await getAIResponse(messageText, historyForAPI);
-
-        const assistantEntry: ChatEntry = {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: response.text || (response.isImage ? `Here's your generated image of: **${response.imagePrompt}**` : ''),
-          timestamp: new Date(),
-          imageUrl: response.imageUrl,
-          imagePrompt: response.imagePrompt,
-          isImage: response.isImage,
-        };
-
-        setMessages((prev) => [...prev, assistantEntry]);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-        const errorEntry: ChatEntry = {
-          id: `error-${Date.now()}`,
-          role: 'assistant',
-          content: `❌ ${errorMessage}`,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorEntry]);
-      } finally {
-        setIsLoading(false);
-        scrollToBottom();
-      }
+  const buildConversationHistory = useCallback(
+    (msgs: ChatMessage[]): ConversationMessage[] => {
+      return msgs
+        .slice(-10)
+        .map(m => ({ role: m.role, content: m.content }));
     },
-    [inputValue, isLoading, messages, scrollToBottom]
+    []
   );
 
-  const clearChat = useCallback(() => {
-    setMessages([{ ...WELCOME_MESSAGE, id: `welcome-${Date.now()}`, timestamp: new Date() }]);
-    setInputValue('');
+  const sendMessage = useCallback(
+    async (userText: string) => {
+      if (!userText.trim() || isLoading) return;
+
+      setError(null);
+      setRetryInfo(null);
+
+      const userMsg: ChatMessage = {
+        id: `user_${Date.now()}`,
+        role: 'user',
+        content: userText.trim(),
+        timestamp: Date.now()
+      };
+
+      setMessages(prev => [...prev, userMsg]);
+      setIsLoading(true);
+
+      try {
+        const history = buildConversationHistory([...messages, userMsg]);
+
+        const response = await generateAIResponse(
+          userText,
+          history,
+          (attempt) => {
+            setRetryInfo(`पुनः प्रयास ${attempt}...`);
+          }
+        );
+
+        setRetryInfo(null);
+
+        const assistantMsg: ChatMessage = {
+          id: `assistant_${Date.now()}`,
+          role: 'assistant',
+          content: response,
+          timestamp: Date.now()
+        };
+
+        setMessages(prev => [...prev, assistantMsg]);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        setError(`उत्तर प्राप्त करने में समस्या हुई: ${errorMsg}`);
+      } finally {
+        setIsLoading(false);
+        setRetryInfo(null);
+      }
+    },
+    [isLoading, messages, buildConversationHistory]
+  );
+
+  const clearHistory = useCallback(() => {
+    setMessages([]);
+    setError(null);
+    setRetryInfo(null);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return {
     messages,
     isLoading,
-    inputValue,
-    setInputValue,
+    error,
+    retryInfo,
     sendMessage,
-    clearChat,
-    messagesEndRef,
+    clearHistory
   };
 }

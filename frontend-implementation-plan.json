@@ -1,58 +1,57 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Switch AI engine from OpenRouter to Google Gemini",
+  "title": "Fix Jap Section Bugs, Smooth Nam Jap Counting & Add Progress Bar",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Replace OpenRouter AI engine with Google Gemini API in aiEngine.ts, preserving message history and error handling",
+      "summary": "Fix all bugs in the Jap section: resolve state management issues causing incorrect count display, fix tap handler debouncing/double-counting, ensure session and daily counts update correctly, and prevent race conditions between local state and backend sync",
       "acceptanceCriteria": [
-        "Sending a text message in the AI Guru chat triggers a request to the Gemini API endpoint, not OpenRouter.",
-        "The response from Gemini is displayed correctly in the chat UI.",
-        "If no API key is stored, the user is prompted to enter their Gemini API key.",
-        "The stored API key is used for all subsequent requests."
+        "Every single tap/press increments the displayed nam jap count by exactly 1 with no skips or double-counts",
+        "Session count and daily count remain consistent with each other and do not reset unexpectedly mid-session",
+        "Rapid repeated taps are handled gracefully without freezing, skipping counts, or crashing",
+        "Backend sync does not override or revert the locally displayed count while the user is actively chanting",
+        "Milestone effects (ripple, lotus bloom at 108) trigger at the correct count values"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/aiEngine.ts",
+          "path": "frontend/src/pages/Jap.tsx",
           "operation": "modify",
-          "description": "Replace the OpenRouter text chat implementation with Google Gemini API. Update the sendMessage function to call the Gemini REST endpoint (https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent) using the stored Gemini API key. Preserve the existing message history array handling, error handling patterns, and the helper functions getStoredApiKey() and setStoredApiKey(). Keep the Pollinations.ai image generation logic unchanged. Update the isImageRequest function if needed to ensure Hindi keywords still trigger image generation."
+          "description": "Refactor state management to use a useRef for immediate local count tracking (optimistic updates) separate from the React state used for rendering. Replace the current useState count with a ref-based counter that increments synchronously on tap, then schedules a state update. Remove any debouncing from the tap handler itself. Ensure the tapCount state and dailyCount from backend stay in sync by reconciling them only when the component mounts or when backend data changes (not during active tapping). Fix any race conditions by preventing backend sync responses from overwriting the local ref counter while user is actively chanting. Verify milestone triggers (ripple at each tap, lotus bloom at 108) fire at the correct count values by checking the ref counter value."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Update API key configuration UI in AIGuru.tsx to reference Google Gemini instead of OpenRouter",
+      "summary": "Implement smooth, lag-free nam jap counting: use optimistic local state updates (increment immediately on tap) and debounce/batch backend sync calls to prevent UI jank from excessive re-renders or network requests",
       "acceptanceCriteria": [
-        "The API key input panel shows 'Google Gemini API Key' as the label.",
-        "A help link or instruction text points users to https://aistudio.google.com/app/apikey.",
-        "No mention of OpenRouter remains in the UI."
+        "The counter number updates visually within 16ms (one animation frame) of each tap",
+        "No visible stutter, lag, or delay when tapping rapidly",
+        "Backend sync is batched/debounced and does not cause the counter to flicker or temporarily revert"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AIGuru.tsx",
+          "path": "frontend/src/pages/Jap.tsx",
           "operation": "modify",
-          "description": "Update all API key configuration UI elements to reference 'Google Gemini API Key' instead of 'OpenRouter'. Change input labels, placeholder text, and help copy to direct users to https://aistudio.google.com/app/apikey to obtain a free Gemini API key. Remove any OpenRouter-specific instructions or links. Ensure the API key state management (useState, localStorage interaction) continues to work with the updated labels."
+          "description": "Implement optimistic UI updates: on tap, immediately increment a local useRef counter and update the displayed count state synchronously (or via a microtask) without waiting for backend. Introduce a debounced backend sync function (using a timer or a library like lodash.debounce) that batches increments and calls the backend incrementJap mutation only after a short delay (e.g., 500ms) since the last tap. Ensure the displayed count always reflects the local ref, and backend sync happens in the background. Prevent backend responses or refetches from causing the counter to flicker by ignoring stale backend data during active tapping sessions. Test rapid tapping to confirm no stutter or lag in the visual counter update."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Update .env.example and code comments to reflect Google Gemini API usage",
+      "summary": "Add a circular or linear progress bar to the Jap section that fills from 0 to 108 as the count increases, resets for each mala cycle, displays current/target count, and uses saffron/gold devotional colors",
       "acceptanceCriteria": [
-        "frontend/.env.example references Gemini, not OpenRouter or OpenAI.",
-        "No stale references to OpenRouter API keys remain in comments or documentation strings."
+        "A progress bar is visible on the Jap page that fills from 0% to 100% as the count goes from 0 to 108",
+        "Progress bar resets and refills for each new 108-count mala cycle",
+        "Current count and target (e.g., '45 / 108') are displayed near the progress bar",
+        "Progress bar color uses saffron or gold tones matching the app's devotional theme",
+        "Progress bar updates smoothly and instantly in sync with each tap"
       ],
       "file_operations": [
         {
-          "path": "frontend/.env.example",
+          "path": "frontend/src/pages/Jap.tsx",
           "operation": "modify",
-          "description": "Update the environment variable documentation to reference Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio (https://aistudio.google.com/app/apikey). Remove any references to VITE_OPENROUTER_API_KEY or similar OpenRouter-specific variables. Clarify that the API key is stored client-side in localStorage."
-        },
-        {
-          "path": "frontend/src/lib/aiEngine.ts",
-          "operation": "modify",
-          "description": "Update any inline comments or JSDoc documentation strings that reference OpenRouter or OpenAI to mention Google Gemini instead. Ensure function-level comments for sendMessage, getStoredApiKey, and setStoredApiKey reflect the Gemini API usage. Remove any stale references to OpenRouter endpoints or authentication patterns."
+          "description": "Add a progress bar component (circular or linear) below or near the main tap counter that visualizes progress from 0 to 108. Calculate the progress percentage as (currentCount % 108) / 108 * 100. Render a progress indicator using a <div> with a linear gradient (for linear bar) or an SVG circle stroke (for circular bar) styled with saffron (#FF9933) or gold gradient colors from the theme. Display the text '(currentCount % 108) / 108' adjacent to or inside the progress bar. Ensure the progress bar updates immediately when the local count ref changes (not waiting for backend sync). When the count reaches a multiple of 108, the progress bar should smoothly reset to 0 and begin filling again. Use CSS transitions or animations to make the fill smooth. Position the progress bar prominently on the Jap page, ensuring it does not obstruct the main tap button or visual effects."
         }
       ]
     }

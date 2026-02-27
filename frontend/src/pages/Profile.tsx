@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetCallerUserProfile, useSetUserProfile } from '../hooks/useQueries';
+import { useGetCallerUserProfile, useSetUserProfile, useGetJapStats } from '../hooks/useQueries';
 import { Mantra } from '../backend';
-import { User, Star, BookOpen, Heart, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { User, Settings, LogOut, Flame, Heart, BookOpen, Bell, BellOff, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useQueryClient } from '@tanstack/react-query';
 import VratModeToggle from '../components/VratModeToggle';
 import VratModeDashboard from '../components/VratModeDashboard';
+import { useDailyNotifications } from '../hooks/useDailyNotifications';
 
 const MANTRA_LABELS: Record<Mantra, string> = {
   [Mantra.omNamahShivaya]: 'ॐ नमः शिवाय',
@@ -22,14 +24,30 @@ const MANTRA_LABELS: Record<Mantra, string> = {
 
 const VRAT_MODE_KEY = 'vrat-mode-enabled';
 
+const PERMISSION_LABELS: Record<string, { label: string; color: string }> = {
+  granted: { label: 'अनुमति दी गई ✓', color: 'text-green-400' },
+  denied: { label: 'अनुमति अस्वीकृत ✗', color: 'text-red-400' },
+  default: { label: 'अनुमति नहीं दी गई', color: 'text-amber-400' },
+  unsupported: { label: 'ब्राउज़र में उपलब्ध नहीं', color: 'text-muted-foreground' },
+};
+
 export default function Profile() {
   const { identity, clear } = useInternetIdentity();
   const queryClient = useQueryClient();
-  const { data: userProfile, isLoading } = useGetCallerUserProfile();
+  const { data: userProfile } = useGetCallerUserProfile();
   const { mutate: setUserProfile } = useSetUserProfile();
+  const { data: japStats, isLoading: japStatsLoading } = useGetJapStats();
 
   const [selectedMantra, setSelectedMantra] = useState<Mantra>(Mantra.omNamahShivaya);
   const [vratModeEnabled, setVratModeEnabled] = useState(false);
+
+  const {
+    isEnabled: notificationsEnabled,
+    permissionStatus,
+    enableNotifications,
+    disableNotifications,
+    isSupported: notificationsSupported,
+  } = useDailyNotifications();
 
   // Load vrat mode from localStorage
   useEffect(() => {
@@ -61,9 +79,23 @@ export default function Profile() {
     queryClient.clear();
   };
 
+  const handleNotificationToggle = async (checked: boolean) => {
+    if (checked) {
+      await enableNotifications();
+    } else {
+      disableNotifications();
+    }
+  };
+
   const isAuthenticated = !!identity;
   const principalId = identity?.getPrincipal().toString();
   const displayName = userProfile?.name || 'भक्त';
+
+  const lifetimeCount = japStats ? Number(japStats.lifetime) : 0;
+  const malaCount = japStats ? Number(japStats.mala) : 0;
+  const streakCount = japStats ? Number(japStats.streak) : 0;
+
+  const permInfo = PERMISSION_LABELS[permissionStatus] ?? PERMISSION_LABELS['default'];
 
   if (!isAuthenticated) {
     return (
@@ -126,19 +158,128 @@ export default function Profile() {
           </div>
         </a>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { icon: Star, label: 'जाप', value: '—' },
-            { icon: BookOpen, label: 'कथाएं', value: '—' },
-            { icon: Heart, label: 'आरती', value: '—' },
-          ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="bg-card rounded-xl border border-border p-3 text-center">
-              <Icon className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold text-foreground">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
+        {/* Devotional Stats — Lifetime & Streak (read-only) */}
+        <div className="bg-gradient-to-br from-amber-900/60 to-orange-900/40 border border-amber-700/40 rounded-2xl p-4">
+          <p className="text-xs text-amber-300/70 uppercase tracking-widest mb-3 font-medium">
+            🙏 भक्ति आँकड़े
+          </p>
+          {japStatsLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
             </div>
-          ))}
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {/* Lifetime Nam Jap */}
+              <div className="bg-black/20 rounded-xl p-3 text-center">
+                <Heart className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                <p className="text-xl font-bold text-amber-300 tabular-nums">
+                  {lifetimeCount.toLocaleString('hi-IN')}
+                </p>
+                <p className="text-xs text-amber-200/60 mt-0.5 leading-tight">जीवन जप</p>
+              </div>
+
+              {/* Total Malas */}
+              <div className="bg-black/20 rounded-xl p-3 text-center">
+                <BookOpen className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                <p className="text-xl font-bold text-amber-300 tabular-nums">
+                  {malaCount.toLocaleString('hi-IN')}
+                </p>
+                <p className="text-xs text-amber-200/60 mt-0.5 leading-tight">कुल माला</p>
+              </div>
+
+              {/* Streak */}
+              <div className="bg-black/20 rounded-xl p-3 text-center">
+                <Flame className="w-4 h-4 text-orange-400 mx-auto mb-1 animate-pulse" />
+                <p className="text-xl font-bold text-orange-300 tabular-nums">
+                  {streakCount}
+                </p>
+                <p className="text-xs text-amber-200/60 mt-0.5 leading-tight">दिन स्ट्रीक</p>
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-amber-200/30 text-center mt-3">
+            ये आँकड़े स्थायी हैं और रीसेट नहीं होते
+          </p>
+        </div>
+
+        {/* Daily Notifications Settings */}
+        <div
+          className="rounded-2xl border p-4"
+          style={{
+            background: 'linear-gradient(135deg, oklch(0.28 0.10 20 / 0.8), oklch(0.32 0.12 30 / 0.6))',
+            borderColor: notificationsEnabled
+              ? 'oklch(0.82 0.18 80 / 0.5)'
+              : 'oklch(0.82 0.18 80 / 0.2)',
+          }}
+        >
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              {notificationsEnabled ? (
+                <BellRing className="w-4 h-4 text-amber-400 animate-pulse" />
+              ) : (
+                <Bell className="w-4 h-4 text-amber-400/60" />
+              )}
+              <h3 className="font-semibold text-amber-200 text-sm">दैनिक स्मरण सूचनाएं</h3>
+            </div>
+            <Switch
+              checked={notificationsEnabled}
+              onCheckedChange={handleNotificationToggle}
+              disabled={!notificationsSupported}
+              className="data-[state=checked]:bg-amber-500"
+            />
+          </div>
+
+          {/* Description */}
+          <p className="text-xs text-amber-200/60 mb-3 leading-relaxed">
+            दिन में <span className="text-amber-300 font-semibold">7 बार</span> स्मरण सूचनाएं मिलेंगी —
+            नाम जप, आरती और व्रत के लिए।{' '}
+            <span className="text-amber-200/40">
+              (7 daily reminders for Nam Jap, Aarti &amp; Vrat)
+            </span>
+          </p>
+
+          {/* Notification times */}
+          {notificationsEnabled && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {['6:00', '8:00', '10:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => {
+                const icons = ['🌅', '🕉️', '🙏', '🪔', '📿', '🌇', '🌙'];
+                return (
+                  <span
+                    key={time}
+                    className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                  >
+                    {icons[i]} {time}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Permission status */}
+          <div className="flex items-center gap-1.5">
+            {permissionStatus === 'denied' ? (
+              <BellOff className="w-3 h-3 text-red-400" />
+            ) : (
+              <Bell className="w-3 h-3 text-amber-400/60" />
+            )}
+            <span className={`text-xs ${permInfo.color}`}>{permInfo.label}</span>
+          </div>
+
+          {/* Denied instructions */}
+          {permissionStatus === 'denied' && (
+            <p className="text-xs text-amber-200/40 mt-2 leading-relaxed">
+              ब्राउज़र सेटिंग में जाकर नोटिफिकेशन की अनुमति दें।
+              In-app reminders will still appear while the app is open.
+            </p>
+          )}
+
+          {/* Unsupported */}
+          {!notificationsSupported && (
+            <p className="text-xs text-muted-foreground mt-2">
+              आपका ब्राउज़र नोटिफिकेशन को सपोर्ट नहीं करता।
+            </p>
+          )}
         </div>
 
         {/* Vrat Mode Toggle */}

@@ -5,6 +5,8 @@ import { useGetCallerUserProfile } from '../hooks/useQueries';
 import ProfileSetupModal from './ProfileSetupModal';
 import BottomNav from './BottomNav';
 import LoginButton from './LoginButton';
+import NotificationBanner from './NotificationBanner';
+import { useDailyNotifications } from '../hooks/useDailyNotifications';
 
 export default function AppLayout() {
   const { identity } = useInternetIdentity();
@@ -18,6 +20,9 @@ export default function AppLayout() {
   } = useGetCallerUserProfile();
 
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
+
+  // Initialize daily notification system
+  const { currentBanner, dismissBanner } = useDailyNotifications();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -50,6 +55,11 @@ export default function AppLayout() {
 
         <LoginButton />
       </header>
+
+      {/* In-app notification banner (fallback when browser notifications are denied/unsupported) */}
+      {currentBanner && (
+        <NotificationBanner message={currentBanner} onDismiss={dismissBanner} />
+      )}
 
       {/* Main Content */}
       <main className="flex-1">

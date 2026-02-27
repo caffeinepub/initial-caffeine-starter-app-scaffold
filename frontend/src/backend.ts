@@ -118,12 +118,6 @@ export interface _CaffeineStorageCreateCertificateResult {
     method: string;
     blob_hash: string;
 }
-export interface JapStatsInternal {
-    lastReset: bigint;
-    lifetime: bigint;
-    daily: bigint;
-    weekly: bigint;
-}
 export interface CommunityPost {
     id: bigint;
     status: KathaApprovalStatus;
@@ -134,14 +128,18 @@ export interface CommunityPost {
     reports: bigint;
     comments: bigint;
 }
+export interface JapCounter {
+    streak: bigint;
+    lastReset: bigint;
+    mala: bigint;
+    lastActiveDate: bigint;
+    lifetime: bigint;
+    tempCount: bigint;
+    daily: bigint;
+}
 export interface UserApprovalInfo {
     status: ApprovalStatus;
     principal: Principal;
-}
-export interface JapStats {
-    lifetime: bigint;
-    daily: bigint;
-    weekly: bigint;
 }
 export interface KrishnaLeela {
     id: bigint;
@@ -202,8 +200,8 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getDharmaQuoteOfDay(): Promise<DharmaQuote | null>;
     getFestivals(): Promise<Array<Festival>>;
-    getJapLeaderboard(): Promise<Array<JapStats>>;
-    getJapStats(): Promise<JapStatsInternal>;
+    getJapLeaderboard(): Promise<Array<JapCounter>>;
+    getJapStats(): Promise<JapCounter>;
     getKatha(id: bigint): Promise<Katha | null>;
     getKrishnaLeelaStory(): Promise<KrishnaLeela>;
     getUserMantra(): Promise<Mantra>;
@@ -521,7 +519,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getJapLeaderboard(): Promise<Array<JapStats>> {
+    async getJapLeaderboard(): Promise<Array<JapCounter>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getJapLeaderboard();
@@ -535,7 +533,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getJapStats(): Promise<JapStatsInternal> {
+    async getJapStats(): Promise<JapCounter> {
         if (this.processError) {
             try {
                 const result = await this.actor.getJapStats();

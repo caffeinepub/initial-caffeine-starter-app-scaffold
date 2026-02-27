@@ -36,16 +36,14 @@ export interface Festival {
   'name' : string,
   'description' : string,
 }
-export interface JapStats {
-  'lifetime' : bigint,
-  'daily' : bigint,
-  'weekly' : bigint,
-}
-export interface JapStatsInternal {
+export interface JapCounter {
+  'streak' : bigint,
   'lastReset' : bigint,
+  'mala' : bigint,
+  'lastActiveDate' : bigint,
   'lifetime' : bigint,
+  'tempCount' : bigint,
   'daily' : bigint,
-  'weekly' : bigint,
 }
 export interface Katha {
   'id' : bigint,
@@ -126,8 +124,8 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDharmaQuoteOfDay' : ActorMethod<[], [] | [DharmaQuote]>,
   'getFestivals' : ActorMethod<[], Array<Festival>>,
-  'getJapLeaderboard' : ActorMethod<[], Array<JapStats>>,
-  'getJapStats' : ActorMethod<[], JapStatsInternal>,
+  'getJapLeaderboard' : ActorMethod<[], Array<JapCounter>>,
+  'getJapStats' : ActorMethod<[], JapCounter>,
   'getKatha' : ActorMethod<[bigint], [] | [Katha]>,
   'getKrishnaLeelaStory' : ActorMethod<[], KrishnaLeela>,
   'getUserMantra' : ActorMethod<[], Mantra>,

@@ -1,33 +1,32 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "AI chatbox app with Google Gemini integration, where users provide their own free Gemini API key. Features include chat, image generation, and download. Future plans include Ekadashi reminders, subscription option, community tab, and admin panel.",
-  "architectural_notes": [
-    "AI chatbox uses Google Gemini API; users must provide their own Gemini API key (free tier available)",
-    "App features: AI chat, image generation, and download functionality"
+  "summary": "Spiritual/devotional app with nam jap (chanting counter) functionality, daily notifications, Hindi narration, and Japanese section. Focus on fixing nam jap counting bugs and adding progress bar feature.",
+  "architectural_notes": [],
+  "known_issues": [
+    "Nam jap counting in Jap section is not smooth and has multiple bugs"
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-replace-the-existing-openrouter-based-ai-text-chat-implementation-in-frontend-src-lib-aiengine-ts-with-google-gemini-api-model-gemini-1-5-flash-or-gemini-pro-the-engine-should-send-user-messages-to-the-gemini-rest-endpoint-https-generativelanguage-googleapis-com-v1beta-models-gemini-1-5-flash-generatecontent-using-the-user-s-stored-gemini-api-key-preserve-existing-message-history-handling-error-handling-and-the-helper-functions-for-api-key-storage-retrieval",
-      "title": "Replace the existing OpenRouter-based AI text chat implementation in `frontend/src/lib/aiEngine.ts` with Google Gemini API (model: `gemini-1.5-flash` or `gemini-pro`). The engine should send user messages to the Gemini REST endpoint (`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`) using the user's stored Gemini API key. Preserve existing message history handling, error handling, and the helper functions for API key storage/retrieval.",
+      "id": "feature-fix-all-bugs-in-the-jap-section-frontend-src-pages-jap-tsx-resolve-any-state-management-issues-causing-incorrect-or-inconsistent-nam-jap-count-display-fix-tap-handler-debouncing-or-double-counting-problems-ensure-the-session-count-and-daily-count-both-update-correctly-and-reliably-on-every-tap-press-and-prevent-any-race-conditions-between-local-state-and-backend-sync-that-cause-the-counter-to-skip-reset-unexpectedly-or-display-stale-values",
+      "title": "Fix all bugs in the Jap section (frontend/src/pages/Jap.tsx): resolve any state management issues causing incorrect or inconsistent nam jap count display, fix tap handler debouncing or double-counting problems, ensure the session count and daily count both update correctly and reliably on every tap/press, and prevent any race conditions between local state and backend sync that cause the counter to skip, reset unexpectedly, or display stale values.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-api-key-configuration-ui-in-frontend-src-pages-aiguru-tsx-to-reference-google-gemini-instead-of-openrouter-change-all-labels-placeholder-text-and-help-copy-to-say-gemini-api-key-and-direct-users-to-https-aistudio-google-com-app-apikey-to-obtain-a-free-key-remove-any-openrouter-specific-instructions",
-      "title": "Update the API key configuration UI in `frontend/src/pages/AIGuru.tsx` to reference Google Gemini instead of OpenRouter. Change all labels, placeholder text, and help copy to say 'Gemini API Key' and direct users to `https://aistudio.google.com/app/apikey` to obtain a free key. Remove any OpenRouter-specific instructions.",
+      "id": "feature-implement-smooth-lag-free-nam-jap-counting-in-the-jap-section-use-optimistic-local-state-updates-increment-a-local-ref-or-state-immediately-on-tap-before-any-async-backend-call-so-the-counter-visually-increments-instantly-without-waiting-for-backend-responses-debounce-or-batch-backend-sync-calls-so-frequent-taps-do-not-trigger-excessive-re-renders-or-network-requests-that-cause-ui-jank",
+      "title": "Implement smooth, lag-free nam jap counting in the Jap section: use optimistic local state updates (increment a local ref or state immediately on tap before any async backend call) so the counter visually increments instantly without waiting for backend responses. Debounce or batch backend sync calls so frequent taps do not trigger excessive re-renders or network requests that cause UI jank.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-frontend-env-example-and-any-relevant-comments-or-documentation-strings-in-the-codebase-to-reflect-that-the-app-now-uses-the-google-gemini-api-instead-of-openrouter-openai-note-that-users-obtain-a-free-gemini-api-key-from-google-ai-studio",
-      "title": "Update `frontend/.env.example` and any relevant comments or documentation strings in the codebase to reflect that the app now uses the Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio.",
+      "id": "feature-add-a-circular-or-linear-progress-bar-to-the-jap-section-frontend-src-pages-jap-tsx-that-fills-progressively-as-the-nam-jap-count-increases-toward-the-108-bead-cycle-the-progress-bar-should-visually-represent-progress-from-0-to-108-one-mala-reset-and-refill-for-each-subsequent-mala-cycle-and-display-the-current-count-and-target-e-g-45-108-alongside-it-use-saffron-gold-devotional-colors-consistent-with-the-app-theme",
+      "title": "Add a circular or linear progress bar to the Jap section (frontend/src/pages/Jap.tsx) that fills progressively as the nam jap count increases toward the 108-bead cycle. The progress bar should visually represent progress from 0 to 108 (one mala), reset and refill for each subsequent mala cycle, and display the current count and target (e.g., '45 / 108') alongside it. Use saffron/gold devotional colors consistent with the app theme.",
       "reqIds": [
         "REQ-3"
       ],
@@ -37,13 +36,19 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Switch AI backend from OpenAI to Google Gemini (users provide their own free Gemini API key)",
+      "summary": "Fix bugs in the Jap section including smooth nam jap counting",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add a progress bar to the Jap section that fills as nam jap count increases",
       "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "AI Guru Devotional",
+  "projectName": "Divya Sadhana",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

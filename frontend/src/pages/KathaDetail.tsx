@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Katha } from '../backend';
 
+const KATHA_NARRATION_ID = 'katha-detail-narration';
+
 export default function KathaDetail() {
   const { id } = useParams({ from: '/kathayen/$id' });
   const [showHindi, setShowHindi] = useState(true);
@@ -24,7 +26,6 @@ export default function KathaDetail() {
   });
 
   // Use backend data if available, otherwise fall back to static data
-  // staticKathaData uses bigint ids, so compare with BigInt(id)
   const staticKatha = staticKathaData.find((k) => k.id === BigInt(id));
   const katha: Katha | null = backendKatha ?? staticKatha ?? null;
 
@@ -33,42 +34,46 @@ export default function KathaDetail() {
     ? katha?.hindiText || ''
     : katha?.englishText || '';
 
-  const narrationLang = showHindi ? 'hi-IN' : 'en-US';
-  const narration = useSpeechNarration(narrationLang);
+  const { narrationState, currentMessageId, speak, pause, resume, stop, isSupported } =
+    useSpeechNarration();
+
+  const isPlaying = narrationState === 'playing' && currentMessageId === KATHA_NARRATION_ID;
+  const isPaused = narrationState === 'paused' && currentMessageId === KATHA_NARRATION_ID;
+  const isActive = currentMessageId === KATHA_NARRATION_ID;
 
   // Stop narration when language changes
   useEffect(() => {
-    narration.stop();
+    stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHindi]);
 
   // Stop narration on unmount
   useEffect(() => {
     return () => {
-      narration.stop();
+      stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePlay = () => {
     if (!currentText) return;
-    if (narration.state === 'paused') {
-      narration.resume();
+    if (isPaused) {
+      resume();
     } else {
-      narration.play(currentText);
+      speak(currentText, KATHA_NARRATION_ID);
     }
   };
 
   const handlePause = () => {
-    narration.pause();
+    pause();
   };
 
   const handleStop = () => {
-    narration.stop();
+    stop();
   };
 
   const handleLanguageToggle = () => {
-    narration.stop();
+    stop();
     setShowHindi((prev) => !prev);
   };
 
@@ -136,9 +141,9 @@ export default function KathaDetail() {
         {/* Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Narration controls */}
-          {narration.isSupported && (
+          {isSupported && (
             <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              {narration.state === 'playing' ? (
+              {isPlaying ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -158,10 +163,10 @@ export default function KathaDetail() {
                   title="सुनें"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  {narration.state === 'paused' ? 'जारी रखें' : 'सुनें'}
+                  {isPaused ? 'जारी रखें' : 'सुनें'}
                 </Button>
               )}
-              {narration.state !== 'idle' && (
+              {isActive && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -190,7 +195,7 @@ export default function KathaDetail() {
           )}
 
           {/* Narration status indicator */}
-          {narration.state === 'playing' && (
+          {isPlaying && (
             <div className="flex items-center gap-1 text-xs text-primary">
               <span className="inline-flex gap-0.5">
                 <span
@@ -209,7 +214,7 @@ export default function KathaDetail() {
               <span>सुन रहे हैं...</span>
             </div>
           )}
-          {narration.state === 'paused' && (
+          {isPaused && (
             <span className="text-xs text-muted-foreground">⏸ रुका हुआ</span>
           )}
         </div>

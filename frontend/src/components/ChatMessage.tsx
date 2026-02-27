@@ -1,166 +1,139 @@
-import React, { useState } from 'react';
-import { Download, ImageOff } from 'lucide-react';
+import React from 'react';
+import { Play, Pause, Square, Volume2, Mic } from 'lucide-react';
+import { ChatMessage as ChatMessageType } from '../hooks/useAIChat';
+import { useSpeechNarration } from '../hooks/useSpeechNarration';
 
 interface ChatMessageProps {
-  role: 'user' | 'ai' | 'assistant';
-  content: string;
-  timestamp: Date;
-  imageUrl?: string;
-  imagePrompt?: string;
-  isImage?: boolean;
+  message: ChatMessageType;
 }
 
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+// Detect if text is primarily Hindi/Devanagari
+function isHindiText(text: string): boolean {
+  const devanagariChars = (text.match(/[\u0900-\u097F]/g) || []).length;
+  return devanagariChars > text.length * 0.2;
 }
 
-// Simple markdown-like renderer: bold (**text**), newlines
-function renderContent(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|\n)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
+const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
+  const { narrationState, currentMessageId, speak, pause, resume, stop, isSupported } =
+    useSpeechNarration();
+
+  const isThisPlaying =
+    currentMessageId === message.id && narrationState === 'playing';
+  const isThisPaused =
+    currentMessageId === message.id && narrationState === 'paused';
+  const isThisActive = currentMessageId === message.id;
+
+  const isHindi = isHindiText(message.content);
+
+  const handleTTS = () => {
+    if (isThisPlaying) {
+      pause();
+    } else if (isThisPaused) {
+      resume();
+    } else {
+      speak(message.content, message.id);
     }
-    if (part === '\n') {
-      return <br key={i} />;
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
-
-function toKebabCase(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .slice(0, 60);
-}
-
-async function downloadImage(imageUrl: string, prompt: string) {
-  try {
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ai-generated-${toKebabCase(prompt) || 'image'}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch {
-    // Fallback: open in new tab
-    window.open(imageUrl, '_blank');
-  }
-}
-
-function GeneratedImage({ imageUrl, imagePrompt }: { imageUrl: string; imagePrompt: string }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-
-  const handleDownload = async () => {
-    setDownloading(true);
-    await downloadImage(imageUrl, imagePrompt);
-    setDownloading(false);
   };
 
+  const handleStop = () => {
+    stop();
+  };
+
+  const isUser = message.role === 'user';
+  const timestamp = new Date(message.timestamp).toLocaleTimeString('hi-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
   return (
-    <div className="mt-2 rounded-xl overflow-hidden border border-gold/30 shadow-md max-w-xs">
-      {!imgLoaded && !imgError && (
-        <div className="w-full h-48 bg-muted/50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <div className="w-6 h-6 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
-            <span className="text-xs">Generating image...</span>
-          </div>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold mr-2 shrink-0 mt-1 shadow-md">
+          🕉️
         </div>
       )}
-      {imgError && (
-        <div className="w-full h-48 bg-muted/50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <ImageOff className="w-8 h-8" />
-            <span className="text-xs">Image generation failed</span>
-          </div>
+
+      <div className={`max-w-[80%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
+        <div
+          className={`rounded-2xl px-4 py-3 shadow-md ${
+            isUser
+              ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-tr-sm'
+              : 'bg-card border border-amber-200/30 text-foreground rounded-tl-sm'
+          }`}
+        >
+          {/* Message text */}
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
         </div>
-      )}
-      <img
-        src={imageUrl}
-        alt={imagePrompt}
-        className={`w-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0 h-0'}`}
-        onLoad={() => setImgLoaded(true)}
-        onError={() => setImgError(true)}
-      />
-      {imgLoaded && !imgError && (
-        <div className="bg-white/90 dark:bg-background/90 px-3 py-2 flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground truncate flex-1">{imagePrompt}</span>
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            aria-label="Download image"
-            className="shrink-0 flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-2.5 py-1.5 rounded-lg hover:bg-primary/90 disabled:opacity-60 transition-colors"
-          >
-            {downloading ? (
-              <div className="w-3 h-3 border border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-            ) : (
-              <Download className="w-3 h-3" />
+
+        {/* TTS controls for assistant messages */}
+        {!isUser && isSupported && (
+          <div className="flex items-center gap-1 mt-1.5 ml-1">
+            <button
+              onClick={handleTTS}
+              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all ${
+                isThisActive
+                  ? 'bg-amber-500 text-white shadow-md'
+                  : 'bg-amber-100/60 text-amber-700 hover:bg-amber-200/80'
+              }`}
+              title={
+                isThisPlaying
+                  ? 'Pause narration'
+                  : isThisPaused
+                  ? 'Resume narration'
+                  : isHindi
+                  ? 'हिंदी में सुनें'
+                  : 'Listen'
+              }
+            >
+              {isThisPlaying ? (
+                <>
+                  <Pause className="w-3 h-3" />
+                  <span>रुकें</span>
+                </>
+              ) : isThisPaused ? (
+                <>
+                  <Play className="w-3 h-3" />
+                  <span>जारी रखें</span>
+                </>
+              ) : (
+                <>
+                  {isHindi ? (
+                    <Mic className="w-3 h-3" />
+                  ) : (
+                    <Volume2 className="w-3 h-3" />
+                  )}
+                  <span>{isHindi ? 'हिंदी सुनें' : 'सुनें'}</span>
+                </>
+              )}
+            </button>
+
+            {isThisActive && (
+              <button
+                onClick={handleStop}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100/60 text-red-600 hover:bg-red-200/80 transition-colors"
+                title="Stop narration"
+              >
+                <Square className="w-3 h-3" />
+              </button>
             )}
-            {downloading ? 'Saving...' : 'Download'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
-export default function ChatMessage({ role, content, timestamp, imageUrl, imagePrompt, isImage }: ChatMessageProps) {
-  const isUser = role === 'user';
+            <span className="text-xs text-muted-foreground ml-1">{timestamp}</span>
+          </div>
+        )}
 
-  return (
-    <div className={`flex items-end gap-2 mb-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-      {/* Avatar */}
-      <div
-        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-md ${
-          isUser
-            ? 'bg-saffron text-white'
-            : 'bg-gradient-to-br from-gold to-saffron text-white overflow-hidden'
-        }`}
-      >
-        {isUser ? (
-          <span>👤</span>
-        ) : (
-          <img
-            src="/assets/generated/ai-guru-avatar.dim_256x256.png"
-            alt="AI"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              (e.target as HTMLImageElement).parentElement!.textContent = '🤖';
-            }}
-          />
+        {/* Timestamp for user messages */}
+        {isUser && (
+          <span className="text-xs text-muted-foreground mt-1 mr-1">{timestamp}</span>
         )}
       </div>
 
-      {/* Bubble */}
-      <div className={`max-w-[78%] ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-        <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
-            isUser
-              ? 'bg-saffron text-white rounded-br-sm'
-              : 'bg-white border border-gold/30 text-foreground rounded-bl-sm'
-          }`}
-        >
-          {renderContent(content)}
-          {/* Inline image for image generation responses */}
-          {isImage && imageUrl && (
-            <GeneratedImage
-              imageUrl={imageUrl}
-              imagePrompt={imagePrompt || 'generated image'}
-            />
-          )}
+      {isUser && (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm font-bold ml-2 shrink-0 mt-1 shadow-md">
+          🙏
         </div>
-        <span className="text-[10px] text-muted-foreground px-1">{formatTime(timestamp)}</span>
-      </div>
+      )}
     </div>
   );
-}
+};
+
+export default ChatMessageComponent;

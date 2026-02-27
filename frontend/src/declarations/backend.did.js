@@ -84,16 +84,14 @@ export const Festival = IDL.Record({
   'name' : IDL.Text,
   'description' : IDL.Text,
 });
-export const JapStats = IDL.Record({
-  'lifetime' : IDL.Nat,
-  'daily' : IDL.Nat,
-  'weekly' : IDL.Nat,
-});
-export const JapStatsInternal = IDL.Record({
+export const JapCounter = IDL.Record({
+  'streak' : IDL.Nat,
   'lastReset' : IDL.Int,
+  'mala' : IDL.Nat,
+  'lastActiveDate' : IDL.Int,
   'lifetime' : IDL.Nat,
+  'tempCount' : IDL.Nat,
   'daily' : IDL.Nat,
-  'weekly' : IDL.Nat,
 });
 export const KrishnaLeela = IDL.Record({
   'id' : IDL.Nat,
@@ -166,8 +164,8 @@ export const idlService = IDL.Service({
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
   'getFestivals' : IDL.Func([], [IDL.Vec(Festival)], ['query']),
-  'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapStats)], ['query']),
-  'getJapStats' : IDL.Func([], [JapStatsInternal], ['query']),
+  'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapCounter)], ['query']),
+  'getJapStats' : IDL.Func([], [JapCounter], ['query']),
   'getKatha' : IDL.Func([IDL.Nat], [IDL.Opt(Katha)], ['query']),
   'getKrishnaLeelaStory' : IDL.Func([], [KrishnaLeela], ['query']),
   'getUserMantra' : IDL.Func([], [Mantra], ['query']),
@@ -276,16 +274,14 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'description' : IDL.Text,
   });
-  const JapStats = IDL.Record({
-    'lifetime' : IDL.Nat,
-    'daily' : IDL.Nat,
-    'weekly' : IDL.Nat,
-  });
-  const JapStatsInternal = IDL.Record({
+  const JapCounter = IDL.Record({
+    'streak' : IDL.Nat,
     'lastReset' : IDL.Int,
+    'mala' : IDL.Nat,
+    'lastActiveDate' : IDL.Int,
     'lifetime' : IDL.Nat,
+    'tempCount' : IDL.Nat,
     'daily' : IDL.Nat,
-    'weekly' : IDL.Nat,
   });
   const KrishnaLeela = IDL.Record({ 'id' : IDL.Nat, 'hindiText' : IDL.Text });
   const ApprovalStatus = IDL.Variant({
@@ -359,8 +355,8 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
     'getFestivals' : IDL.Func([], [IDL.Vec(Festival)], ['query']),
-    'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapStats)], ['query']),
-    'getJapStats' : IDL.Func([], [JapStatsInternal], ['query']),
+    'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapCounter)], ['query']),
+    'getJapStats' : IDL.Func([], [JapCounter], ['query']),
     'getKatha' : IDL.Func([IDL.Nat], [IDL.Opt(Katha)], ['query']),
     'getKrishnaLeelaStory' : IDL.Func([], [KrishnaLeela], ['query']),
     'getUserMantra' : IDL.Func([], [Mantra], ['query']),

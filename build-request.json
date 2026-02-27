@@ -1,70 +1,79 @@
 {
   "kind": "build_request",
-  "title": "Switch AI engine from OpenRouter to Google Gemini",
-  "projectName": "AI Guru Devotional",
-  "priority": "normal",
+  "title": "Fix Jap Section Bugs, Smooth Nam Jap Counting & Add Progress Bar",
+  "projectName": "Divya Sadhana",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Replace the existing OpenRouter-based AI text chat implementation in `frontend/src/lib/aiEngine.ts` with Google Gemini API (model: `gemini-1.5-flash` or `gemini-pro`). The engine should send user messages to the Gemini REST endpoint (`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`) using the user's stored Gemini API key. Preserve existing message history handling, error handling, and the helper functions for API key storage/retrieval.",
+      "text": "Fix all bugs in the Jap section (frontend/src/pages/Jap.tsx): resolve any state management issues causing incorrect or inconsistent nam jap count display, fix tap handler debouncing or double-counting problems, ensure the session count and daily count both update correctly and reliably on every tap/press, and prevent any race conditions between local state and backend sync that cause the counter to skip, reset unexpectedly, or display stale values.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "Switch to Google Gemini (which has more generous free limits than OpenAI)?"
+          "it have many bugs",
+          "in counting the nam jap it faces many problems it doesn't count the nam jap smoothly"
         ]
       },
       "acceptanceCriteria": [
-        "Sending a text message in the AI Guru chat triggers a request to the Gemini API endpoint, not OpenRouter.",
-        "The response from Gemini is displayed correctly in the chat UI.",
-        "If no API key is stored, the user is prompted to enter their Gemini API key.",
-        "The stored API key is used for all subsequent requests."
+        "Every single tap/press increments the displayed nam jap count by exactly 1 with no skips or double-counts",
+        "Session count and daily count remain consistent with each other and do not reset unexpectedly mid-session",
+        "Rapid repeated taps are handled gracefully without freezing, skipping counts, or crashing",
+        "Backend sync does not override or revert the locally displayed count while the user is actively chanting",
+        "Milestone effects (ripple, lotus bloom at 108) trigger at the correct count values"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the API key configuration UI in `frontend/src/pages/AIGuru.tsx` to reference Google Gemini instead of OpenRouter. Change all labels, placeholder text, and help copy to say 'Gemini API Key' and direct users to `https://aistudio.google.com/app/apikey` to obtain a free key. Remove any OpenRouter-specific instructions.",
+      "text": "Implement smooth, lag-free nam jap counting in the Jap section: use optimistic local state updates (increment a local ref or state immediately on tap before any async backend call) so the counter visually increments instantly without waiting for backend responses. Debounce or batch backend sync calls so frequent taps do not trigger excessive re-renders or network requests that cause UI jank.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "Switch to Google Gemini (which has more generous free limits than OpenAI)?"
+          "it doesn't count the nam jap smoothly so solve it"
         ]
       },
       "acceptanceCriteria": [
-        "The API key input panel shows 'Google Gemini API Key' as the label.",
-        "A help link or instruction text points users to https://aistudio.google.com/app/apikey.",
-        "No mention of OpenRouter remains in the UI."
+        "The counter number updates visually within 16ms (one animation frame) of each tap",
+        "No visible stutter, lag, or delay when tapping rapidly",
+        "Backend sync is batched/debounced and does not cause the counter to flicker or temporarily revert"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update `frontend/.env.example` and any relevant comments or documentation strings in the codebase to reflect that the app now uses the Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio.",
+      "text": "Add a circular or linear progress bar to the Jap section (frontend/src/pages/Jap.tsx) that fills progressively as the nam jap count increases toward the 108-bead cycle. The progress bar should visually represent progress from 0 to 108 (one mala), reset and refill for each subsequent mala cycle, and display the current count and target (e.g., '45 / 108') alongside it. Use saffron/gold devotional colors consistent with the app theme.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
+        ],
+        "quotes": [
+          "add a progress bar it fills when the nam jap increasing"
         ]
       },
       "acceptanceCriteria": [
-        "frontend/.env.example references Gemini, not OpenRouter or OpenAI.",
-        "No stale references to OpenRouter API keys remain in comments or documentation strings."
+        "A progress bar is visible on the Jap page that fills from 0% to 100% as the count goes from 0 to 108",
+        "Progress bar resets and refills for each new 108-count mala cycle",
+        "Current count and target (e.g., '45 / 108') are displayed near the progress bar",
+        "Progress bar color uses saffron or gold tones matching the app's devotional theme",
+        "Progress bar updates smoothly and instantly in sync with each tap"
       ]
     }
   ],
   "constraints": [
-    "Image generation should continue to use Pollinations.ai (free, no key required) — do not route image generation through Gemini.",
-    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
-    "Do not add any backend changes — API key storage and AI calls remain entirely client-side."
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
+    "Backend Motoko actor in backend/main.mo should only be changed if a schema or logic fix is strictly required for correct counting; prefer frontend-side fixes first",
+    "Preserve all existing visual effects: SacredRipple, OmParticleBurst, LotusBloomOverlay, and MalaRing"
   ],
   "nonGoals": [
-    "Embedding a shared/hardcoded API key for all users — each user must supply their own Gemini key.",
-    "Switching the image generation provider away from Pollinations.ai.",
-    "Any changes to the backend Motoko actor."
+    "Redesigning the entire Jap page layout",
+    "Adding new mantras or changing mantra selection logic",
+    "Modifying any other pages (Home, Panchang, Aarti, etc.)",
+    "Changing the backend data model for jap counters unless strictly necessary"
   ],
   "imageRequirements": {
     "required": [],

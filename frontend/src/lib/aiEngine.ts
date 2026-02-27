@@ -1,230 +1,248 @@
-// AI Engine using Google Gemini API (free tier) for real AI responses
-// and Pollinations.ai for free image generation (no key required)
-// Get your free Gemini API key at: https://aistudio.google.com/app/apikey
+// AI Engine - Uses Pollinations.ai (free, no API key required)
+// Text: https://text.pollinations.ai (POST)
+// Image: https://image.pollinations.ai (GET)
 
-const API_KEY_STORAGE_KEY = 'ai_api_key';
+const DIVYA_GURU_SYSTEM_PROMPT = `You are Divya Guru, a wise and compassionate Hindu spiritual guide. You speak with warmth, wisdom, and deep knowledge of Hindu scriptures, philosophy, and traditions.
 
-export interface ChatMessage {
+Your responses should:
+- Be spiritually uplifting and grounded in Hindu philosophy
+- Reference relevant scriptures (Bhagavad Gita, Upanishads, Puranas, Vedas) when appropriate
+- Use respectful terms like "dear devotee", "beloved seeker"
+- Include Sanskrit shlokas with Hindi/English translations when relevant
+- Blend Hindi and English naturally (Hinglish is welcome)
+- Be concise but profound (2-4 paragraphs typically)
+- Address questions about dharma, karma, bhakti, yoga, festivals, rituals, and daily spiritual practice
+- Always end with a blessing or encouraging thought
+
+You represent the living tradition of Sanatana Dharma with love and inclusivity.`;
+
+export interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export interface AIResponse {
-  text?: string;
-  imageUrl?: string;
-  imagePrompt?: string;
-  isImage: boolean;
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Detect if the user is requesting image generation
-function detectImageRequest(message: string): string | null {
-  const lower = message.toLowerCase();
-  const imageKeywords = [
-    'generate image',
-    'create image',
-    'make image',
-    'draw',
-    'show me a picture',
-    'show me an image',
-    'generate a picture',
-    'create a picture',
-    'make a picture',
-    'paint',
-    'illustrate',
-    'visualize',
-    'generate photo',
-    'create photo',
-    'image of',
-    'picture of',
-    'photo of',
-    'तस्वीर बनाओ',
-    'चित्र बनाओ',
-    'इमेज बनाओ',
-    'फोटो बनाओ',
+async function tryPollinationsText(
+  userMessage: string,
+  conversationHistory: ConversationMessage[]
+): Promise<string> {
+  const messages = [
+    { role: 'system', content: DIVYA_GURU_SYSTEM_PROMPT },
+    ...conversationHistory.slice(-6),
+    { role: 'user', content: userMessage }
   ];
 
-  for (const keyword of imageKeywords) {
-    if (lower.includes(keyword)) {
-      return message;
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      model: 'openai',
+      seed: Math.floor(Math.random() * 1000),
+      jsonMode: false
+    }),
+    signal: AbortSignal.timeout(30000)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Pollinations text API error: ${response.status}`);
+  }
+
+  const text = await response.text();
+  if (!text || text.trim().length < 10) {
+    throw new Error('Empty response from Pollinations text API');
+  }
+  return text.trim();
+}
+
+async function tryPollinationsTextGet(
+  userMessage: string,
+  conversationHistory: ConversationMessage[]
+): Promise<string> {
+  const systemContext = DIVYA_GURU_SYSTEM_PROMPT.substring(0, 200);
+  const recentHistory = conversationHistory.slice(-2)
+    .map(m => `${m.role}: ${m.content}`)
+    .join('\n');
+  const fullPrompt = `${systemContext}\n\n${recentHistory}\nuser: ${userMessage}\nassistant:`;
+  const encoded = encodeURIComponent(fullPrompt.substring(0, 500));
+
+  const response = await fetch(
+    `https://text.pollinations.ai/${encoded}?model=openai&seed=${Math.floor(Math.random() * 9999)}`,
+    { signal: AbortSignal.timeout(25000) }
+  );
+
+  if (!response.ok) throw new Error(`GET fallback error: ${response.status}`);
+  const text = await response.text();
+  if (!text || text.trim().length < 10) throw new Error('Empty GET response');
+  return text.trim();
+}
+
+async function tryOpenRouterFree(
+  userMessage: string,
+  conversationHistory: ConversationMessage[]
+): Promise<string> {
+  // Use a completely free, no-auth endpoint as last resort
+  const prompt = `You are a Hindu spiritual guide. Answer this question with wisdom and devotion: ${userMessage}`;
+  const encoded = encodeURIComponent(prompt.substring(0, 400));
+
+  const response = await fetch(
+    `https://text.pollinations.ai/${encoded}?model=mistral&seed=${Date.now() % 9999}`,
+    { signal: AbortSignal.timeout(20000) }
+  );
+
+  if (!response.ok) throw new Error(`Fallback error: ${response.status}`);
+  const text = await response.text();
+  if (!text || text.trim().length < 5) throw new Error('Empty fallback response');
+  return text.trim();
+}
+
+export async function generateAIResponse(
+  userMessage: string,
+  conversationHistory: ConversationMessage[] = [],
+  onRetry?: (attempt: number) => void
+): Promise<string> {
+  const providers = [
+    () => tryPollinationsText(userMessage, conversationHistory),
+    () => tryPollinationsTextGet(userMessage, conversationHistory),
+    () => tryOpenRouterFree(userMessage, conversationHistory),
+  ];
+
+  let lastError: Error = new Error('All providers failed');
+
+  for (let i = 0; i < providers.length; i++) {
+    try {
+      if (i > 0) {
+        onRetry?.(i);
+        await sleep(1000 * i);
+      }
+      const result = await providers[i]();
+      return result;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`AI provider ${i + 1} failed:`, lastError.message);
     }
   }
-  return null;
+
+  // Final fallback: return a devotional message
+  return `🙏 प्रिय भक्त, \n\nआपका प्रश्न बहुत सुंदर है। इस समय तकनीकी कठिनाई के कारण मैं उत्तर देने में असमर्थ हूँ। कृपया थोड़ी देर बाद पुनः प्रयास करें।\n\nभगवान श्री कृष्ण ने गीता में कहा है: "योगस्थः कुरु कर्माणि" - स्थिर चित्त से कर्म करते रहो।\n\nहरि ॐ 🕉️`;
 }
 
-// Extract the image subject from the prompt
-function extractImagePrompt(message: string): string {
+// ─── Image Generation ───────────────────────────────────────────────────────
+
+export function detectImageRequest(message: string): boolean {
+  const lower = message.toLowerCase();
+  const keywords = [
+    'image', 'photo', 'picture', 'show me', 'generate', 'draw', 'create image',
+    'तस्वीर', 'चित्र', 'फोटो', 'दिखाओ', 'बनाओ'
+  ];
+  return keywords.some(kw => lower.includes(kw));
+}
+
+export function extractImagePrompt(message: string): string {
   const lower = message.toLowerCase();
   const prefixes = [
-    'generate image of',
-    'generate image',
-    'create image of',
-    'create image',
-    'make image of',
-    'make image',
-    'draw a picture of',
-    'draw a',
-    'draw an',
-    'draw',
-    'show me a picture of',
-    'show me an image of',
-    'show me a picture',
-    'show me an image',
-    'generate a picture of',
-    'generate a picture',
-    'create a picture of',
-    'create a picture',
-    'make a picture of',
-    'make a picture',
-    'paint a',
-    'paint an',
-    'paint',
-    'illustrate',
-    'visualize',
-    'generate photo of',
-    'generate photo',
-    'create photo of',
-    'create photo',
-    'image of',
-    'picture of',
-    'photo of',
-    'तस्वीर बनाओ',
-    'चित्र बनाओ',
-    'इमेज बनाओ',
-    'फोटो बनाओ',
+    'generate an image of', 'generate image of', 'create an image of', 'create image of',
+    'show me an image of', 'show me a picture of', 'show me', 'generate a photo of',
+    'generate a picture of', 'draw', 'create a picture of', 'image of', 'picture of',
+    'photo of', 'generate', 'create'
   ];
-
   let prompt = message;
   for (const prefix of prefixes) {
     if (lower.startsWith(prefix)) {
-      prompt = message.slice(prefix.length).trim();
-      break;
-    }
-    const idx = lower.indexOf(prefix);
-    if (idx !== -1) {
-      prompt = message.slice(idx + prefix.length).trim();
+      prompt = message.substring(prefix.length).trim();
       break;
     }
   }
-
+  // Add devotional context if not already present
+  if (!prompt.toLowerCase().includes('hindu') &&
+      !prompt.toLowerCase().includes('krishna') &&
+      !prompt.toLowerCase().includes('shiva') &&
+      !prompt.toLowerCase().includes('temple') &&
+      !prompt.toLowerCase().includes('deity')) {
+    prompt = `${prompt}, Hindu devotional art style, spiritual, divine, beautiful`;
+  }
   return prompt || message;
 }
 
-// Get the stored Gemini API key from localStorage
-export function getStoredApiKey(): string | null {
-  return localStorage.getItem(API_KEY_STORAGE_KEY);
-}
+/**
+ * Attempts to fetch and return a blob URL for the generated image.
+ * Tries up to maxRetries times with exponential backoff.
+ */
+async function fetchImageWithRetry(
+  imageUrl: string,
+  maxRetries: number = 3,
+  baseDelayMs: number = 2000
+): Promise<string> {
+  let lastError: Error = new Error('Image fetch failed');
 
-// Save the Gemini API key to localStorage
-export function saveApiKey(key: string): void {
-  localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
-}
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      await sleep(baseDelayMs * attempt);
+    }
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-// Clear the stored Gemini API key from localStorage
-export function clearApiKey(): void {
-  localStorage.removeItem(API_KEY_STORAGE_KEY);
-}
+      const response = await fetch(imageUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
-// Send a message to the Google Gemini API and return the AI response
-export async function getAIResponse(
-  userMessage: string,
-  conversationHistory: ChatMessage[] = []
-): Promise<AIResponse> {
-  // Check for image generation request first (no API key needed for Pollinations)
-  const imageRequest = detectImageRequest(userMessage);
-  if (imageRequest) {
-    const imagePrompt = extractImagePrompt(userMessage);
-    const encodedPrompt = encodeURIComponent(imagePrompt);
-    const seed = Math.floor(Math.random() * 1000000);
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=768&height=512&nologo=true`;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
-    return {
-      imageUrl,
-      imagePrompt,
-      isImage: true,
-    };
+      const blob = await response.blob();
+
+      // Validate the blob is a real image (not an error page)
+      if (blob.size < 1000) {
+        throw new Error('Response too small — likely an error page, not an image');
+      }
+
+      if (!blob.type.startsWith('image/')) {
+        throw new Error(`Unexpected content type: ${blob.type}`);
+      }
+
+      return URL.createObjectURL(blob);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`Image generation attempt ${attempt + 1}/${maxRetries} failed:`, lastError.message);
+    }
   }
 
-  // For text responses, check for Gemini API key
-  const apiKey = getStoredApiKey();
-  if (!apiKey) {
-    return {
-      text: "⚙️ Please configure your **Google Gemini API key** in the settings above to start chatting.\n\nYou can get a **free API key** from [Google AI Studio](https://aistudio.google.com/app/apikey) — no credit card required!\n\nNote: Image generation works without an API key — just ask me to 'generate an image of...'",
-      isImage: false,
-    };
-  }
+  throw lastError;
+}
+
+export async function generateImage(prompt: string): Promise<string> {
+  // Enhance the prompt for better devotional art quality
+  const enhancedPrompt = `${prompt}, highly detailed, divine light, spiritual art, vibrant colors, 4k quality, masterpiece`;
+  const encoded = encodeURIComponent(enhancedPrompt);
+  const seed = Math.floor(Math.random() * 999999);
+
+  // Primary URL with model=flux for better quality
+  const primaryUrl = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&seed=${seed}&nologo=true&model=flux`;
 
   try {
-    // Build Gemini contents array from conversation history
-    const contents = [
-      ...conversationHistory.map((msg) => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      })),
-      {
-        role: 'user',
-        parts: [{ text: userMessage }],
-      },
-    ];
+    return await fetchImageWithRetry(primaryUrl, 3, 2000);
+  } catch (primaryErr) {
+    console.warn('Primary image URL failed, trying fallback model:', primaryErr);
 
-    const systemInstruction = {
-      parts: [
-        {
-          text: 'You are a helpful, knowledgeable AI assistant. You can answer questions on any topic — science, history, technology, arts, philosophy, spirituality, coding, and more. Be concise, accurate, and friendly. Format responses clearly using markdown when helpful.',
-        },
-      ],
-    };
+    // Fallback: try with default model and different seed
+    const fallbackSeed = Math.floor(Math.random() * 999999);
+    const fallbackUrl = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&seed=${fallbackSeed}&nologo=true`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          system_instruction: systemInstruction,
-          contents,
-          generationConfig: {
-            maxOutputTokens: 1024,
-            temperature: 0.7,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      if (response.status === 400) {
-        const msg = errorData?.error?.message || '';
-        if (msg.toLowerCase().includes('api key')) {
-          throw new Error('Invalid Gemini API key. Please check your key in settings.');
-        }
-        throw new Error(msg || `API error: ${response.status}`);
-      } else if (response.status === 401 || response.status === 403) {
-        throw new Error('Invalid Gemini API key. Please check your key in settings.');
-      } else if (response.status === 429) {
-        throw new Error('Rate limit reached. Please wait a moment and try again.');
-      } else {
-        const msg = errorData?.error?.message || `API error: ${response.status}`;
-        throw new Error(msg);
-      }
-    }
-
-    const data = await response.json();
-    const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (content) {
-      return { text: content, isImage: false };
-    }
-
-    // Handle safety blocks or empty responses
-    const finishReason = data?.candidates?.[0]?.finishReason;
-    if (finishReason === 'SAFETY') {
-      throw new Error('Response blocked by safety filters. Please rephrase your question.');
-    }
-
-    throw new Error('Empty response from Gemini');
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error occurred';
-    throw new Error(message);
+    return await fetchImageWithRetry(fallbackUrl, 2, 3000);
   }
+}
+
+// Legacy aliases for backward compatibility
+export function isImageRequest(message: string): boolean {
+  return detectImageRequest(message);
+}
+
+export function buildImageUrl(prompt: string): string {
+  const encoded = encodeURIComponent(prompt);
+  const seed = Math.floor(Math.random() * 999999);
+  return `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&seed=${seed}&nologo=true`;
 }

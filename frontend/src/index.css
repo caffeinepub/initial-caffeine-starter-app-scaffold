@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Yatra+One&family=Tiro+Devanagari+Hindi:ital@0;1&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,58 +6,52 @@
 
 @layer base {
   :root {
-    --background: oklch(0.98 0.015 85);
+    --background: oklch(0.98 0.01 80);
     --foreground: oklch(0.18 0.04 30);
-    --card: oklch(0.97 0.02 80);
+    --card: oklch(1 0 0);
     --card-foreground: oklch(0.18 0.04 30);
-    --popover: oklch(0.97 0.02 80);
+    --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.18 0.04 30);
-    --primary: oklch(0.62 0.18 45);
-    --primary-foreground: oklch(0.98 0.01 85);
-    --secondary: oklch(0.88 0.06 75);
+    --primary: oklch(0.55 0.18 40);
+    --primary-foreground: oklch(0.98 0.01 80);
+    --secondary: oklch(0.92 0.04 80);
     --secondary-foreground: oklch(0.25 0.06 30);
-    --muted: oklch(0.92 0.03 75);
-    --muted-foreground: oklch(0.48 0.05 40);
-    --accent: oklch(0.78 0.16 75);
-    --accent-foreground: oklch(0.18 0.04 30);
+    --muted: oklch(0.94 0.02 80);
+    --muted-foreground: oklch(0.52 0.05 40);
+    --accent: oklch(0.88 0.10 80);
+    --accent-foreground: oklch(0.25 0.06 30);
     --destructive: oklch(0.55 0.22 25);
-    --destructive-foreground: oklch(0.98 0.01 85);
-    --border: oklch(0.82 0.06 70);
-    --input: oklch(0.88 0.04 75);
-    --ring: oklch(0.62 0.18 45);
+    --destructive-foreground: oklch(0.98 0.01 80);
+    --border: oklch(0.88 0.03 80);
+    --input: oklch(0.88 0.03 80);
+    --ring: oklch(0.55 0.18 40);
     --radius: 0.75rem;
-    --saffron: oklch(0.72 0.19 55);
-    --gold: oklch(0.82 0.18 80);
-    --maroon: oklch(0.35 0.14 20);
-    --cream: oklch(0.97 0.025 85);
-    --deep-maroon: oklch(0.28 0.12 18);
+    --success: oklch(0.60 0.15 145);
+    --warning: oklch(0.75 0.18 80);
   }
 
   .dark {
-    --background: oklch(0.14 0.04 25);
-    --foreground: oklch(0.94 0.02 80);
-    --card: oklch(0.18 0.05 25);
-    --card-foreground: oklch(0.94 0.02 80);
-    --popover: oklch(0.18 0.05 25);
-    --popover-foreground: oklch(0.94 0.02 80);
-    --primary: oklch(0.72 0.19 55);
-    --primary-foreground: oklch(0.14 0.04 25);
-    --secondary: oklch(0.25 0.06 30);
-    --secondary-foreground: oklch(0.94 0.02 80);
-    --muted: oklch(0.22 0.04 28);
-    --muted-foreground: oklch(0.65 0.05 50);
-    --accent: oklch(0.78 0.16 75);
-    --accent-foreground: oklch(0.14 0.04 25);
+    --background: oklch(0.14 0.04 20);
+    --foreground: oklch(0.92 0.03 80);
+    --card: oklch(0.18 0.05 22);
+    --card-foreground: oklch(0.92 0.03 80);
+    --popover: oklch(0.18 0.05 22);
+    --popover-foreground: oklch(0.92 0.03 80);
+    --primary: oklch(0.72 0.18 55);
+    --primary-foreground: oklch(0.14 0.04 20);
+    --secondary: oklch(0.24 0.06 25);
+    --secondary-foreground: oklch(0.88 0.04 80);
+    --muted: oklch(0.22 0.05 22);
+    --muted-foreground: oklch(0.60 0.06 50);
+    --accent: oklch(0.28 0.08 30);
+    --accent-foreground: oklch(0.88 0.04 80);
     --destructive: oklch(0.55 0.22 25);
-    --destructive-foreground: oklch(0.98 0.01 85);
-    --border: oklch(0.28 0.06 30);
-    --input: oklch(0.22 0.04 28);
-    --ring: oklch(0.72 0.19 55);
-    --saffron: oklch(0.72 0.19 55);
-    --gold: oklch(0.82 0.18 80);
-    --maroon: oklch(0.45 0.14 20);
-    --cream: oklch(0.22 0.04 28);
-    --deep-maroon: oklch(0.35 0.12 18);
+    --destructive-foreground: oklch(0.98 0.01 80);
+    --border: oklch(0.28 0.06 25);
+    --input: oklch(0.28 0.06 25);
+    --ring: oklch(0.72 0.18 55);
+    --success: oklch(0.60 0.15 145);
+    --warning: oklch(0.75 0.18 80);
   }
 }
 
@@ -67,296 +61,61 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
-  }
-  h1, h2, h3 {
-    font-family: 'Yatra One', 'Tiro Devanagari Hindi', serif;
+    font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
   }
 }
 
-/* ── Devotional Animations ─────────────────────────────────────────────── */
-
-@keyframes floating-lotus {
-  0% { transform: translateY(100vh) translateX(0px) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.8; }
-  90% { opacity: 0.6; }
-  100% { transform: translateY(-120px) translateX(60px) rotate(360deg); opacity: 0; }
+/* ── Jap Counter Animations ── */
+@keyframes jap-glow {
+  0%, 100% { text-shadow: 0 0 10px oklch(0.82 0.18 80 / 0.4); }
+  50%       { text-shadow: 0 0 30px oklch(0.82 0.18 80 / 0.9), 0 0 60px oklch(0.72 0.18 55 / 0.5); }
 }
 
-@keyframes floating-lotus-2 {
-  0% { transform: translateY(100vh) translateX(0px) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.7; }
-  90% { opacity: 0.5; }
-  100% { transform: translateY(-120px) translateX(-80px) rotate(-360deg); opacity: 0; }
+@keyframes jap-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
 }
 
-@keyframes diya-flicker {
-  0%, 100% { filter: drop-shadow(0 0 8px oklch(0.82 0.18 80)) drop-shadow(0 0 20px oklch(0.72 0.19 55)); transform: scale(1) rotate(-1deg); }
-  25% { filter: drop-shadow(0 0 15px oklch(0.82 0.18 80)) drop-shadow(0 0 35px oklch(0.72 0.19 55)); transform: scale(1.05) rotate(1deg); }
-  50% { filter: drop-shadow(0 0 6px oklch(0.82 0.18 80)) drop-shadow(0 0 15px oklch(0.72 0.19 55)); transform: scale(0.97) rotate(-2deg); }
-  75% { filter: drop-shadow(0 0 20px oklch(0.82 0.18 80)) drop-shadow(0 0 40px oklch(0.72 0.19 55)); transform: scale(1.08) rotate(1.5deg); }
+@keyframes tap-glow {
+  0%   { box-shadow: 0 0 0 0 oklch(0.82 0.18 80 / 0.7); }
+  70%  { box-shadow: 0 0 0 20px oklch(0.82 0.18 80 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(0.82 0.18 80 / 0); }
 }
 
-@keyframes golden-halo {
-  0%, 100% { box-shadow: 0 0 10px 3px oklch(0.82 0.18 80 / 0.4), 0 0 25px 8px oklch(0.72 0.19 55 / 0.2); transform: scale(1); }
-  50% { box-shadow: 0 0 20px 8px oklch(0.82 0.18 80 / 0.7), 0 0 50px 20px oklch(0.72 0.19 55 / 0.4); transform: scale(1.05); }
+@keyframes mala-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50%       { transform: scale(1.03); opacity: 1; }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
 }
 
 @keyframes mandala-spin {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
 }
 
-@keyframes mandala-spin-reverse {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
+@keyframes slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes light-rays {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.1); }
-}
-
-@keyframes card-hover-sway {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-4px) rotate(0.5deg); }
-}
-
-@keyframes sacred-ripple {
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(4); opacity: 0; }
-}
-
-@keyframes om-particle-burst {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
-}
-
-@keyframes lotus-bloom {
-  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
-  50% { transform: scale(1.1) rotate(10deg); opacity: 1; }
-  80% { transform: scale(1) rotate(0deg); opacity: 1; }
-  100% { transform: scale(1.5) rotate(0deg); opacity: 0; }
-}
-
-@keyframes golden-aura-glow {
-  0%, 100% { 
-    box-shadow: 0 0 30px 10px oklch(0.82 0.18 80 / 0.3), 
-                0 0 60px 20px oklch(0.72 0.19 55 / 0.2),
-                inset 0 0 30px oklch(0.82 0.18 80 / 0.1);
-  }
-  50% { 
-    box-shadow: 0 0 60px 25px oklch(0.82 0.18 80 / 0.6), 
-                0 0 100px 40px oklch(0.72 0.19 55 / 0.4),
-                inset 0 0 50px oklch(0.82 0.18 80 / 0.2);
-  }
-}
-
-@keyframes count-bounce {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.4); }
-  60% { transform: scale(0.9); }
-  80% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-@keyframes mala-bead-glow {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+@keyframes shrink-width {
+  from { width: 100%; }
+  to   { width: 0%; }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
 
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2); opacity: 0; }
-}
-
-@keyframes float-up-down {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
-}
-
-@keyframes divine-entrance {
-  0% { opacity: 0; transform: translateY(30px) scale(0.9); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes saffron-wave {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* ── Animation Utility Classes ─────────────────────────────────────────── */
-
-.animate-floating-lotus {
-  animation: floating-lotus linear infinite;
-}
-
-.animate-floating-lotus-2 {
-  animation: floating-lotus-2 linear infinite;
-}
-
-.animate-diya-flicker {
-  animation: diya-flicker 2s ease-in-out infinite;
-}
-
-.animate-golden-halo {
-  animation: golden-halo 2.5s ease-in-out infinite;
-}
-
-.animate-mandala-spin {
-  animation: mandala-spin 20s linear infinite;
-}
-
-.animate-mandala-spin-fast {
-  animation: mandala-spin 3s linear infinite;
-}
-
-.animate-mandala-spin-reverse {
-  animation: mandala-spin-reverse 15s linear infinite;
-}
-
-.animate-light-rays {
-  animation: light-rays 4s ease-in-out infinite;
-}
-
-.animate-card-hover:hover {
-  animation: card-hover-sway 0.6s ease-in-out;
-  transform: translateY(-4px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.animate-sacred-ripple {
-  animation: sacred-ripple 0.8s ease-out forwards;
-}
-
-.animate-om-burst {
-  animation: om-particle-burst 1.5s ease-out forwards;
-}
-
-.animate-lotus-bloom {
-  animation: lotus-bloom 3s ease-in-out forwards;
-}
-
-.animate-golden-aura {
-  animation: golden-aura-glow 3s ease-in-out infinite;
-}
-
-.animate-count-bounce {
-  animation: count-bounce 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
-}
-
-.animate-float {
-  animation: float-up-down 3s ease-in-out infinite;
-}
-
-.animate-divine-entrance {
-  animation: divine-entrance 0.8s ease-out forwards;
-}
-
-.animate-pulse-ring {
-  animation: pulse-ring 2s ease-out infinite;
-}
-
-/* ── Devotional Background Patterns ───────────────────────────────────── */
-
-.mandala-bg {
-  background-image: url('/assets/generated/mandala-bg-tile.dim_512x512.png');
-  background-repeat: repeat;
-  background-size: 200px 200px;
-  opacity: 0.04;
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.devotional-gradient {
-  background: linear-gradient(135deg, 
-    oklch(0.35 0.14 20) 0%, 
-    oklch(0.45 0.16 30) 30%, 
-    oklch(0.55 0.18 45) 60%, 
-    oklch(0.35 0.14 20) 100%
-  );
-  background-size: 300% 300%;
-  animation: saffron-wave 8s ease infinite;
-}
-
-.gold-shimmer {
-  background: linear-gradient(90deg, 
-    oklch(0.82 0.18 80) 0%, 
-    oklch(0.92 0.12 85) 50%, 
-    oklch(0.82 0.18 80) 100%
-  );
-  background-size: 200% auto;
-  animation: shimmer 3s linear infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.sacred-border {
-  border: 2px solid oklch(0.82 0.18 80 / 0.6);
-  box-shadow: 0 0 15px oklch(0.82 0.18 80 / 0.2), inset 0 0 15px oklch(0.82 0.18 80 / 0.05);
-}
-
-.devotional-card {
-  background: oklch(0.97 0.025 85);
-  border: 1px solid oklch(0.82 0.18 80 / 0.4);
-  box-shadow: 0 4px 20px oklch(0.62 0.18 45 / 0.1), 0 0 0 1px oklch(0.82 0.18 80 / 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.devotional-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px oklch(0.62 0.18 45 / 0.2), 0 0 20px oklch(0.82 0.18 80 / 0.2);
-}
-
-.dark .devotional-card {
-  background: oklch(0.18 0.05 25);
-  border-color: oklch(0.82 0.18 80 / 0.3);
-}
-
-/* ── Sacred Divider ────────────────────────────────────────────────────── */
-
-.sacred-divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.sacred-divider::before,
-.sacred-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, oklch(0.82 0.18 80 / 0.6), transparent);
-}
-
-.sacred-divider-text {
-  color: oklch(0.82 0.18 80);
-  font-size: 1.2rem;
-}
-
-/* ── Scrollbar Styling ─────────────────────────────────────────────────── */
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: oklch(0.92 0.03 75);
-}
-
-::-webkit-scrollbar-thumb {
-  background: oklch(0.72 0.19 55 / 0.6);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.72 0.19 55);
-}
+.animate-jap-glow    { animation: jap-glow 2s ease-in-out infinite; }
+.animate-jap-pulse   { animation: jap-pulse 1.5s ease-in-out infinite; }
+.animate-tap-glow    { animation: tap-glow 0.6s ease-out; }
+.animate-mala-breathe { animation: mala-breathe 4s ease-in-out infinite; }
+.animate-bounce-subtle { animation: bounce-subtle 2s ease-in-out infinite; }
+.animate-mandala-spin  { animation: mandala-spin 20s linear infinite; }
+.animate-slide-down    { animation: slide-down 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }

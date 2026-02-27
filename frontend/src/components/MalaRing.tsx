@@ -16,6 +16,8 @@ export default function MalaRing({ count }: MalaRingProps) {
   const countRef = useRef(count);
   const rafRef = useRef<number>(0);
   const lastFrameRef = useRef(0);
+  // Breathing animation state
+  const breathRef = useRef(0);
 
   useEffect(() => {
     countRef.current = count;
@@ -41,6 +43,10 @@ export default function MalaRing({ count }: MalaRingProps) {
       // Smooth rotation
       targetRotationRef.current += 0.003;
       rotationRef.current += (targetRotationRef.current - rotationRef.current) * 0.08;
+
+      // Breathing: gentle sine wave for Om symbol scale
+      breathRef.current += 0.04;
+      const breathScale = 1 + Math.sin(breathRef.current) * 0.06;
 
       ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
@@ -71,12 +77,16 @@ export default function MalaRing({ count }: MalaRingProps) {
         ctx.fill();
       }
 
-      // Center Om symbol
+      // Center Om symbol with breathing scale
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(breathScale, breathScale);
       ctx.font = '32px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = 'oklch(0.65 0.18 55)';
-      ctx.fillText('ॐ', cx, cy);
+      ctx.fillText('ॐ', 0, 0);
+      ctx.restore();
 
       rafRef.current = requestAnimationFrame(draw);
     };

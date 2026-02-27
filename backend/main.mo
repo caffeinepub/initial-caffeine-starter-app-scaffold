@@ -11,7 +11,6 @@ import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 
 
-// Triggers the migration on upgrade.
 
 actor {
   include MixinStorage();
@@ -79,32 +78,20 @@ actor {
     reports : Nat;
   };
 
-  public type JapStats = {
-    daily : Nat;
-    weekly : Nat;
-    lifetime : Nat;
-  };
-
   public type UserProfile = {
     name : Text;
     selectedMantra : Mantra;
   };
 
-  type JapStatsInternal = {
+  public type JapCounter = {
     daily : Nat;
-    weekly : Nat;
     lifetime : Nat;
+    mala : Nat;
     lastReset : Int;
+    tempCount : Nat;
+    streak : Nat;
+    lastActiveDate : Int;
   };
-
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let temples = Map.empty<Nat, Temple>();
-  let communityPosts = Map.empty<Nat, CommunityPost>();
-  let japCounters = Map.empty<Principal, JapStatsInternal>();
-  let dharmaQuotes = Map.empty<Nat, DharmaQuote>();
-
-  var nextPostId = 0;
-  var counter = 0;
 
   public type KathaCategory = {
     #puranik;
@@ -129,14 +116,20 @@ actor {
     status : KathaApprovalStatus;
   };
 
-  let kathayen = Map.empty<Nat, Katha>();
-  var kathaCounter = 1;
-
-  // Krishna Leela Full Story in Hindi (seeded data)
   public type KrishnaLeela = {
     id : Nat;
     hindiText : Text;
   };
+
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let temples = Map.empty<Nat, Temple>();
+  let communityPosts = Map.empty<Nat, CommunityPost>();
+  let japCounters = Map.empty<Principal, JapCounter>();
+  let dharmaQuotes = Map.empty<Nat, DharmaQuote>();
+  let kathayen = Map.empty<Nat, Katha>();
+  var nextPostId = 0;
+  var counter = 0;
+  var kathaCounter = 1;
 
   let krishnaLeelaData = Map.singleton<Nat, KrishnaLeela>(
     0,
@@ -156,38 +149,7 @@ actor {
     };
   };
 
-  // Approval helpers
-
-  // Any authenticated user (non-guest) can check their own approval status
-  public query ({ caller }) func isCallerApproved() : async Bool {
-    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
-  };
-
-  // Only authenticated users (non-guest) can request approval
-  public shared ({ caller }) func requestApproval() : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can request approval");
-    };
-    UserApproval.requestApproval(approvalState, caller);
-  };
-
-  // Only admins can set approval status
-  public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-    UserApproval.setApproval(approvalState, user, status);
-  };
-
-  // Only admins can list all approvals
-  public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-    UserApproval.listApprovals(approvalState);
-  };
-
-  // User profile - only authenticated users can get/set their own profile
+  // Only authenticated users can get/set their own profile
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -247,35 +209,31 @@ actor {
           {
             stats with
             daily = count;
-            weekly = if (now - stats.lastReset > 604800_000_000_000) { count } else {
-              stats.weekly + count : Nat;
-            };
             lifetime = stats.lifetime + count : Nat;
           };
         } else {
           {
             stats with
             daily = stats.daily + count : Nat;
-            weekly = stats.weekly + count : Nat;
             lifetime = stats.lifetime + count : Nat;
           };
         };
       };
       case (null) {
-        { daily = count; weekly = count; lifetime = count; lastReset = now };
+        { daily = count; lifetime = count; mala = 0; lastReset = now; tempCount = 0; streak = 0; lastActiveDate = 0 };
       };
     };
     japCounters.add(caller, currentStatsInternal);
   };
 
   // Only authenticated users can view their own Jap stats
-  public query ({ caller }) func getJapStats() : async JapStatsInternal {
+  public query ({ caller }) func getJapStats() : async JapCounter {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view Jap stats");
     };
     switch (japCounters.get(caller)) {
       case (?stats) { stats };
-      case (null) { { daily = 0; weekly = 0; lifetime = 0; lastReset = 0 } };
+      case (null) { { daily = 0; lifetime = 0; mala = 0; lastReset = 0; tempCount = 0; streak = 0; lastActiveDate = 0 } };
     };
   };
 
@@ -288,10 +246,10 @@ actor {
   };
 
   // Leaderboard is public - no auth required
-  public query func getJapLeaderboard() : async [JapStats] {
+  public query func getJapLeaderboard() : async [JapCounter] {
     let entries = japCounters.toArray().map(
       func((principal, statsInternal)) {
-        { daily = statsInternal.daily; weekly = statsInternal.weekly; lifetime = statsInternal.lifetime };
+        statsInternal;
       }
     );
 
@@ -534,5 +492,35 @@ actor {
       case (null) { Runtime.trap("Krishna Leela data not found") };
     };
   };
-};
 
+  // Approval helpers
+
+  // Any authenticated user (non-guest) can check their own approval status
+  public query ({ caller }) func isCallerApproved() : async Bool {
+    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+  };
+
+  // Only authenticated users (non-guest) can request approval
+  public shared ({ caller }) func requestApproval() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can request approval");
+    };
+    UserApproval.requestApproval(approvalState, caller);
+  };
+
+  // Only admins can set approval status
+  public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.setApproval(approvalState, user, status);
+  };
+
+  // Only admins can list all approvals
+  public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.listApprovals(approvalState);
+  };
+};

@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Play, ChevronRight } from 'lucide-react';
 import EkadashiReminderBanner from '../components/EkadashiReminderBanner';
-import PremiumBanner from '../components/PremiumBanner';
 import DailyDharmaQuote from '../components/DailyDharmaQuote';
 import { getTithi, getNakshatra, getVara } from '../lib/panchangEngine';
 
@@ -76,9 +75,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Premium Banner */}
-        <PremiumBanner />
 
         {/* Today's Shloka */}
         <div className="bg-gradient-to-br from-maroon to-maroon-light border border-amber-800/30 rounded-xl p-4 shadow-sm">
