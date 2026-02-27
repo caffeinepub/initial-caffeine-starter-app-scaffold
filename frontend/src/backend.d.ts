@@ -48,11 +48,6 @@ export interface KrishnaLeela {
     id: bigint;
     hindiText: string;
 }
-export interface VratKatha {
-    id: bigint;
-    title: string;
-    hindiText: string;
-}
 export interface UserProfile {
     selectedMantra: Mantra;
     name: string;
@@ -89,7 +84,6 @@ export interface backendInterface {
     approveKatha(kathaId: bigint): Promise<boolean>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     getAllKathayen(): Promise<Array<Katha>>;
-    getAllVratKathas(): Promise<Array<VratKatha>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDharmaQuoteOfDay(): Promise<DharmaQuote | null>;
@@ -100,7 +94,6 @@ export interface backendInterface {
     getKrishnaLeelaStory(): Promise<KrishnaLeela>;
     getUserMantra(): Promise<Mantra>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
-    getVratKathaById(id: bigint): Promise<VratKatha | null>;
     incrementJap(count: bigint): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
@@ -108,6 +101,7 @@ export interface backendInterface {
     listKathayenByCategory(category: KathaCategory): Promise<Array<Katha>>;
     requestApproval(): Promise<void>;
     resetJapStats(): Promise<void>;
+    saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchKathayenByDeity(deity: string): Promise<Array<Katha>>;
     searchKathayenByTitle(search: string): Promise<Array<Katha>>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;

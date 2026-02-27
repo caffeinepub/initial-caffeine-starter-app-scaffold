@@ -1,14 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Expand the Dharma Darshan app with 20 Vrat Kathayen, full Ramayan (7 kandas), full Mahabharat (13 parvas), and 10+ Krishna Leela stories — all in Hindi — plus add narration controls to the KathaDetail page.
+**Goal:** Add 10 long-form Vrat Kathas in Hindi to the Vrat Katha section with audio narration support.
 
 **Planned changes:**
-- Add 20 Vrat Katha entries to `kathaData.ts` under the `Vrat` category, covering Ekadashi, Pradosh, Somvar, Mangalvar, Budhvar, Brihaspativar, Shukravar, Shanivaar, Navratri, Kartik, Ahoi Ashtami, Hariyali Teej, Hartalika Teej, Karva Chauth, Vat Savitri, Jivitputrika, Solah Somvar, Satyanarayan, Sakat Chauth, and Janmashtami Vrat — each with full Hindi narrative text
-- Add 7 Ramayan kanda entries (Bal Kand through Uttar Kand) to `kathaData.ts` under the `Puranik` category with complete Hindi narratives, ordered sequentially
-- Add 13 Mahabharat parva entries (Adi Parva through Swargarohana Parva) to `kathaData.ts` under the `Puranik` category with complete Hindi narratives; Bhishma Parva to include a Bhagavad Gita summary
-- Add 10 Krishna Leela story entries to `kathaData.ts` under a new `Krishna Leela` category covering Janmotsav, Putana Vadh, Makhan Chor Leela, Govardhan Parvat Dharana, Kaliya Nag Daman, Raas Leela, Kans Vadh, Sudama Milan, Draupadi Cheerharan, and Kurukshetra Geeta Updesh — each with full Hindi narrative
-- Add a `कृष्ण लीला` filter tab to the Kathayen page that displays only Krishna Leela category entries, styled consistently with existing tabs
-- Add sticky/floating narration controls (Play/Pause, Stop, language label) to the KathaDetail page using the existing `useSpeechNarration` hook, with Hindi voice preferred
+- Add 10 complete Vrat Katha entries (Ekadashi, Solah Somvar, Mangalwar, Sukrwar, Karva Chauth, Santoshi Mata, Pradosh, Navratri, Satyanarayan, Hartalika Teej) to `frontend/src/lib/kathaData.ts` under the `vrat` category, each with 400+ words of Hindi narrative, title, and deity fields
+- Update the Kathayen listing page to display all 10 Vrat Kathas when the `vrat` tab is selected, using static data as a fallback so content always renders
+- Add audio narration controls (Play, Pause, Resume, Stop) to the Katha detail page using the existing `useSpeechNarration` hook with `hi-IN` voice preference, displayed prominently near the top of the content with visual state indicators
+- Seed the backend canister with the same 10 Vrat Katha records (title, Hindi text, deity, category `vrat`) without affecting existing data
 
-**User-visible outcome:** Users can browse all 20 Vrat Kathayen, the full Ramayan and Mahabharat in sequential parts, and 10 Krishna Leela stories via a new filter tab — and listen to any katha via accessible narration controls on the detail page.
+**User-visible outcome:** Users can browse all 10 Vrat Kathas in the Vrat Katha section and listen to each katha read aloud in Hindi using Play, Pause, Resume, and Stop narration controls on the detail page.

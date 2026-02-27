@@ -1,115 +1,57 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add 20 Vrat Kathayen, Full Ramayan, Mahabharat & Krishna Leela with Narration",
+  "title": "Add 10 Long Vrat Kathas with Narration to Vrat Katha Section",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add all 20 Vrat Kathayen to the static katha data with complete Hindi narratives covering major Hindu fasts",
+      "summary": "Add 10 complete, long-form Vrat Kathas in Hindi to the static data file under the vrat category",
       "acceptanceCriteria": [
-        "Exactly 20 vrat kathayen entries exist in kathaData.ts under the 'Vrat' category",
-        "Each katha has a full Hindi narrative (minimum 300 words per story)",
-        "All 20 appear in the Kathayen page under the Vrat filter tab",
-        "Each entry has a unique ID, correct category, deity, and title"
+        "Exactly 10 Vrat Katha entries exist in the static data with category 'vrat'",
+        "Each katha includes: Ekadashi, Solah Somvar, Mangalwar, Sukrwar, Karva Chauth, Santoshi Mata, Pradosh, Navratri, Satyanarayan, Hartalika Teej",
+        "Each katha's Hindi text is long-form (400+ words of narrative)",
+        "Each katha has a title, deity, and category field populated"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/kathaData.ts",
           "operation": "modify",
-          "description": "Add 20 new vrat katha entries to the kathas array. Each entry must have category: KathaCategory.vrat, status: KathaApprovalStatus.approved, and include complete Hindi narratives for: Ekadashi Vrat, Pradosh Vrat, Somvar Vrat (Shivji), Mangalvar Vrat (Hanumanji), Budhvar Vrat (Ganeshji), Brihaspativar Vrat (Vishnu/Guruvar), Shukravar Vrat (Santoshi Mata/Devi), Shanivaar Vrat (Shani Dev), Navratri Vrat, Kartik Vrat, Ahoi Ashtami Vrat, Hariyali Teej Vrat, Hartalika Teej Vrat, Karva Chauth Vrat, Vat Savitri Vrat, Jivitputrika (Jitiya) Vrat, Solah Somvar Vrat, Satyanarayan Vrat, Sakat Chauth Vrat, and Janmashtami Vrat. Each narrative should be at least 300 words in Hindi, describing the vrat katha, vidhi (method), significance, and benefits. Assign appropriate deity names for each vrat."
+          "description": "Add 10 new Vrat Katha entries to the kathas array with category 'vrat'. Each entry must include: (1) Ekadashi Vrat Katha dedicated to Lord Vishnu, (2) Solah Somvar Vrat Katha dedicated to Lord Shiva, (3) Mangalwar (Mangalvar) Vrat Katha dedicated to Lord Hanuman, (4) Sukrwar (Shukravar) Vrat Katha dedicated to Goddess Santoshi Mata, (5) Karva Chauth Vrat Katha dedicated to Goddess Parvati, (6) Santoshi Mata Vrat Katha dedicated to Goddess Santoshi, (7) Pradosh Vrat Katha dedicated to Lord Shiva, (8) Navratri Vrat Katha dedicated to Goddess Durga, (9) Satyanarayan Vrat Katha dedicated to Lord Vishnu/Satyanarayan, (10) Hartalika Teej Vrat Katha dedicated to Goddess Parvati. Each katha must have a full Hindi narrative text (hindiText field) of at least 400-600 words describing the vrat story, significance, and observance method. Include appropriate title (in Hindi), deity name, englishText (can be a brief English summary), tags array with relevant keywords, and category set to KathaCategory.vrat. Assign sequential IDs starting from the next available ID after existing kathas. Do not modify or remove any existing Ramayan or Mahabharat katha entries."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Expand Ramayan content to include all 7 major kandas as separate katha entries with complete Hindi narratives",
+      "summary": "Ensure the Kathayen listing page correctly displays all 10 Vrat Kathas when the vrat category tab is selected",
       "acceptanceCriteria": [
-        "All 7 Ramayan kandas are present as individual katha entries",
-        "Each kanda entry has full narrative text in Hindi covering major events",
-        "All Ramayan entries appear under the Puranik category filter",
-        "Entries are ordered sequentially (Bal Kand through Uttar Kand)"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/kathaData.ts",
-          "operation": "modify",
-          "description": "Add or expand 7 Ramayan kanda entries: Bal Kand, Ayodhya Kand, Aranya Kand, Kishkindha Kand, Sundar Kand, Lanka Kand (Yuddha Kand), and Uttar Kand. Each entry must have category: KathaCategory.puranik, deity: 'Ram', status: KathaApprovalStatus.approved, and a complete Hindi narrative covering all major events of that kanda. Ensure sequential ordering by assigning appropriate IDs or maintaining array order. Each narrative should comprehensively cover the kanda's story arc in Hindi."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Expand Mahabharat content to include all major parvas as separate katha entries with complete Hindi narratives",
-      "acceptanceCriteria": [
-        "All major Mahabharat parvas exist as individual katha entries",
-        "Each parva entry contains complete Hindi narrative of major events",
-        "All Mahabharat entries appear under the Puranik category filter",
-        "Bhishma Parva entry includes a summary of the Bhagavad Gita"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/kathaData.ts",
-          "operation": "modify",
-          "description": "Add or expand Mahabharat parva entries including: Adi Parva, Sabha Parva, Vana Parva, Virata Parva, Udyoga Parva, Bhishma Parva (with Bhagavad Gita summary), Drona Parva, Karna Parva, Shalya Parva, Sauptika Parva, Stri Parva, Shanti Parva, and Swargarohana Parva. Each entry must have category: KathaCategory.puranik, deity: 'Krishna' (or appropriate deity for the parva context), status: KathaApprovalStatus.approved, and a complete Hindi narrative covering major events. Bhishma Parva must include a dedicated section summarizing the Bhagavad Gita teachings in Hindi."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add a dedicated 'Krishna Leela' category section with at least 10 Krishna Leela stories with complete Hindi narratives",
-      "acceptanceCriteria": [
-        "At least 10 Krishna Leela stories exist in kathaData.ts",
-        "All entries have category 'Krishna Leela'",
-        "Krishna Leela tab/filter on the Kathayen page shows these stories",
-        "Each story has complete Hindi narrative text"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/kathaData.ts",
-          "operation": "modify",
-          "description": "Add a new KathaCategory enum value 'krishnaLeela' (if not present) and create at least 10 Krishna Leela katha entries with category: KathaCategory.krishnaLeela, deity: 'Krishna', status: KathaApprovalStatus.approved. Include these stories: Janmotsav (Krishna's birth), Putana Vadh, Makhan Chor Leela (butter thief), Govardhan Parvat Dharana, Kaliya Nag Daman (serpent subduing), Raas Leela, Kans Vadh (killing of Kansa), Sudama Milan (meeting with Sudama), Draupadi Cheerharan and Krishna's intervention, and Kurukshetra Geeta Updesh (Bhagavad Gita teaching). Each entry must have a complete Hindi narrative describing the leela in detail."
-        },
-        {
-          "path": "frontend/src/backend.d.ts",
-          "operation": "modify",
-          "description": "Add 'krishnaLeela' to the KathaCategory enum if it does not already exist. Update the enum definition to include: vrat = 'vrat', puranik = 'puranik', krishnaLeela = 'krishnaLeela'. This ensures type safety between frontend and backend category definitions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Ensure the Kathayen page has a 'Krishna Leela' filter tab that filters and displays only Krishna Leela category kathayen",
-      "acceptanceCriteria": [
-        "A 'कृष्ण लीला' tab is visible on the Kathayen page",
-        "Selecting the tab filters the katha list to only Krishna Leela entries",
-        "The tab integrates visually with the existing filter tab row",
-        "Tab is active-highlighted when selected"
+        "Vrat Katha tab/filter shows exactly 10 katha cards",
+        "Content renders from static fallback even if the backend returns no data",
+        "Each card shows the correct title, deity, and a Hindi text preview"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/Kathayen.tsx",
           "operation": "modify",
-          "description": "Add a 'कृष्ण लीला' (Krishna Leela) filter tab to the existing category filter tabs (All, Puranik, Vrat). Update the filter state to include 'krishnaLeela' as a valid category filter option. When the Krishna Leela tab is selected, filter the displayed katha list to show only entries with category KathaCategory.krishnaLeela. Ensure the tab styling matches the existing tabs and applies active highlighting (golden glow or similar) when selected. The tab should be positioned logically in the tab row alongside the existing category tabs."
+          "description": "Update the category filter logic to ensure the 'vrat' tab displays all kathas with category KathaCategory.vrat from the static kathaData fallback. Verify that the filter buttons include a 'Vrat' option that correctly filters the katha list. Ensure the static data from kathaData.ts is used as the primary or fallback source when backend data is unavailable or empty for the vrat category. Confirm that the KathaCard components render correctly for all 10 vrat kathas, showing title, deity, and Hindi text preview. The static fallback must guarantee that the vrat section is never empty after REQ-1 is implemented."
         }
       ]
     },
     {
-      "id": "REQ-6",
-      "summary": "Add prominent narration controls to the KathaDetail page using the existing useSpeechNarration hook with Play, Pause, Stop, and language indication",
+      "id": "REQ-3",
+      "summary": "Add audio narration controls to the Katha detail page for Vrat Kathas using the existing useSpeechNarration hook",
       "acceptanceCriteria": [
-        "KathaDetail page shows Play, Pause, and Stop narration buttons",
-        "Clicking Play begins text-to-speech of the katha text using useSpeechNarration",
-        "Clicking Pause pauses narration; clicking Play/Resume resumes from where it paused",
-        "Clicking Stop ends narration and resets state",
-        "Narration controls are accessible without scrolling (sticky or floating placement)",
-        "Hindi voice is used when available via the existing hook",
-        "Narration works for Vrat Kathayen, Ramayan, Mahabharat, and Krishna Leela entries"
+        "Play button starts reading the katha text aloud in Hindi",
+        "Pause button pauses mid-narration and Resume resumes from the same position",
+        "Stop button cancels narration completely",
+        "Narration controls are visible for all Vrat Kathas on the detail page",
+        "Active narration state (playing/paused) is reflected in button styling",
+        "Narration uses hi-IN voice preference via the useSpeechNarration hook"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/KathaDetail.tsx",
           "operation": "modify",
-          "description": "Integrate the useSpeechNarration hook into the KathaDetail page. Add a narration control panel with three buttons: Play/Resume (toggle between play and resume states), Pause, and Stop. The controls should be positioned in a sticky header or floating bottom bar for easy access without scrolling. Display a 'Narration' label or icon indicating the feature. When Play is clicked, pass the current katha's hindiText (or englishText if Hindi is unavailable) to the narration hook's play function. Handle pause/resume state transitions properly using the hook's pause and resume methods. On Stop, call the hook's stop method to reset narration state. Show visual feedback for the active narration state (e.g., a pulsing icon or highlighted text). Use Hindi voice preference via the hook's configuration. Ensure narration controls work for all katha categories (Vrat, Puranik, Krishna Leela)."
+          "description": "Import and integrate the existing useSpeechNarration hook from frontend/src/hooks/useSpeechNarration.ts to add Play, Pause, Resume, and Stop narration controls for Vrat Kathas. Position the narration controls prominently near the top of the katha content section, above or beside the language toggle. Wire the Play button to call the hook's play function with the full Hindi text (katha.hindiText) and hi-IN voice preference. Wire Pause, Resume, and Stop buttons to the corresponding hook methods. Display the current narration state (isPlaying, isPaused) visually by updating button styles (e.g., highlighting the active button, disabling unavailable actions). Ensure controls are visible for all kathas but emphasize they work best for long-form vrat kathas. Verify the hook's usage instructions in the hook file before implementing. Do not reimplement Web Speech API logic; use only the provided hook."
         }
       ]
     }

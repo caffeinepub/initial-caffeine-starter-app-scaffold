@@ -1,55 +1,29 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T03:48:06.314Z",
+  "generatedAt": "2026-02-27T04:47:45.080Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 0,
+    "total": 4,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add all 20 Vrat Kathayen to the static katha data in frontend/src/lib/kathaData.ts. Each katha must include: category 'Vrat', appropriate deity name, full Hindi title, full Hindi narrative text (complete story, not truncated), and approved status. The 20 vrat kathayen should cover major Hindu fasts including: Ekadashi, Pradosh, Somvar (Shivji), Mangalvar (Hanumanji), Budhvar (Ganeshji), Brihaspativar (Vishnu/Guruvar), Shukravar (Santoshi Mata/Devi), Shanivaar (Shani Dev), Navratri Vrat, Kartik Vrat, Ahoi Ashtami, Hariyali Teej, Hartalika Teej, Karva Chauth, Vat Savitri, Jivitputrika (Jitiya), Solah Somvar, Satyanarayan Vrat, Sakat Chauth, and Janmashtami Vrat.",
-        "status": "missing",
+        "summary": "Add 10 complete, long-form Vrat Kathas in Hindi to the static data file `frontend/src/lib/kathaData.ts` under the `vrat` category. The 10 kathas must include: (1) Ekadashi Vrat Katha, (2) Solah Somvar Vrat Katha, (3) Mangalwar (Mangalvar) Vrat Katha, (4) Sukrwar (Shukravar) Vrat Katha, (5) Karva Chauth Vrat Katha, (6) Santoshi Mata Vrat Katha, (7) Pradosh Vrat Katha, (8) Navratri Vrat Katha, (9) Satyanarayan Vrat Katha, (10) Hartalika Teej Vrat Katha. Each katha must have a full Hindi text of significant length (at minimum 400–600 words of narrative content), a meaningful title in Hindi and English, associated deity name, and the `vrat` category tag.",
+        "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/kathaData.ts"
         ],
-        "matchedFiles": []
+        "matchedFiles": [
+          "frontend/src/lib/kathaData.ts"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Expand the Ramayan content in frontend/src/lib/kathaData.ts to include the full Ramayan with all major kandas: Bal Kand, Ayodhya Kand, Aranya Kand, Kishkindha Kand, Sundar Kand, Lanka Kand (Yuddha Kand), and Uttar Kand. Each kanda should be a separate katha entry with category 'Puranik', deity 'Ram', full Hindi title, and complete Hindi narrative text covering all major events of that kanda.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/lib/kathaData.ts"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Expand the Mahabharat content in frontend/src/lib/kathaData.ts to include all major parvas as separate katha entries: Adi Parva, Sabha Parva, Vana Parva, Virata Parva, Udyoga Parva, Bhishma Parva (including Bhagavad Gita summary), Drona Parva, Karna Parva, Shalya Parva, Sauptika Parva, Stri Parva, Shanti Parva, and Swargarohana Parva. Each parva should have category 'Puranik', deity 'Krishna' or appropriate deity, full Hindi title, and complete Hindi narrative.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/lib/kathaData.ts"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add a dedicated 'Krishna Leela' category section with at least 10 Krishna Leela stories in frontend/src/lib/kathaData.ts. Stories should include: Janmotsav (birth), Putana Vadh, Makhan Chor Leela, Govardhan Parvat Dharana, Kaliya Nag Daman, Raas Leela, Kans Vadh, Sudama Milan, Draupadi Cheerharan and Krishna's intervention, and Kurukshetra Geeta Updesh. Each entry must have category 'Krishna Leela', deity 'Krishna', full Hindi title, and complete Hindi narrative.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/lib/kathaData.ts",
-          "frontend/src/backend.d.ts"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Ensure the Kathayen page (frontend/src/pages/Kathayen.tsx) has a 'Krishna Leela' filter tab alongside the existing All, Puranik, and Vrat tabs. The tab should filter and display only Krishna Leela category kathayen. The tab label should be 'कृष्ण लीला' in Hindi.",
+        "summary": "Ensure the Kathayen listing page (`frontend/src/pages/Kathayen.tsx`) correctly displays all 10 Vrat Kathas when the 'vrat' category tab is selected. The section must not appear empty — use the static data from `kathaData.ts` as the primary or fallback source so content always renders even without a backend response.",
         "status": "missing",
         "plannedFiles": [
           "frontend/src/pages/Kathayen.tsx"
@@ -57,20 +31,34 @@
         "matchedFiles": []
       },
       {
-        "id": "REQ-6",
-        "summary": "Add prominent narration controls to the KathaDetail page (frontend/src/pages/KathaDetail.tsx) using the existing useSpeechNarration hook. The narration UI must include: a Play/Pause toggle button, a Stop button, and a visible 'Narration' label. When narration is active, highlight the currently narrated section if possible. Prefer Hindi voice for Hindi text. Show a tooltip or label indicating the narration language. The narration controls should be placed in a sticky or easily accessible position (e.g., top of content or floating bottom bar).",
+        "id": "REQ-3",
+        "summary": "Add audio narration controls to the Katha detail page (`frontend/src/pages/KathaDetail.tsx`) for Vrat Kathas. Use the existing `useSpeechNarration` hook (`frontend/src/hooks/useSpeechNarration.ts`) to implement Play, Pause, Resume, and Stop buttons. The narration must read the full Hindi text aloud using the Web Speech API with Hindi (`hi-IN`) voice preference. Show narration controls prominently near the top of the katha content. Display current narration state (playing / paused / stopped) visually.",
         "status": "missing",
         "plannedFiles": [
           "frontend/src/pages/KathaDetail.tsx"
         ],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Seed the backend (`backend/main.mo`) with the same 10 Vrat Kathas so they persist in canister state. Each entry must include title, Hindi text body, deity, and category `vrat`. Update the migration file (`backend/migration.mo`) if the current state schema change requires it to preserve existing data while adding the new vrat katha entries.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/lib/kathaData.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

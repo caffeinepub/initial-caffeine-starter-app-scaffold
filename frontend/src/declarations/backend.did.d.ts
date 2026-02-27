@@ -69,11 +69,6 @@ export interface UserProfile { 'selectedMantra' : Mantra, 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
-export interface VratKatha {
-  'id' : bigint,
-  'title' : string,
-  'hindiText' : string,
-}
 export interface _CaffeineStorageCreateCertificateResult {
   'method' : string,
   'blob_hash' : string,
@@ -111,7 +106,6 @@ export interface _SERVICE {
   'approveKatha' : ActorMethod<[bigint], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'getAllKathayen' : ActorMethod<[], Array<Katha>>,
-  'getAllVratKathas' : ActorMethod<[], Array<VratKatha>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDharmaQuoteOfDay' : ActorMethod<[], [] | [DharmaQuote]>,
@@ -122,7 +116,6 @@ export interface _SERVICE {
   'getKrishnaLeelaStory' : ActorMethod<[], KrishnaLeela>,
   'getUserMantra' : ActorMethod<[], Mantra>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'getVratKathaById' : ActorMethod<[bigint], [] | [VratKatha]>,
   'incrementJap' : ActorMethod<[bigint], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
@@ -130,6 +123,7 @@ export interface _SERVICE {
   'listKathayenByCategory' : ActorMethod<[KathaCategory], Array<Katha>>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetJapStats' : ActorMethod<[], undefined>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'searchKathayenByDeity' : ActorMethod<[string], Array<Katha>>,
   'searchKathayenByTitle' : ActorMethod<[string], Array<Katha>>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,

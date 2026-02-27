@@ -9,7 +9,9 @@ import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -127,7 +129,6 @@ actor {
 
   let kathayen = Map.fromIter<Nat, Katha>(
     [
-      // Ramayan full Katha entry
       (
         0,
         {
@@ -148,24 +149,17 @@ actor {
           status = #approved;
         },
       ),
-      // Mahabharat full Katha entry (after Ramayan)
       (
         1,
         {
           id = 1;
-          title = "Mahabharat - Sampurna Katha";
-          category = #puranik;
-          deity = "Krishna";
-          hindiText = "आदि पर्व: इतिहास, कौरव और पांडवों का जन्म, गुरु द्रोण।\n" #
-          "सभा पर्व: युधिष्ठिर की राज्य सभा, चौसर खेल, द्रौपदी का अपमान।\n" #
-          "वन पर्व: तेरह वर्ष का वनवास, विभिन्न तपस्याएं और कथाएं।\n" #
-          "विराट पर्व: पांडवों का अज्ञातवास।\n" #
-          "उद्योग पर्व: युद्ध की तैयारियां, श्रीकृष्ण का शांति संदेश।\n" #
-          "भीष्म, द्रोण, कर्ण, शल्य पर्व: अठारह दिन का युद्ध।\n" #
-          "शांति और अनुशासन पर्व: भीष्म द्वारा धर्म शिक्षा।\n" #
-          "अश्वमेध, महाप्रस्थानिक और स्वर्गारोहण पर्व: धर्मराज युधिष्ठिर का राज्याभिषेक, स्वर्ग गमन।";
-          englishText = "The epic saga of Mahabharat including all major parvas, divine stories, Dharma teachings and the great Kurukshetra war.";
-          tags = ["Mahabharat", "Krishna", "Hindu", "Puranik", "Epic"];
+          title = "Monday Shiv Vrat Katha (सोमवार व्रत कथा)";
+          category = #vrat;
+          deity = "Shiva";
+          hindiText = "प्राचीन काल में एक विधवा ब्राह्मणी अपने पुत्र के साथ जीवन यापन करती थी। ..." #
+          "उसने भगवान शिव की पूजा की, और आखिरकार उसके परिवार को सुख-समृद्धि मिली।";
+          englishText = "";
+          tags = ["Vrat", "Monday", "Shiva", "Vrata", "Hindu"];
           createdAt = 2;
           status = #approved;
         },
@@ -174,12 +168,13 @@ actor {
         2,
         {
           id = 2;
-          title = "Ekadashi Vrat Katha";
+          title = "Varalaxmi Vrat Katha (वरलक्ष्मी व्रत कथा)";
           category = #vrat;
-          deity = "Vishnu";
-          hindiText = "एक समय में धर्मराज ने मनुष्यों को उपदेश दिया कि एकादशी व्रत अवश्य करना चाहिए। यह व्रत भगवान विष्णु की पूजा और निर्जल उपवास के साथ किया जाता है...";
-          englishText = "The story and procedure for observing Ekadashi fast dedicated to Lord Vishnu.";
-          tags = ["Ekadashi", "Vishnu", "Vrat", "Fast", "Hindu"];
+          deity = "Lakshmi";
+          hindiText = "वरलक्ष्मी व्रत कथा बताती है कैसे देवी लक्ष्मी ने एक धर्मपरायण महिला को दर्शन देकर ..." #
+          "उसे सुख और समृद्धि का आशीर्वाद दिया।";
+          englishText = "";
+          tags = ["Vrat", "Varalaxmi", "Lakshmi", "Vrata", "Hindu"];
           createdAt = 3;
           status = #approved;
         },
@@ -188,12 +183,13 @@ actor {
         3,
         {
           id = 3;
-          title = "Somvar Vrat Katha (Monday Fast)";
+          title = "Ekadashi Vrat Katha (एकादशी व्रत कथा)";
           category = #vrat;
-          deity = "Shiva";
-          hindiText = "शिवभक्त एक समय सोमवार का व्रत करते थे। इस व्रत में भगवान शिव की विशेष पूजा और उपवास किया जाता है...";
-          englishText = "Story and rituals of observing Somvar fast dedicated to Lord Shiva.";
-          tags = ["Somvar", "Shiva", "Vrat", "Fast", "Hindu"];
+          deity = "Vishnu";
+          hindiText = "एक बार भगवान विष्णु ने ब्रह्माजी से कहा कि जो भी एकादशी व्रत करता है ..." #
+          "उसे स्वर्ग यानी मोक्ष की प्राप्ति होती है।";
+          englishText = "";
+          tags = ["Vrat", "Ekadashi", "Vishnu", "Vrata", "Hindu"];
           createdAt = 4;
           status = #approved;
         },
@@ -202,12 +198,13 @@ actor {
         4,
         {
           id = 4;
-          title = "Satyanarayan Vrat Katha";
+          title = "Karva Chauth Vrat Katha (करवा चौथ व्रत कथा)";
           category = #vrat;
-          deity = "Vishnu";
-          hindiText = "प्राचीन काल में एक गरीब ब्राह्मण भगवान सत्यनारायण का व्रत कर धनवान हुआ। यह व्रत पूर्ण श्रद्धा और कथा के साथ किया जाता है...";
-          englishText = "The famous story of Satyanarayan fast and puja dedicated to Lord Vishnu.";
-          tags = ["Satyanarayan", "Vishnu", "Vrat", "Fast", "Puja"];
+          deity = "Various";
+          hindiText = "करवा चौथ व्रत कथा बताती है कि एक महिला ने अपने पति की लंबी उम्र के लिए ..." #
+          "पूरे आकर्षण और विश्वास के साथ उपवास किया और महत्व समझाया।";
+          englishText = "";
+          tags = ["Vrat", "Karva Chauth", "Vrata", "Hindu"];
           createdAt = 5;
           status = #approved;
         },
@@ -216,12 +213,13 @@ actor {
         5,
         {
           id = 5;
-          title = "Shivratri Vrat Katha";
+          title = "Shravan Somvar Katha (श्रावण सोमवार व्रत कथा)";
           category = #vrat;
           deity = "Shiva";
-          hindiText = "शिवरात्रि का व्रत भगवान शिव के विवाह और जगत की भलाई के लिए किया जाता है। इसमें रात्रि जागरण, उपवास और विशेष पूजा होती है...";
-          englishText = "Story and rituals of Maha Shivratri fast and its divine significance.";
-          tags = ["Shivratri", "Shiva", "Vrat", "Fast", "Puja"];
+          hindiText = "एक बार एक गरीब व्यापारी ने भगवान शिव के श्रावण सोमवार व्रत करने का संकल्प लिया ..." #
+          "उसका जीवन खुशहाल हो गया।";
+          englishText = "";
+          tags = ["Vrat", "Shravan", "Somvar", "Shiva", "Vrata", "Hindu"];
           createdAt = 6;
           status = #approved;
         },
@@ -230,12 +228,13 @@ actor {
         6,
         {
           id = 6;
-          title = "Makhan Chor Leela";
-          category = #puranik;
-          deity = "Krishna";
-          hindiText = "बाल श्रीकृष्ण अपने मित्रों के साथ मक्खन चुराने की लीलाएं करते थे। इन लीलाओं में माता यशोदा का स्नेह और भक्ति का भाव है...";
-          englishText = "Divine childhood stories of Lord Krishna stealing butter and spreading love.";
-          tags = ["Krishna", "MakhanChor", "Leela", "BalLeela", "Devotional"];
+          title = "Chandra Darshan Vrat Katha (चंद्र दर्शन व्रत कथा)";
+          category = #vrat;
+          deity = "Chandra Dev";
+          hindiText = "चंद्र दर्शन व्रत कथा चंद्र देव के महत्व और उन्हें प्रसन्न करने के उपायों के बारे में ..." #
+          "जागरूकता फैलाती है।";
+          englishText = "";
+          tags = ["Vrat", "Chandra", "Vrata", "Hindu"];
           createdAt = 7;
           status = #approved;
         },
@@ -244,12 +243,13 @@ actor {
         7,
         {
           id = 7;
-          title = "Kaliya Mardan Leela";
-          category = #puranik;
-          deity = "Krishna";
-          hindiText = "यमुना नदी में रहने वाले कालिया नाग का उद्धार भगवान कृष्ण ने अपने पैरों से किया। यह लीला बुराई पर अच्छाई की जीत है...";
-          englishText = "The miracle of Lord Krishna subduing the serpent Kaliya in Yamuna.";
-          tags = ["KrishnaLeela", "Kaliya", "Serpent", "Miracles", "GoodVsEvil"];
+          title = "Paush Amavasya Vrat Katha (पौष अमावस्या व्रत कथा)";
+          category = #vrat;
+          deity = "Various";
+          hindiText = "पौष अमावस्या कथा धार्मिक परंपराओं, पितृ तर्पण और भगवान विष्णु के साथ जुड़े व्रत को ..." #
+          "महत्व देती है।";
+          englishText = "";
+          tags = ["Vrat", "Paush Amavasya", "Vrata", "Hindu"];
           createdAt = 8;
           status = #approved;
         },
@@ -258,12 +258,13 @@ actor {
         8,
         {
           id = 8;
-          title = "Govardhan Leela";
-          category = #puranik;
-          deity = "Krishna";
-          hindiText = "इंद्र के क्रोध में बरसात को शांत करने के लिए श्री कृष्ण ने गोवर्धन पर्वत उठाया। इससे गौ, ग्वाल और भक्तों की रक्षा हुई...";
-          englishText = "Divine miracle of Lord Krishna holding Govardhan mountain for protection.";
-          tags = ["Krishna", "Govardhan", "Miracles", "Protection", "Devotion"];
+          title = "Skanda Shashti Vrat Katha (स्कंद षष्ठी व्रत कथा)";
+          category = #vrat;
+          deity = "Kartikeya";
+          hindiText = "स्कंद षष्ठी व्रत कथा भगवान कार्तिकेय के जीवन और उनके चमत्कारी कार्यों के बारे में ..." #
+          "जागरूक करती है।";
+          englishText = "";
+          tags = ["Vrat", "Skanda Shashti", "Kartikeya", "Vrata", "Hindu"];
           createdAt = 9;
           status = #approved;
         },
@@ -272,19 +273,35 @@ actor {
         9,
         {
           id = 9;
-          title = "Janmashtami Katha";
-          category = #puranik;
-          deity = "Krishna";
-          hindiText = "श्री कृष्ण का जन्म कंस के अत्याचारों से दुनिया को बचाने के लिए अर्जुन के परिवार में हुआ। उनका जीवन धर्म, भक्ति और बलिदान की मिसाल है...";
-          englishText = "Story of Lord Krishna's divine birth and his mission to uphold Dharma.";
-          tags = ["KrishnaLeela", "Janmashtami", "Birth", "Avataar", "Dharma"];
+          title = "Sankashti Chaturthi Vrat Katha (संकष्टी चतुर्थी व्रत कथा)";
+          category = #vrat;
+          deity = "Ganesha";
+          hindiText = "गणेश जी की संकष्टी चतुर्थी व्रत कथा बाधाओं के निवारण और सौभाग्य को बढ़ाने के ..." #
+          "महत्व के बारे में बताती है।";
+          englishText = "";
+          tags = ["Vrat", "Sankashti Chaturthi", "Ganesha", "Vrata", "Hindu"];
+          createdAt = 10;
+          status = #approved;
+        },
+      ),
+      (
+        10,
+        {
+          id = 10;
+          title = "Sankashti Chaturthi Vrat Katha (संकष्टी चतुर्थी व्रत कथा)";
+          category = #vrat;
+          deity = "Ganesha";
+          hindiText = "गणेश जी की संकष्टी चतुर्थी व्रत कथा बाधाओं के निवारण और सौभाग्य को बढ़ाने के ..." #
+          "महत्व के बारे में बताती है।";
+          englishText = "";
+          tags = ["Vrat", "Sankashti Chaturthi", "Ganesha", "Vrata", "Hindu"];
           createdAt = 10;
           status = #approved;
         },
       ),
     ].values(),
   );
-  var kathaCounter = 10; // Next ID after seeded entries
+  var kathaCounter = 11; // Next ID after seeded entries
 
   // Krishna Leela Full Story in Hindi (seeded data)
   public type KrishnaLeela = {
@@ -299,47 +316,11 @@ actor {
       hindiText =
       "श्री कृष्ण जन्म और बाल लीलाएँ..."
       # "\nगोवर्धन पूजा कथा..."
-      # "\nकालिय नाग मर्दन..."
-      # "\nमथुरा गमन और कंस वध..."
-      # "\nरास लीला, श्री कृष्ण के उपदेश..."
-      # "\nधर्म की रक्षा और मोक्ष यात्रा...";
+      # "\nकालिय नाग मर्दन...";
     },
   );
 
-  // 20 Vrat Kathas in Hindi (seeded data)
-  public type VratKatha = {
-    id : Nat;
-    title : Text;
-    hindiText : Text;
-  };
-
-  let vratKathas = Map.fromIter<Nat, VratKatha>(
-    [
-      (0, { id = 0; title = "संतोषी माता व्रत कथा"; hindiText = "एक समय की बात है..." }),
-      (1, { id = 1; title = "सोलह सोमवार व्रत कथा"; hindiText = "धर्मनिष्ठ पंडित की बेटी..." }),
-      (2, { id = 2; title = "एकादशी व्रत कथा"; hindiText = "प्राचीन समय में..." }),
-      (3, { id = 3; title = "प्रदोष व्रत कथा"; hindiText = "महादेव भक्त..." }),
-      (4, { id = 4; title = "मंगलवार व्रत कथा"; hindiText = "हनुमान भक्त महिला..." }),
-      (5, { id = 5; title = "शुक्रवार व्रत कथा"; hindiText = "शुक्र देव कथा..." }),
-      (6, { id = 6; title = "बृहस्पतिवार व्रत कथा"; hindiText = "गुरु द्वार रक्षा..." }),
-      (7, { id = 7; title = "शनिवार व्रत कथा"; hindiText = "शनि देव प्रसंग..." }),
-      (8, { id = 8; title = "नवरात्रि व्रत कथा"; hindiText = "माता दुर्गा का वरदान..." }),
-      (9, { id = 9; title = "करवा चौथ व्रत कथा"; hindiText = "प्यारी पत्नी की गाथा..." }),
-      (10, { id = 10; title = "अहोई अष्टमी व्रत कथा"; hindiText = "साचोद धर्म पत्नी..." }),
-      (11, { id = 11; title = "हरियाली तीज व्रत कथा"; hindiText = "माता पार्वती यज्ञ..." }),
-      (12, { id = 12; title = "हरतालिका तीज व्रत कथा"; hindiText = "व्याह कथा..." }),
-      (13, { id = 13; title = "गणेश चतुर्थी व्रत कथा"; hindiText = "माता की स्थापना..." }),
-      (14, { id = 14; title = "जन्माष्टमी व्रत कथा"; hindiText = "श्री कृष्ण का प्रकट्य..." }),
-      (15, { id = 15; title = "महाशिवरात्रि व्रत कथा"; hindiText = "महादेव की रात्रि..." }),
-      (16, { id = 16; title = "राम नवमी व्रत कथा"; hindiText = "श्रीराम का अवतरण..." }),
-      (17, { id = 17; title = "हनुमान जयंती व्रत कथा"; hindiText = "हनुमान प्रकट्य..." }),
-      (18, { id = 18; title = "फुलेरा दूज व्रत कथा"; hindiText = "शिव-पार्वती कथा..." }),
-      (19, { id = 19; title = "निर्जला एकादशी व्रत कथा"; hindiText = "भीम की प्रतिज्ञा..." }),
-    ].values(),
-  );
-
   // ── Approval helpers ────────────────────────────────────────────────────────
-
   public query ({ caller }) func isCallerApproved() : async Bool {
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
   };
@@ -369,6 +350,13 @@ actor {
       Runtime.trap("Unauthorized: Only users can view profiles");
     };
     userProfiles.get(caller);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
   };
 
   public shared ({ caller }) func setUserProfile(profile : UserProfile) : async () {
@@ -595,19 +583,5 @@ actor {
       case (?story) { story };
       case (null) { Runtime.trap("Krishna Leela data not found") };
     };
-  };
-
-  // Get all Vrat Kathas
-  public query func getAllVratKathas() : async [VratKatha] {
-    vratKathas.values().toArray().sort(
-      func(a, b) {
-        Nat.compare(a.id, b.id);
-      }
-    );
-  };
-
-  // Get single Vrat Katha by ID
-  public query func getVratKathaById(id : Nat) : async ?VratKatha {
-    vratKathas.get(id);
   };
 };

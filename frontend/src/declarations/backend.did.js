@@ -44,11 +44,6 @@ export const Katha = IDL.Record({
   'hindiText' : IDL.Text,
   'deity' : IDL.Text,
 });
-export const VratKatha = IDL.Record({
-  'id' : IDL.Nat,
-  'title' : IDL.Text,
-  'hindiText' : IDL.Text,
-});
 export const Mantra = IDL.Variant({
   'saiRam' : IDL.Null,
   'hareKrishna' : IDL.Null,
@@ -145,7 +140,6 @@ export const idlService = IDL.Service({
   'approveKatha' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'getAllKathayen' : IDL.Func([], [IDL.Vec(Katha)], ['query']),
-  'getAllVratKathas' : IDL.Func([], [IDL.Vec(VratKatha)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
@@ -160,7 +154,6 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'getVratKathaById' : IDL.Func([IDL.Nat], [IDL.Opt(VratKatha)], ['query']),
   'incrementJap' : IDL.Func([IDL.Nat], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
@@ -172,6 +165,7 @@ export const idlService = IDL.Service({
     ),
   'requestApproval' : IDL.Func([], [], []),
   'resetJapStats' : IDL.Func([], [], []),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'searchKathayenByDeity' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
   'searchKathayenByTitle' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
@@ -216,11 +210,6 @@ export const idlFactory = ({ IDL }) => {
     'category' : KathaCategory,
     'hindiText' : IDL.Text,
     'deity' : IDL.Text,
-  });
-  const VratKatha = IDL.Record({
-    'id' : IDL.Nat,
-    'title' : IDL.Text,
-    'hindiText' : IDL.Text,
   });
   const Mantra = IDL.Variant({
     'saiRam' : IDL.Null,
@@ -319,7 +308,6 @@ export const idlFactory = ({ IDL }) => {
     'approveKatha' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'getAllKathayen' : IDL.Func([], [IDL.Vec(Katha)], ['query']),
-    'getAllVratKathas' : IDL.Func([], [IDL.Vec(VratKatha)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
@@ -334,7 +322,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
-    'getVratKathaById' : IDL.Func([IDL.Nat], [IDL.Opt(VratKatha)], ['query']),
     'incrementJap' : IDL.Func([IDL.Nat], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
@@ -346,6 +333,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'requestApproval' : IDL.Func([], [], []),
     'resetJapStats' : IDL.Func([], [], []),
+    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'searchKathayenByDeity' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
     'searchKathayenByTitle' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),

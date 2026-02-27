@@ -1,61 +1,32 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T03:48:06.311Z",
-  "summary": "The diff only modifies project_state.json, which is a planning/tracking file. All actual implementation requirements (REQ-1 through REQ-6) remain in 'pending' status and have not been implemented. No source code files were added or modified.",
+  "generatedAt": "2026-02-27T04:47:45.076Z",
+  "summary": "The diff shows additions to backend/migration.mo, backend/main.mo, and frontend/src/lib/kathaData.ts. REQ-1 and REQ-4 appear partially addressed (static data and backend seeding present, though truncated). REQ-2 (Kathayen.tsx) and REQ-3 (KathaDetail.tsx) show no evidence of modification in the diff — neither file appears in the modified files list.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Add all 20 Vrat Kathayen to frontend/src/lib/kathaData.ts with category 'Vrat', deity, full Hindi title, full Hindi narrative, and approved status.",
-      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
-      "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
       "id": "REQ-2",
-      "requirement": "Expand Ramayan content in frontend/src/lib/kathaData.ts with all 7 kandas as separate entries with category 'Puranik', deity 'Ram', and full Hindi narratives.",
-      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
+      "requirement": "Ensure the Kathayen listing page (frontend/src/pages/Kathayen.tsx) correctly displays all 10 Vrat Kathas when the 'vrat' category tab is selected, using static data as primary/fallback source.",
+      "reason": "frontend/src/pages/Kathayen.tsx is not listed in the modified or added files. There is no evidence the listing page was updated to use static fallback data or display the 10 vrat kathas.",
       "evidence": [
-        "project_state.json"
+        "frontend/src/pages/Kathayen.tsx"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Expand Mahabharat content in frontend/src/lib/kathaData.ts with all major parvas as separate entries including Bhagavad Gita summary in Bhishma Parva.",
-      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
+      "requirement": "Add audio narration controls (Play, Pause, Resume, Stop) to frontend/src/pages/KathaDetail.tsx using the existing useSpeechNarration hook with hi-IN voice preference, with visual state indication.",
+      "reason": "frontend/src/pages/KathaDetail.tsx is not listed in the modified or added files. There is no evidence that narration controls were added to the detail page.",
       "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Add at least 10 Krishna Leela stories in frontend/src/lib/kathaData.ts with category 'Krishna Leela', deity 'Krishna', and complete Hindi narratives.",
-      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
-      "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Add a 'कृष्ण लीला' filter tab to the Kathayen page (frontend/src/pages/Kathayen.tsx) that filters and displays only Krishna Leela category entries.",
-      "reason": "No changes were made to Kathayen.tsx or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
-      "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "requirement": "Add prominent narration controls (Play/Pause/Stop) to KathaDetail page using the existing useSpeechNarration hook, with sticky/floating placement and Hindi voice preference.",
-      "reason": "No changes were made to KathaDetail.tsx or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
-      "evidence": [
-        "project_state.json"
+        "frontend/src/pages/KathaDetail.tsx"
       ]
     }
   ],
   "hallucinated_features": [],
-  "confidence": 0.98,
+  "confidence": 0.82,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend/src/lib/kathaData.ts",
     "project_state.json"
   ]
 }
