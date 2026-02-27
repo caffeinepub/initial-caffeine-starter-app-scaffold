@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { icon: Home, label: 'होम', path: '/' },
   { icon: Calendar, label: 'पंचांग', path: '/panchang' },
   { icon: () => <span className="text-lg">📿</span>, label: 'जप', path: '/jap' },
+  { icon: () => <span className="text-lg">🪔</span>, label: 'आरती', path: '/aarti' },
   { icon: BookOpen, label: 'कथाएँ', path: '/kathayen' },
   { icon: MapPin, label: 'मंदिर', path: '/mandir' },
   { icon: Sparkles, label: 'AI गुरु', path: '/ai-guru' },
@@ -19,7 +20,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 px-2 py-2"
+      className="fixed bottom-0 left-0 right-0 z-40 px-1 py-2"
       style={{
         background: 'linear-gradient(135deg, oklch(0.35 0.14 20), oklch(0.42 0.15 28))',
         borderTop: '1px solid oklch(0.82 0.18 80 / 0.3)',
@@ -35,11 +36,11 @@ export default function BottomNav() {
             <button
               key={item.path}
               onClick={() => navigate({ to: item.path })}
-              className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all duration-200"
+              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl transition-all duration-200"
               style={{
                 background: isActive ? 'oklch(0.82 0.18 80 / 0.15)' : 'transparent',
                 border: isActive ? '1px solid oklch(0.82 0.18 80 / 0.3)' : '1px solid transparent',
-                minWidth: '44px',
+                minWidth: '38px',
               }}
             >
               <div
@@ -55,7 +56,7 @@ export default function BottomNav() {
                 className="text-xs"
                 style={{
                   color: isActive ? '#FFD700' : 'oklch(0.82 0.18 80 / 0.5)',
-                  fontSize: '0.6rem',
+                  fontSize: '0.55rem',
                   fontWeight: isActive ? 600 : 400,
                 }}
               >

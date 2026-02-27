@@ -6,6 +6,7 @@ import Jap from './pages/Jap';
 import Mandir from './pages/Mandir';
 import Profile from './pages/Profile';
 import Community from './pages/Community';
+import Aarti from './pages/Aarti';
 import AartiDetail from './pages/AartiDetail';
 import AdminPanel from './pages/AdminPanel';
 import AIGuru from './pages/AIGuru';
@@ -55,6 +56,12 @@ const communityRoute = createRoute({
   component: Community,
 });
 
+const aartiRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/aarti',
+  component: Aarti,
+});
+
 const aartiDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/aarti/$id',
@@ -92,6 +99,7 @@ const routeTree = rootRoute.addChildren([
   mandirRoute,
   profileRoute,
   communityRoute,
+  aartiRoute,
   aartiDetailRoute,
   adminRoute,
   aiGuruRoute,

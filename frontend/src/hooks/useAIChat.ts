@@ -6,18 +6,21 @@ export interface ChatEntry {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  imageUrl?: string;
+  imagePrompt?: string;
+  isImage?: boolean;
 }
 
+const WELCOME_MESSAGE: ChatEntry = {
+  id: 'welcome',
+  role: 'assistant',
+  content:
+    "Hello! 👋 I'm your AI Assistant. I can answer questions on **any topic** — science, history, coding, philosophy, and more.\n\nI can also **generate images** for you! Just say something like:\n• *\"Generate an image of a sunset over mountains\"*\n• *\"Draw a lotus flower\"*\n\nConfigure your API key in settings above to unlock full chat capabilities.",
+  timestamp: new Date(),
+};
+
 export function useAIChat() {
-  const [messages, setMessages] = useState<ChatEntry[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        'नमस्ते! 🙏 मैं आपका AI गुरु हूँ। मैं आपको हिंदू दर्शन, ध्यान, मंत्र, योग और आध्यात्मिक मार्गदर्शन में सहायता कर सकता हूँ। आप मुझसे कोई भी प्रश्न पूछ सकते हैं।',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatEntry[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -33,10 +36,8 @@ export function useAIChat() {
       const messageText = (text ?? inputValue).trim();
       if (!messageText || isLoading) return;
 
-      // Clear input immediately
       setInputValue('');
 
-      // Add user message optimistically
       const userEntry: ChatEntry = {
         id: `user-${Date.now()}`,
         role: 'user',
@@ -48,9 +49,10 @@ export function useAIChat() {
       setIsLoading(true);
       scrollToBottom();
 
-      // Build conversation history for context (last 6 messages)
+      // Build conversation history for context (last 8 messages, text only)
       const historyForAPI: ChatMessage[] = messages
-        .slice(-6)
+        .filter((m) => !m.isImage)
+        .slice(-8)
         .map((m) => ({ role: m.role, content: m.content }));
 
       try {
@@ -59,17 +61,20 @@ export function useAIChat() {
         const assistantEntry: ChatEntry = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          content: response,
+          content: response.text || (response.isImage ? `Here's your generated image of: **${response.imagePrompt}**` : ''),
           timestamp: new Date(),
+          imageUrl: response.imageUrl,
+          imagePrompt: response.imagePrompt,
+          isImage: response.isImage,
         };
 
         setMessages((prev) => [...prev, assistantEntry]);
-      } catch (_err) {
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
         const errorEntry: ChatEntry = {
           id: `error-${Date.now()}`,
           role: 'assistant',
-          content:
-            'क्षमा करें, AI गुरु से संपर्क नहीं हो पा रहा। कृपया पुनः प्रयास करें। 🙏',
+          content: `❌ ${errorMessage}`,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, errorEntry]);
@@ -82,15 +87,7 @@ export function useAIChat() {
   );
 
   const clearChat = useCallback(() => {
-    setMessages([
-      {
-        id: 'welcome-new',
-        role: 'assistant',
-        content:
-          'नमस्ते! 🙏 मैं आपका AI गुरु हूँ। मैं आपको हिंदू दर्शन, ध्यान, मंत्र, योग और आध्यात्मिक मार्गदर्शन में सहायता कर सकता हूँ। आप मुझसे कोई भी प्रश्न पूछ सकते हैं।',
-        timestamp: new Date(),
-      },
-    ]);
+    setMessages([{ ...WELCOME_MESSAGE, id: `welcome-${Date.now()}`, timestamp: new Date() }]);
     setInputValue('');
   }, []);
 

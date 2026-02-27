@@ -13,6 +13,18 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type ApprovalStatus = { 'pending' : null } |
   { 'approved' : null } |
   { 'rejected' : null };
+export interface CommunityPost {
+  'id' : bigint,
+  'status' : { 'pending' : null } |
+    { 'approved' : null } |
+    { 'rejected' : null },
+  'content' : string,
+  'author' : Principal,
+  'likes' : bigint,
+  'timestamp' : bigint,
+  'reports' : bigint,
+  'comments' : bigint,
+}
 export interface DharmaQuote {
   'id' : bigint,
   'author' : string,
@@ -103,9 +115,13 @@ export interface _SERVICE {
     [string, KathaCategory, string, string, string, Array<string>],
     bigint
   >,
+  'approveCommunityPost' : ActorMethod<[bigint], boolean>,
   'approveKatha' : ActorMethod<[bigint], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'createCommunityPost' : ActorMethod<[string], bigint>,
+  'getAllCommunityPosts' : ActorMethod<[], Array<CommunityPost>>,
   'getAllKathayen' : ActorMethod<[], Array<Katha>>,
+  'getApprovedCommunityPosts' : ActorMethod<[], Array<CommunityPost>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDharmaQuoteOfDay' : ActorMethod<[], [] | [DharmaQuote]>,
@@ -119,8 +135,11 @@ export interface _SERVICE {
   'incrementJap' : ActorMethod<[bigint], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
+  'likeCommunityPost' : ActorMethod<[bigint], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'listKathayenByCategory' : ActorMethod<[KathaCategory], Array<Katha>>,
+  'rejectCommunityPost' : ActorMethod<[bigint], boolean>,
+  'reportCommunityPost' : ActorMethod<[bigint], boolean>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetJapStats' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,

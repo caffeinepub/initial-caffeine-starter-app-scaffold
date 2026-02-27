@@ -35,6 +35,16 @@ export interface JapStatsInternal {
     daily: bigint;
     weekly: bigint;
 }
+export interface CommunityPost {
+    id: bigint;
+    status: KathaApprovalStatus;
+    content: string;
+    author: Principal;
+    likes: bigint;
+    timestamp: bigint;
+    reports: bigint;
+    comments: bigint;
+}
 export interface UserApprovalInfo {
     status: ApprovalStatus;
     principal: Principal;
@@ -81,9 +91,13 @@ export interface backendInterface {
     addAarti(id: bigint, name: string, hindiText: string, englishText: string): Promise<void>;
     addDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<void>;
     addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>): Promise<bigint>;
+    approveCommunityPost(postId: bigint): Promise<boolean>;
     approveKatha(kathaId: bigint): Promise<boolean>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    createCommunityPost(content: string): Promise<bigint>;
+    getAllCommunityPosts(): Promise<Array<CommunityPost>>;
     getAllKathayen(): Promise<Array<Katha>>;
+    getApprovedCommunityPosts(): Promise<Array<CommunityPost>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDharmaQuoteOfDay(): Promise<DharmaQuote | null>;
@@ -97,8 +111,11 @@ export interface backendInterface {
     incrementJap(count: bigint): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
+    likeCommunityPost(postId: bigint): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     listKathayenByCategory(category: KathaCategory): Promise<Array<Katha>>;
+    rejectCommunityPost(postId: bigint): Promise<boolean>;
+    reportCommunityPost(postId: bigint): Promise<boolean>;
     requestApproval(): Promise<void>;
     resetJapStats(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;

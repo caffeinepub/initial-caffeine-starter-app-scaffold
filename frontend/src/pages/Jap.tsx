@@ -122,7 +122,7 @@ export default function Jap() {
         if (toSync <= 0) return;
         setIsSyncing(true);
         try {
-          await incrementJap.mutateAsync(BigInt(toSync));
+          await incrementJap.mutateAsync(toSync);
           setLastSyncedCount(count);
         } catch (e) {
           console.error('Sync failed:', e);
@@ -164,7 +164,7 @@ export default function Jap() {
     const toSync = sessionCount - lastSyncedCount;
     if (isAuthenticated && toSync > 0) {
       try {
-        await incrementJap.mutateAsync(BigInt(toSync));
+        await incrementJap.mutateAsync(toSync);
       } catch (e) {
         console.error('Final sync failed:', e);
       }
@@ -189,7 +189,7 @@ export default function Jap() {
       const toSync = sessionCount - lastSyncedCount;
       if (isAuthenticated && toSync > 0) {
         try {
-          await incrementJap.mutateAsync(BigInt(toSync));
+          await incrementJap.mutateAsync(toSync);
         } catch (e) {
           console.error('Sync on mantra change failed:', e);
         }

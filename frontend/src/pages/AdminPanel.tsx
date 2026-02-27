@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
+import { Shield, Users, Quote, CheckCircle, XCircle, Loader2, AlertTriangle, LogIn } from 'lucide-react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   useIsCallerAdmin,
   useListApprovals,
@@ -8,317 +14,295 @@ import {
   useAddDharmaQuote,
 } from '../hooks/useQueries';
 import { UserRole } from '../backend';
-import type { UserApprovalInfo } from '../backend';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { Shield, Users, BookOpen, Calendar, Loader2, Info } from 'lucide-react';
-import type { Principal } from '@dfinity/principal';
 
-// Local ApprovalStatus type
-type ApprovalStatus = { approved: null } | { rejected: null } | { pending: null };
+type ApprovalStatus = 'approved' | 'rejected' | 'pending';
 
 export default function AdminPanel() {
-  const { identity } = useInternetIdentity();
+  const { identity, login, loginStatus } = useInternetIdentity();
+  const isAuthenticated = !!identity;
+
   const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
-  const { data: approvals, isLoading: approvalsLoading } = useListApprovals();
+  const { data: approvals = [], isLoading: approvalsLoading, refetch: refetchApprovals } = useListApprovals();
   const setApprovalMutation = useSetApproval();
   const assignRoleMutation = useAssignUserRole();
   const addQuoteMutation = useAddDharmaQuote();
 
-  const [quoteId, setQuoteId] = useState('');
-  const [quoteEnglish, setQuoteEnglish] = useState('');
-  const [quoteHindi, setQuoteHindi] = useState('');
-  const [quoteAuthor, setQuoteAuthor] = useState('');
+  const [quoteForm, setQuoteForm] = useState({
+    englishText: '',
+    hindiText: '',
+    author: '',
+  });
+  const [quoteSuccess, setQuoteSuccess] = useState(false);
 
-  if (!identity) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Please log in to access the admin panel.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (adminLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <Shield className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <p className="text-foreground font-semibold">Access Denied</p>
-            <p className="text-muted-foreground text-sm mt-1">You do not have admin privileges.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const handleApprove = (principal: Principal) => {
-    const status: ApprovalStatus = { approved: null };
-    setApprovalMutation.mutate(
-      { user: principal, status },
-      {
-        onSuccess: () => toast.success('User approved'),
-        onError: () => toast.error('Failed to approve user'),
-      }
-    );
+  const handleApprove = async (principal: { toString(): string }, status: ApprovalStatus) => {
+    try {
+      await setApprovalMutation.mutateAsync({ principal: principal as any, status });
+      refetchApprovals();
+    } catch (err) {
+      console.error('Approval action failed:', err);
+    }
   };
 
-  const handleReject = (principal: Principal) => {
-    const status: ApprovalStatus = { rejected: null };
-    setApprovalMutation.mutate(
-      { user: principal, status },
-      {
-        onSuccess: () => toast.success('User rejected'),
-        onError: () => toast.error('Failed to reject user'),
-      }
-    );
-  };
-
-  const handleAssignRole = (principal: Principal, role: UserRole) => {
-    assignRoleMutation.mutate(
-      { user: principal, role },
-      {
-        onSuccess: () => toast.success('Role assigned'),
-        onError: () => toast.error('Failed to assign role'),
-      }
-    );
+  const handleAssignRole = async (principal: { toString(): string }, role: UserRole) => {
+    try {
+      await assignRoleMutation.mutateAsync({ principal: principal as any, role });
+      refetchApprovals();
+    } catch (err) {
+      console.error('Role assignment failed:', err);
+    }
   };
 
   const handleAddQuote = async () => {
-    if (!quoteId || !quoteEnglish || !quoteHindi || !quoteAuthor) {
-      toast.error('Please fill all fields');
-      return;
+    if (!quoteForm.englishText.trim() || !quoteForm.hindiText.trim() || !quoteForm.author.trim()) return;
+    try {
+      await addQuoteMutation.mutateAsync({
+        id: BigInt(Date.now()),
+        englishText: quoteForm.englishText.trim(),
+        hindiText: quoteForm.hindiText.trim(),
+        author: quoteForm.author.trim(),
+      });
+      setQuoteForm({ englishText: '', hindiText: '', author: '' });
+      setQuoteSuccess(true);
+      setTimeout(() => setQuoteSuccess(false), 3000);
+    } catch (err) {
+      console.error('Add quote failed:', err);
     }
-    addQuoteMutation.mutate(
-      {
-        id: BigInt(quoteId),
-        englishText: quoteEnglish,
-        hindiText: quoteHindi,
-        author: quoteAuthor,
-      },
-      {
-        onSuccess: () => {
-          toast.success('Quote added successfully');
-          setQuoteId('');
-          setQuoteEnglish('');
-          setQuoteHindi('');
-          setQuoteAuthor('');
-        },
-        onError: () => toast.error('Failed to add quote'),
-      }
-    );
   };
 
-  const getStatusBadge = (approval: UserApprovalInfo) => {
-    const statusStr = typeof approval.status === 'string'
-      ? approval.status
-      : Object.keys(approval.status as object)[0];
+  // Not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <Shield className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">एडमिन पैनल</h2>
+          <p className="text-muted-foreground text-sm mb-6">
+            एडमिन पैनल तक पहुँचने के लिए लॉगिन करें।
+          </p>
+          <Button
+            onClick={login}
+            disabled={loginStatus === 'logging-in'}
+            className="bg-amber-600 hover:bg-amber-500 text-white"
+          >
+            {loginStatus === 'logging-in' ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> लॉगिन हो रहा है...</>
+            ) : (
+              <><LogIn className="w-4 h-4 mr-2" /> लॉगिन करें</>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-    switch (statusStr) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Approved</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
-    }
+  // Loading admin status
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+      </div>
+    );
+  }
+
+  // Not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">पहुँच अस्वीकृत</h2>
+          <p className="text-muted-foreground text-sm">
+            आपके पास एडमिन पैनल तक पहुँचने की अनुमति नहीं है।
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const pendingApprovals = approvals.filter(a => {
+    const s = a.status as any;
+    return s === 'pending' || s?.__kind__ === 'pending' || JSON.stringify(s).includes('pending');
+  });
+
+  const getStatusLabel = (status: any): string => {
+    const s = JSON.stringify(status);
+    if (s.includes('approved')) return 'approved';
+    if (s.includes('rejected')) return 'rejected';
+    return 'pending';
   };
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Shield className="w-7 h-7 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-amber-900 to-orange-900 px-4 pt-6 pb-8">
+        <div className="flex items-center gap-3">
+          <Shield className="w-7 h-7 text-amber-300" />
+          <div>
+            <h1 className="text-2xl font-bold text-white">एडमिन पैनल</h1>
+            <p className="text-amber-200 text-sm">व्यवस्थापक नियंत्रण केंद्र</p>
+          </div>
         </div>
+      </div>
 
-        <Tabs defaultValue="users">
-          <TabsList className="mb-6 w-full">
-            <TabsTrigger value="users" className="flex-1 gap-1">
-              <Users className="w-4 h-4" />
-              Users
+      <div className="px-4 -mt-4">
+        <Tabs defaultValue="approvals" className="w-full">
+          <TabsList className="w-full grid grid-cols-2 mb-4">
+            <TabsTrigger value="approvals">
+              <Users className="w-4 h-4 mr-1" />
+              उपयोगकर्ता ({pendingApprovals.length})
             </TabsTrigger>
-            <TabsTrigger value="quotes" className="flex-1 gap-1">
-              <BookOpen className="w-4 h-4" />
-              Quotes
-            </TabsTrigger>
-            <TabsTrigger value="panchang" className="flex-1 gap-1">
-              <Calendar className="w-4 h-4" />
-              Panchang
+            <TabsTrigger value="quotes">
+              <Quote className="w-4 h-4 mr-1" />
+              धर्म उद्धरण
             </TabsTrigger>
           </TabsList>
 
-          {/* Users Tab */}
-          <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Approvals</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {approvalsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                ) : !approvals || approvals.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No approval requests yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {approvals.map((approval) => (
-                      <div
-                        key={approval.principal.toString()}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg"
-                      >
-                        <div className="space-y-1">
-                          <p className="font-mono text-xs text-muted-foreground break-all">
-                            {approval.principal.toString()}
-                          </p>
-                          {getStatusBadge(approval)}
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-green-700 border-green-300 hover:bg-green-50"
-                            onClick={() => handleApprove(approval.principal)}
-                            disabled={setApprovalMutation.isPending}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-700 border-red-300 hover:bg-red-50"
-                            onClick={() => handleReject(approval.principal)}
-                            disabled={setApprovalMutation.isPending}
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAssignRole(approval.principal, UserRole.admin)}
-                            disabled={assignRoleMutation.isPending}
-                          >
-                            Make Admin
-                          </Button>
-                        </div>
+          {/* User Approvals Tab */}
+          <TabsContent value="approvals" className="space-y-3">
+            {approvalsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              </div>
+            ) : approvals.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">कोई उपयोगकर्ता नहीं मिला</p>
+              </div>
+            ) : (
+              approvals.map((approval, idx) => {
+                const statusLabel = getStatusLabel(approval.status);
+                const principalStr = approval.principal.toString();
+                const shortPrincipal = principalStr.length > 16
+                  ? principalStr.slice(0, 8) + '...' + principalStr.slice(-6)
+                  : principalStr;
+
+                return (
+                  <div key={idx} className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <p className="font-mono text-xs text-foreground">{shortPrincipal}</p>
+                        <Badge
+                          variant={statusLabel === 'approved' ? 'default' : statusLabel === 'rejected' ? 'destructive' : 'secondary'}
+                          className="mt-1 text-xs"
+                        >
+                          {statusLabel === 'approved' ? 'अनुमोदित' : statusLabel === 'rejected' ? 'अस्वीकृत' : 'लंबित'}
+                        </Badge>
                       </div>
-                    ))}
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApprove(approval.principal, 'approved')}
+                          disabled={setApprovalMutation.isPending || statusLabel === 'approved'}
+                          className="text-green-600 border-green-600 hover:bg-green-50 text-xs"
+                        >
+                          {setApprovalMutation.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <><CheckCircle className="w-3 h-3 mr-1" /> अनुमोदित</>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApprove(approval.principal, 'rejected')}
+                          disabled={setApprovalMutation.isPending || statusLabel === 'rejected'}
+                          className="text-red-600 border-red-600 hover:bg-red-50 text-xs"
+                        >
+                          <XCircle className="w-3 h-3 mr-1" /> अस्वीकृत
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Role assignment */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-border">
+                      <span className="text-xs text-muted-foreground">भूमिका:</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleAssignRole(approval.principal, UserRole.admin)}
+                        disabled={assignRoleMutation.isPending}
+                        className="text-xs h-7 px-2"
+                      >
+                        एडमिन बनाएं
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleAssignRole(approval.principal, UserRole.user)}
+                        disabled={assignRoleMutation.isPending}
+                        className="text-xs h-7 px-2"
+                      >
+                        उपयोगकर्ता बनाएं
+                      </Button>
+                    </div>
                   </div>
+                );
+              })
+            )}
+          </TabsContent>
+
+          {/* Dharma Quotes Tab */}
+          <TabsContent value="quotes" className="space-y-4">
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Quote className="w-4 h-4 text-amber-500" />
+                नया धर्म उद्धरण जोड़ें
+              </h3>
+
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium">हिंदी पाठ *</label>
+                <Textarea
+                  value={quoteForm.hindiText}
+                  onChange={(e) => setQuoteForm(f => ({ ...f, hindiText: e.target.value }))}
+                  placeholder="हिंदी में उद्धरण लिखें..."
+                  className="min-h-[80px] resize-none text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium">English Text *</label>
+                <Textarea
+                  value={quoteForm.englishText}
+                  onChange={(e) => setQuoteForm(f => ({ ...f, englishText: e.target.value }))}
+                  placeholder="Write quote in English..."
+                  className="min-h-[80px] resize-none text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium">लेखक / Author *</label>
+                <Input
+                  value={quoteForm.author}
+                  onChange={(e) => setQuoteForm(f => ({ ...f, author: e.target.value }))}
+                  placeholder="जैसे: भगवद्गीता, अध्याय 2"
+                  className="text-sm"
+                />
+              </div>
+
+              {quoteSuccess && (
+                <p className="text-green-500 text-sm font-medium flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" /> उद्धरण सफलतापूर्वक जोड़ा गया!
+                </p>
+              )}
+
+              <Button
+                onClick={handleAddQuote}
+                disabled={
+                  addQuoteMutation.isPending ||
+                  !quoteForm.englishText.trim() ||
+                  !quoteForm.hindiText.trim() ||
+                  !quoteForm.author.trim()
+                }
+                className="w-full bg-amber-600 hover:bg-amber-500 text-white"
+              >
+                {addQuoteMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> जोड़ा जा रहा है...</>
+                ) : (
+                  'उद्धरण जोड़ें'
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Quotes Tab */}
-          <TabsContent value="quotes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add Dharma Quote</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label>ID</Label>
-                    <Input
-                      type="number"
-                      placeholder="Quote ID"
-                      value={quoteId}
-                      onChange={(e) => setQuoteId(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Author</Label>
-                    <Input
-                      placeholder="Author name"
-                      value={quoteAuthor}
-                      onChange={(e) => setQuoteAuthor(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label>English Text</Label>
-                  <Textarea
-                    placeholder="Quote in English"
-                    value={quoteEnglish}
-                    onChange={(e) => setQuoteEnglish(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>Hindi Text</Label>
-                  <Textarea
-                    placeholder="Quote in Hindi"
-                    value={quoteHindi}
-                    onChange={(e) => setQuoteHindi(e.target.value)}
-                  />
-                </div>
-                <Button
-                  onClick={handleAddQuote}
-                  disabled={addQuoteMutation.isPending}
-                  className="w-full"
-                >
-                  {addQuoteMutation.isPending ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</>
-                  ) : (
-                    'Add Quote'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Panchang Tab */}
-          <TabsContent value="panchang">
-            <Card>
-              <CardHeader>
-                <CardTitle>Panchang Information</CardTitle>
-                <CardDescription>
-                  Panchang data is now computed client-side using astronomical algorithms.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200/50">
-                  <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                      Automatic Calculation Enabled
-                    </p>
-                    <p className="text-sm text-amber-700 dark:text-amber-400">
-                      Tithi, Nakshatra, Yoga, Karana, Rahu Kaal, Muhurat, Sunrise, and Sunset are now
-                      computed in real-time using Jean Meeus astronomical algorithms for central India
-                      (23°N, 80°E, IST). No manual data entry is required.
-                    </p>
-                    <ul className="text-xs text-amber-600 dark:text-amber-500 mt-2 space-y-0.5 list-disc list-inside">
-                      <li>Tithi based on Moon–Sun angular difference</li>
-                      <li>Nakshatra based on Moon's ecliptic longitude</li>
-                      <li>Yoga based on sum of Sun + Moon longitudes</li>
-                      <li>Rahu/Gulika/Yamaganda Kaal from weekday + sunrise/sunset</li>
-                      <li>Brahma Muhurat &amp; Abhijit Muhurat from solar timing</li>
-                      <li>Vikram Samvat, Hindu month, and Ayana from Sun position</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

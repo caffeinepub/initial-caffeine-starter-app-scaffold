@@ -1,141 +1,120 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+
+export type NarrationState = 'idle' | 'playing' | 'paused';
 
 interface UseSpeechNarrationReturn {
-  isPlaying: boolean;
-  isPaused: boolean;
-  speechSupported: boolean;
-  playNarration: (text: string, lang?: string) => void;
-  pauseNarration: () => void;
-  resumeNarration: () => void;
-  stopNarration: () => void;
+  state: NarrationState;
+  play: (text: string) => void;
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  isSupported: boolean;
 }
 
-export function useSpeechNarration(): UseSpeechNarrationReturn {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+export function useSpeechNarration(lang: string = 'hi-IN'): UseSpeechNarrationReturn {
+  const [state, setState] = useState<NarrationState>('idle');
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
-  // Clean up on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (speechSupported) {
+      if (isSupported) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [speechSupported]);
+  }, [isSupported]);
 
-  const stopNarration = useCallback(() => {
-    if (!speechSupported) return;
-    window.speechSynthesis.cancel();
-    utteranceRef.current = null;
-    setIsPlaying(false);
-    setIsPaused(false);
-  }, [speechSupported]);
+  const getPreferredVoice = useCallback((): SpeechSynthesisVoice | null => {
+    if (!isSupported) return null;
+    const voices = window.speechSynthesis.getVoices();
+    // Try to find a Hindi voice first
+    const hindiVoice = voices.find(
+      (v) => v.lang === 'hi-IN' || v.lang.startsWith('hi')
+    );
+    if (hindiVoice) return hindiVoice;
+    // Fallback to any available voice
+    return voices[0] || null;
+  }, [isSupported]);
 
-  const playNarration = useCallback((text: string, lang?: string) => {
-    if (!speechSupported) return;
+  const play = useCallback(
+    (text: string) => {
+      if (!isSupported) return;
 
-    // Stop any existing narration first
-    window.speechSynthesis.cancel();
-    setIsPlaying(false);
-    setIsPaused(false);
+      // Cancel any existing speech
+      window.speechSynthesis.cancel();
+      setState('idle');
 
-    if (!text || text.trim().length === 0) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = 0.85;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    // Set language — default to hi-IN for Hindi (Devanagari) text
-    const targetLang = lang ?? 'hi-IN';
-    utterance.lang = targetLang;
-
-    // Try to find a matching voice for the language
-    const trySetVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        // Prefer exact match, then language prefix match
-        const exactMatch = voices.find((v) => v.lang === targetLang);
-        const prefixMatch = voices.find((v) => v.lang.startsWith(targetLang.split('-')[0]));
-        const selectedVoice = exactMatch ?? prefixMatch ?? null;
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
+      // Try to set voice
+      const setVoiceAndSpeak = () => {
+        const voice = getPreferredVoice();
+        if (voice) {
+          utterance.voice = voice;
         }
-        // If no matching voice found, the browser will use its default for the lang tag
+
+        utterance.onstart = () => setState('playing');
+        utterance.onpause = () => setState('paused');
+        utterance.onresume = () => setState('playing');
+        utterance.onend = () => {
+          setState('idle');
+          utteranceRef.current = null;
+        };
+        utterance.onerror = (e) => {
+          // Gracefully handle errors
+          if (e.error !== 'interrupted' && e.error !== 'canceled') {
+            console.warn('Speech synthesis error:', e.error);
+          }
+          setState('idle');
+          utteranceRef.current = null;
+        };
+
+        utteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+        setState('playing');
+      };
+
+      // Voices may not be loaded yet
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.onvoiceschanged = null;
+          setVoiceAndSpeak();
+        };
+      } else {
+        setVoiceAndSpeak();
       }
-    };
+    },
+    [isSupported, lang, getPreferredVoice]
+  );
 
-    // Voices may not be loaded yet — try immediately and also after voiceschanged
-    trySetVoice();
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.addEventListener('voiceschanged', trySetVoice, { once: true });
-    }
-
-    utterance.onstart = () => {
-      setIsPlaying(true);
-      setIsPaused(false);
-    };
-
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-      utteranceRef.current = null;
-    };
-
-    utterance.onerror = (event) => {
-      // Ignore 'interrupted' / 'canceled' errors — these happen when we cancel intentionally
-      if (event.error === 'interrupted' || event.error === 'canceled') return;
-      // Log graceful fallback for unsupported language
-      if (event.error === 'language-unavailable' || event.error === 'voice-unavailable') {
-        console.warn(`Hindi TTS voice not available (${event.error}). Falling back to default voice.`);
-        // Retry without a specific voice
-        const fallback = new SpeechSynthesisUtterance(text);
-        fallback.rate = 0.85;
-        fallback.pitch = 1.0;
-        fallback.volume = 1.0;
-        fallback.onstart = () => { setIsPlaying(true); setIsPaused(false); };
-        fallback.onend = () => { setIsPlaying(false); setIsPaused(false); utteranceRef.current = null; };
-        fallback.onerror = () => { setIsPlaying(false); setIsPaused(false); utteranceRef.current = null; };
-        utteranceRef.current = fallback;
-        window.speechSynthesis.speak(fallback);
-        return;
-      }
-      setIsPlaying(false);
-      setIsPaused(false);
-      utteranceRef.current = null;
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  }, [speechSupported]);
-
-  const pauseNarration = useCallback(() => {
-    if (!speechSupported) return;
+  const pause = useCallback(() => {
+    if (!isSupported) return;
     if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
       window.speechSynthesis.pause();
-      setIsPaused(true);
-      setIsPlaying(false);
+      setState('paused');
     }
-  }, [speechSupported]);
+  }, [isSupported]);
 
-  const resumeNarration = useCallback(() => {
-    if (!speechSupported) return;
+  const resume = useCallback(() => {
+    if (!isSupported) return;
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
-      setIsPaused(false);
-      setIsPlaying(true);
+      setState('playing');
     }
-  }, [speechSupported]);
+  }, [isSupported]);
 
-  return {
-    isPlaying,
-    isPaused,
-    speechSupported,
-    playNarration,
-    pauseNarration,
-    resumeNarration,
-    stopNarration,
-  };
+  const stop = useCallback(() => {
+    if (!isSupported) return;
+    window.speechSynthesis.cancel();
+    utteranceRef.current = null;
+    setState('idle');
+  }, [isSupported]);
+
+  return { state, play, pause, resume, stop, isSupported };
 }

@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-10-complete-long-form-vrat-kathas-in-hindi-to-the-static-data-file-frontend-src-lib-kathadata-ts-under-the-vrat-category-the-10-kathas-must-include-1-ekadashi-vrat-katha-2-solah-somvar-vrat-katha-3-mangalwar-mangalvar-vrat-katha-4-sukrwar-shukravar-vrat-katha-5-karva-chauth-vrat-katha-6-santoshi-mata-vrat-katha-7-pradosh-vrat-katha-8-navratri-vrat-katha-9-satyanarayan-vrat-katha-10-hartalika-teej-vrat-katha-each-katha-must-have-a-full-hindi-text-of-significant-length-at-minimum-400-600-words-of-narrative-content-a-meaningful-title-in-hindi-and-english-associated-deity-name-and-the-vrat-category-tag",
-      "featureTitle": "Add 10 complete, long-form Vrat Kathas in Hindi to the static data file `frontend/src/lib/kathaData.ts` under the `vrat` category. The 10 kathas must include: (1) Ekadashi Vrat Katha, (2) Solah Somvar Vrat Katha, (3) Mangalwar (Mangalvar) Vrat Katha, (4) Sukrwar (Shukravar) Vrat Katha, (5) Karva Chauth Vrat Katha, (6) Santoshi Mata Vrat Katha, (7) Pradosh Vrat Katha, (8) Navratri Vrat Katha, (9) Satyanarayan Vrat Katha, (10) Hartalika Teej Vrat Katha. Each katha must have a full Hindi text of significant length (at minimum 400–600 words of narrative content), a meaningful title in Hindi and English, associated deity name, and the `vrat` category tag.",
+      "featureId": "feature-replace-the-existing-openrouter-based-ai-text-chat-implementation-in-frontend-src-lib-aiengine-ts-with-google-gemini-api-model-gemini-1-5-flash-or-gemini-pro-the-engine-should-send-user-messages-to-the-gemini-rest-endpoint-https-generativelanguage-googleapis-com-v1beta-models-gemini-1-5-flash-generatecontent-using-the-user-s-stored-gemini-api-key-preserve-existing-message-history-handling-error-handling-and-the-helper-functions-for-api-key-storage-retrieval",
+      "featureTitle": "Replace the existing OpenRouter-based AI text chat implementation in `frontend/src/lib/aiEngine.ts` with Google Gemini API (model: `gemini-1.5-flash` or `gemini-pro`). The engine should send user messages to the Gemini REST endpoint (`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`) using the user's stored Gemini API key. Preserve existing message history handling, error handling, and the helper functions for API key storage/retrieval.",
       "files": [
-        "frontend/src/lib/kathaData.ts"
+        "frontend/src/lib/aiEngine.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -19,6 +19,49 @@
       ],
       "testIds": [
         "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-api-key-configuration-ui-in-frontend-src-pages-aiguru-tsx-to-reference-google-gemini-instead-of-openrouter-change-all-labels-placeholder-text-and-help-copy-to-say-gemini-api-key-and-direct-users-to-https-aistudio-google-com-app-apikey-to-obtain-a-free-key-remove-any-openrouter-specific-instructions",
+      "featureTitle": "Update the API key configuration UI in `frontend/src/pages/AIGuru.tsx` to reference Google Gemini instead of OpenRouter. Change all labels, placeholder text, and help copy to say 'Gemini API Key' and direct users to `https://aistudio.google.com/app/apikey` to obtain a free key. Remove any OpenRouter-specific instructions.",
+      "files": [
+        "frontend/src/pages/AIGuru.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-frontend-env-example-and-any-relevant-comments-or-documentation-strings-in-the-codebase-to-reflect-that-the-app-now-uses-the-google-gemini-api-instead-of-openrouter-openai-note-that-users-obtain-a-free-gemini-api-key-from-google-ai-studio",
+      "featureTitle": "Update `frontend/.env.example` and any relevant comments or documentation strings in the codebase to reflect that the app now uses the Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio.",
+      "files": [
+        "frontend/.env.example",
+        "frontend/src/lib/aiEngine.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

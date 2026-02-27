@@ -1,14 +1,11 @@
 /**
- * Panchang Engine - Accurate Hindu Calendar Calculations
- * Based on Jean Meeus "Astronomical Algorithms" (2nd Edition)
- * All calculations use IST (UTC+5:30) and fixed location: 23.0°N, 80.0°E (Central India)
+ * Panchang Engine - Complete client-side astronomical calculations
+ * Using Jean Meeus algorithms for Hindu calendar computations
  */
 
-const IST_OFFSET_HOURS = 5.5; // UTC+5:30
+const IST_OFFSET = 5.5; // UTC+5:30
 const LAT = 23.0; // Central India latitude
 const LON = 80.0; // Central India longitude
-
-// ─── Helper Math ─────────────────────────────────────────────────────────────
 
 function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
@@ -22,62 +19,43 @@ function normalizeAngle(deg: number): number {
   return ((deg % 360) + 360) % 360;
 }
 
-/** Convert a JS Date to Julian Day Number */
-function dateToJD(date: Date): number {
-  // Work in UTC
-  const Y = date.getUTCFullYear();
-  const M = date.getUTCMonth() + 1;
-  const D =
+function toJulianDay(date: Date): number {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const day =
     date.getUTCDate() +
     date.getUTCHours() / 24 +
     date.getUTCMinutes() / 1440 +
     date.getUTCSeconds() / 86400;
 
-  let y = Y;
-  let m = M;
-  if (m <= 2) {
-    y -= 1;
-    m += 12;
+  let Y = year;
+  let M = month;
+  if (M <= 2) {
+    Y -= 1;
+    M += 12;
   }
-  const A = Math.floor(y / 100);
+  const A = Math.floor(Y / 100);
   const B = 2 - A + Math.floor(A / 4);
-  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + D + B - 1524.5;
+  return Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + day + B - 1524.5;
 }
 
-/** Julian centuries since J2000.0 */
-function jdToT(jd: number): number {
-  return (jd - 2451545.0) / 36525;
-}
-
-// ─── Sun Position ─────────────────────────────────────────────────────────────
-
-/** Returns Sun's apparent ecliptic longitude in degrees (Meeus Ch.25) */
 function getSunLongitude(jd: number): number {
-  const T = jdToT(jd);
-  // Geometric mean longitude of the Sun
+  const T = (jd - 2451545.0) / 36525;
   const L0 = normalizeAngle(280.46646 + 36000.76983 * T + 0.0003032 * T * T);
-  // Mean anomaly of the Sun
   const M = normalizeAngle(357.52911 + 35999.05029 * T - 0.0001537 * T * T);
   const Mrad = toRad(M);
-  // Equation of center
   const C =
     (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(Mrad) +
     (0.019993 - 0.000101 * T) * Math.sin(2 * Mrad) +
     0.000289 * Math.sin(3 * Mrad);
-  // Sun's true longitude
   const sunLon = L0 + C;
-  // Apparent longitude (nutation correction)
   const omega = 125.04 - 1934.136 * T;
   const apparent = sunLon - 0.00569 - 0.00478 * Math.sin(toRad(omega));
   return normalizeAngle(apparent);
 }
 
-// ─── Moon Position ────────────────────────────────────────────────────────────
-
-/** Returns Moon's ecliptic longitude in degrees (Meeus Ch.47, simplified) */
 function getMoonLongitude(jd: number): number {
-  const T = jdToT(jd);
-  // Moon's mean longitude
+  const T = (jd - 2451545.0) / 36525;
   const L1 = normalizeAngle(
     218.3164477 +
       481267.88123421 * T -
@@ -85,7 +63,6 @@ function getMoonLongitude(jd: number): number {
       T * T * T / 538841 -
       T * T * T * T / 65194000
   );
-  // Moon's mean elongation
   const D = normalizeAngle(
     297.8501921 +
       445267.1114034 * T -
@@ -93,9 +70,7 @@ function getMoonLongitude(jd: number): number {
       T * T * T / 545868 -
       T * T * T * T / 113065000
   );
-  // Sun's mean anomaly
   const M = normalizeAngle(357.5291092 + 35999.0502909 * T - 0.0001536 * T * T + T * T * T / 24490000);
-  // Moon's mean anomaly
   const M1 = normalizeAngle(
     134.9633964 +
       477198.8675055 * T +
@@ -103,7 +78,6 @@ function getMoonLongitude(jd: number): number {
       T * T * T / 69699 -
       T * T * T * T / 14712000
   );
-  // Moon's argument of latitude
   const F = normalizeAngle(
     93.272095 +
       483202.0175233 * T -
@@ -117,7 +91,6 @@ function getMoonLongitude(jd: number): number {
   const M1rad = toRad(M1);
   const Frad = toRad(F);
 
-  // Major periodic terms for longitude (in 0.000001 degrees)
   let sumL = 0;
   sumL += 6288774 * Math.sin(M1rad);
   sumL += 1274027 * Math.sin(2 * Drad - M1rad);
@@ -185,23 +158,14 @@ function getMoonLongitude(jd: number): number {
 
 // ─── Sunrise / Sunset ─────────────────────────────────────────────────────────
 
-/**
- * Compute sunrise and sunset times for a given date at the fixed location.
- * Returns times as Date objects in local IST.
- * Uses Meeus Ch.15 algorithm.
- */
-function getSunriseSunset(date: Date): { sunrise: Date; sunset: Date } {
-  // Use noon IST of the given date as reference
+function computeSunriseSunset(date: Date): { sunrise: Date; sunset: Date } {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
 
-  // JD for noon UT on the given date
-  const jdNoon = dateToJD(new Date(Date.UTC(year, month - 1, day, 12, 0, 0)));
+  const jdNoon = toJulianDay(new Date(Date.UTC(year, month - 1, day, 12, 0, 0)));
+  const T = (jdNoon - 2451545.0) / 36525;
 
-  const T = jdToT(jdNoon);
-
-  // Sun's mean longitude and anomaly
   const L0 = normalizeAngle(280.46646 + 36000.76983 * T);
   const M = normalizeAngle(357.52911 + 35999.05029 * T);
   const Mrad = toRad(M);
@@ -213,38 +177,32 @@ function getSunriseSunset(date: Date): { sunrise: Date; sunset: Date } {
   const omega = 125.04 - 1934.136 * T;
   const apparent = sunLon - 0.00569 - 0.00478 * Math.sin(toRad(omega));
 
-  // Obliquity of ecliptic
   const eps0 = 23.439291111 - 0.013004167 * T;
   const eps = eps0 + 0.00256 * Math.cos(toRad(omega));
 
-  // Sun's right ascension and declination
-  const sunRA = toDeg(Math.atan2(Math.cos(toRad(eps)) * Math.sin(toRad(apparent)), Math.cos(toRad(apparent))));
   const sunDec = toDeg(Math.asin(Math.sin(toRad(eps)) * Math.sin(toRad(apparent))));
 
-  // Hour angle for sunrise/sunset (h0 = -0.8333 degrees for standard sunrise)
   const h0 = -0.8333;
   const latRad = toRad(LAT);
   const decRad = toRad(sunDec);
-  const cosH = (Math.sin(toRad(h0)) - Math.sin(latRad) * Math.sin(decRad)) / (Math.cos(latRad) * Math.cos(decRad));
-
-  // Clamp to valid range
+  const cosH =
+    (Math.sin(toRad(h0)) - Math.sin(latRad) * Math.sin(decRad)) /
+    (Math.cos(latRad) * Math.cos(decRad));
   const cosHClamped = Math.max(-1, Math.min(1, cosH));
   const H = toDeg(Math.acos(cosHClamped));
 
-  // Equation of time (approximate)
-  const B = toRad(360 / 365 * (jdNoon - 2451545 + 10));
-  const eqTime = -7.655 * Math.sin(B) + 9.873 * Math.sin(2 * B + 3.588) + 0.439 * Math.sin(4 * B + 0.072);
+  const B = toRad((360 / 365) * (jdNoon - 2451545 + 10));
+  const eqTime =
+    -7.655 * Math.sin(B) +
+    9.873 * Math.sin(2 * B + 3.588) +
+    0.439 * Math.sin(4 * B + 0.072);
 
-  // Solar noon in hours UT
   const solarNoonUT = 12 - LON / 15 - eqTime / 60;
-
-  // Sunrise and sunset in hours UT
   const sunriseUT = solarNoonUT - H / 15;
   const sunsetUT = solarNoonUT + H / 15;
 
-  // Convert to IST (UTC+5:30)
-  const sunriseIST = sunriseUT + IST_OFFSET_HOURS;
-  const sunsetIST = sunsetUT + IST_OFFSET_HOURS;
+  const sunriseIST = sunriseUT + IST_OFFSET;
+  const sunsetIST = sunsetUT + IST_OFFSET;
 
   function hoursToDate(hours: number, baseDate: Date): Date {
     const h = Math.floor(hours);
@@ -279,37 +237,6 @@ export const TITHI_NAMES_EN: string[] = [
   'Ekadashi', 'Dwadashi', 'Trayodashi', 'Chaturdashi', 'Amavasya',
 ];
 
-/** Returns Tithi number (1-30) and name for a given date */
-export function getTithi(date: Date): { number: number; name: string; nameEn: string; paksha: string } {
-  // Use IST noon for calculation
-  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  // Convert IST noon to UTC for JD calculation
-  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET_HOURS * 3600 * 1000);
-  const jd = dateToJD(utcNoon);
-
-  const sunLon = getSunLongitude(jd);
-  const moonLon = getMoonLongitude(jd);
-
-  // Angular difference (Moon - Sun), normalized to 0-360
-  let diff = normalizeAngle(moonLon - sunLon);
-
-  // Each tithi is 12 degrees
-  const tithiIndex = Math.floor(diff / 12); // 0-29
-  const tithiNumber = tithiIndex + 1; // 1-30
-
-  const paksha = tithiIndex < 15 ? 'शुक्ल पक्ष' : 'कृष्ण पक्ष';
-  const pakshaEn = tithiIndex < 15 ? 'Shukla Paksha' : 'Krishna Paksha';
-
-  return {
-    number: tithiNumber,
-    name: TITHI_NAMES[tithiIndex],
-    nameEn: TITHI_NAMES_EN[tithiIndex],
-    paksha,
-  };
-}
-
-// ─── Nakshatra ────────────────────────────────────────────────────────────────
-
 export const NAKSHATRA_NAMES: string[] = [
   'अश्विनी', 'भरणी', 'कृत्तिका', 'रोहिणी', 'मृगशिरा',
   'आर्द्रा', 'पुनर्वसु', 'पुष्य', 'आश्लेषा', 'मघा',
@@ -327,24 +254,6 @@ export const NAKSHATRA_NAMES_EN: string[] = [
   'Uttarashadha', 'Shravana', 'Dhanishtha', 'Shatabhisha', 'Purva Bhadrapada',
   'Uttara Bhadrapada', 'Revati',
 ];
-
-/** Returns Nakshatra (1-27) and name for a given date */
-export function getNakshatra(date: Date): { number: number; name: string; nameEn: string } {
-  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET_HOURS * 3600 * 1000);
-  const jd = dateToJD(utcNoon);
-
-  const moonLon = getMoonLongitude(jd);
-  // Each nakshatra spans 360/27 = 13.333... degrees
-  const nakshatraIndex = Math.floor(moonLon / (360 / 27)); // 0-26
-  return {
-    number: nakshatraIndex + 1,
-    name: NAKSHATRA_NAMES[nakshatraIndex],
-    nameEn: NAKSHATRA_NAMES_EN[nakshatraIndex],
-  };
-}
-
-// ─── Yoga ─────────────────────────────────────────────────────────────────────
 
 export const YOGA_NAMES: string[] = [
   'विष्कम्भ', 'प्रीति', 'आयुष्मान', 'सौभाग्य', 'शोभन',
@@ -364,27 +273,6 @@ export const YOGA_NAMES_EN: string[] = [
   'Indra', 'Vaidhriti',
 ];
 
-/** Returns Yoga (1-27) and name for a given date */
-export function getYoga(date: Date): { number: number; name: string; nameEn: string } {
-  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET_HOURS * 3600 * 1000);
-  const jd = dateToJD(utcNoon);
-
-  const sunLon = getSunLongitude(jd);
-  const moonLon = getMoonLongitude(jd);
-
-  // Yoga = (Sun longitude + Moon longitude) / (360/27)
-  const sum = normalizeAngle(sunLon + moonLon);
-  const yogaIndex = Math.floor(sum / (360 / 27)); // 0-26
-  return {
-    number: yogaIndex + 1,
-    name: YOGA_NAMES[yogaIndex],
-    nameEn: YOGA_NAMES_EN[yogaIndex],
-  };
-}
-
-// ─── Karana ───────────────────────────────────────────────────────────────────
-
 export const KARANA_NAMES: string[] = [
   'बव', 'बालव', 'कौलव', 'तैतिल', 'गर',
   'वणिज', 'विष्टि', 'शकुनि', 'चतुष्पाद', 'नाग', 'किंस्तुघ्न',
@@ -395,43 +283,6 @@ export const KARANA_NAMES_EN: string[] = [
   'Vanija', 'Vishti', 'Shakuni', 'Chatushpada', 'Naga', 'Kinstughna',
 ];
 
-/** Returns Karana name for a given date */
-export function getKarana(date: Date): { name: string; nameEn: string } {
-  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET_HOURS * 3600 * 1000);
-  const jd = dateToJD(utcNoon);
-
-  const sunLon = getSunLongitude(jd);
-  const moonLon = getMoonLongitude(jd);
-  const diff = normalizeAngle(moonLon - sunLon);
-
-  // Each karana is 6 degrees (half a tithi)
-  const karanaIndex = Math.floor(diff / 6); // 0-59
-
-  // The 7 movable karanas repeat 8 times (indices 0-55), then 4 fixed karanas
-  let name: string;
-  let nameEn: string;
-  if (karanaIndex === 0) {
-    // Kinstughna (fixed)
-    name = KARANA_NAMES[10];
-    nameEn = KARANA_NAMES_EN[10];
-  } else if (karanaIndex >= 57) {
-    // Fixed karanas at end: Shakuni, Chatushpada, Naga
-    const fixedIdx = karanaIndex - 57 + 7;
-    name = KARANA_NAMES[Math.min(fixedIdx, 9)];
-    nameEn = KARANA_NAMES_EN[Math.min(fixedIdx, 9)];
-  } else {
-    // Movable karanas (7 repeating)
-    const movableIdx = ((karanaIndex - 1) % 7);
-    name = KARANA_NAMES[movableIdx];
-    nameEn = KARANA_NAMES_EN[movableIdx];
-  }
-
-  return { name, nameEn };
-}
-
-// ─── Vara (Weekday) ───────────────────────────────────────────────────────────
-
 export const VARA_NAMES: string[] = [
   'रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार',
 ];
@@ -441,226 +292,340 @@ export const VARA_NAMES_EN: string[] = [
   'Budhavara (Wednesday)', 'Guruvara (Thursday)', 'Shukravara (Friday)', 'Shanivara (Saturday)',
 ];
 
-export function getVara(date: Date): { name: string; nameEn: string } {
-  const day = date.getDay(); // 0=Sunday
+// ─── Core calculation functions ───────────────────────────────────────────────
+
+function getTithiData(date: Date): { number: number; name: string; nameEn: string; paksha: string } {
+  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET * 3600 * 1000);
+  const jd = toJulianDay(utcNoon);
+
+  const sunLon = getSunLongitude(jd);
+  const moonLon = getMoonLongitude(jd);
+  const diff = normalizeAngle(moonLon - sunLon);
+
+  const tithiIndex = Math.floor(diff / 12);
+  const tithiNumber = tithiIndex + 1;
+  const paksha = tithiIndex < 15 ? 'शुक्ल पक्ष' : 'कृष्ण पक्ष';
+
+  return {
+    number: tithiNumber,
+    name: TITHI_NAMES[tithiIndex],
+    nameEn: TITHI_NAMES_EN[tithiIndex],
+    paksha,
+  };
+}
+
+function getNakshatraData(date: Date): { number: number; name: string; nameEn: string } {
+  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET * 3600 * 1000);
+  const jd = toJulianDay(utcNoon);
+  const moonLon = getMoonLongitude(jd);
+  const nakshatraIndex = Math.floor(moonLon / (360 / 27));
+  return {
+    number: nakshatraIndex + 1,
+    name: NAKSHATRA_NAMES[nakshatraIndex],
+    nameEn: NAKSHATRA_NAMES_EN[nakshatraIndex],
+  };
+}
+
+function getYogaData(date: Date): { number: number; name: string; nameEn: string } {
+  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET * 3600 * 1000);
+  const jd = toJulianDay(utcNoon);
+  const sunLon = getSunLongitude(jd);
+  const moonLon = getMoonLongitude(jd);
+  const sum = normalizeAngle(sunLon + moonLon);
+  const yogaIndex = Math.floor(sum / (360 / 27));
+  return {
+    number: yogaIndex + 1,
+    name: YOGA_NAMES[yogaIndex],
+    nameEn: YOGA_NAMES_EN[yogaIndex],
+  };
+}
+
+function getKaranaData(date: Date): { name: string; nameEn: string } {
+  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET * 3600 * 1000);
+  const jd = toJulianDay(utcNoon);
+  const sunLon = getSunLongitude(jd);
+  const moonLon = getMoonLongitude(jd);
+  const diff = normalizeAngle(moonLon - sunLon);
+  const karanaIndex = Math.floor(diff / 6);
+
+  let name: string;
+  let nameEn: string;
+  if (karanaIndex === 0) {
+    name = KARANA_NAMES[10];
+    nameEn = KARANA_NAMES_EN[10];
+  } else if (karanaIndex >= 57) {
+    const fixedIdx = karanaIndex - 57 + 7;
+    name = KARANA_NAMES[Math.min(fixedIdx, 9)];
+    nameEn = KARANA_NAMES_EN[Math.min(fixedIdx, 9)];
+  } else {
+    const movableIdx = (karanaIndex - 1) % 7;
+    name = KARANA_NAMES[movableIdx];
+    nameEn = KARANA_NAMES_EN[movableIdx];
+  }
+  return { name, nameEn };
+}
+
+function getVaraData(date: Date): { name: string; nameEn: string } {
+  const day = date.getDay();
   return { name: VARA_NAMES[day], nameEn: VARA_NAMES_EN[day] };
 }
 
-// ─── Rahu Kaal / Gulika / Yamaganda ──────────────────────────────────────────
-
-/**
- * Rahu Kaal order by weekday (0=Sun, 1=Mon, ... 6=Sat)
- * The number represents which 1/8th segment of the day is Rahu Kaal
- * (1-indexed, where 1 = first segment after sunrise)
- */
-const RAHU_KAAL_SEGMENT: Record<number, number> = {
-  0: 8, // Sunday: 8th segment
-  1: 2, // Monday: 2nd segment
-  2: 7, // Tuesday: 7th segment
-  3: 5, // Wednesday: 5th segment
-  4: 6, // Thursday: 6th segment
-  5: 4, // Friday: 4th segment
-  6: 3, // Saturday: 3rd segment
-};
-
-const GULIKA_KAAL_SEGMENT: Record<number, number> = {
-  0: 6, // Sunday
-  1: 5, // Monday
-  2: 4, // Tuesday
-  3: 3, // Wednesday
-  4: 2, // Thursday
-  5: 1, // Friday
-  6: 7, // Saturday
-};
-
-const YAMAGANDA_SEGMENT: Record<number, number> = {
-  0: 4, // Sunday
-  1: 3, // Monday
-  2: 2, // Tuesday
-  3: 1, // Wednesday
-  4: 8, // Thursday
-  5: 7, // Friday
-  6: 6, // Saturday
-};
-
-function getKaalPeriod(date: Date, segmentMap: Record<number, number>): { start: Date; end: Date } {
-  const { sunrise, sunset } = getSunriseSunset(date);
+function getKaalPeriod(
+  date: Date,
+  segmentMap: Record<number, number>
+): { start: Date; end: Date } {
+  const { sunrise, sunset } = computeSunriseSunset(date);
   const dayDurationMs = sunset.getTime() - sunrise.getTime();
   const segmentMs = dayDurationMs / 8;
   const dayOfWeek = date.getDay();
   const segment = segmentMap[dayOfWeek];
-
   const start = new Date(sunrise.getTime() + (segment - 1) * segmentMs);
   const end = new Date(sunrise.getTime() + segment * segmentMs);
   return { start, end };
 }
 
-export function getRahuKaal(date: Date): { start: Date; end: Date } {
-  return getKaalPeriod(date, RAHU_KAAL_SEGMENT);
+const RAHU_KAAL_SEGMENT: Record<number, number> = {
+  0: 8, 1: 2, 2: 7, 3: 5, 4: 6, 5: 4, 6: 3,
+};
+const GULIKA_KAAL_SEGMENT: Record<number, number> = {
+  0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1, 6: 7,
+};
+const YAMAGANDA_SEGMENT: Record<number, number> = {
+  0: 4, 1: 3, 2: 2, 3: 1, 4: 8, 5: 7, 6: 6,
+};
+
+// ─── Public exports (simple string versions) ─────────────────────────────────
+
+/** Returns Tithi name string for Home page */
+export function getTithi(date: Date): string {
+  return getTithiData(date).name;
 }
 
-export function getGulikaKaal(date: Date): { start: Date; end: Date } {
-  return getKaalPeriod(date, GULIKA_KAAL_SEGMENT);
+/** Returns Nakshatra name string for Home page */
+export function getNakshatra(date: Date): string {
+  return getNakshatraData(date).name;
 }
 
-export function getYamagandaKaal(date: Date): { start: Date; end: Date } {
-  return getKaalPeriod(date, YAMAGANDA_SEGMENT);
+/** Returns Vara (weekday) name string for Home page */
+export function getVara(date: Date): string {
+  return getVaraData(date).name;
 }
 
-// ─── Brahma Muhurat & Abhijit Muhurat ─────────────────────────────────────────
-
-/** Brahma Muhurat: 96 minutes before sunrise, lasts 48 minutes */
-export function getBrahmaMuhurat(date: Date): { start: Date; end: Date } {
-  const { sunrise } = getSunriseSunset(date);
-  const start = new Date(sunrise.getTime() - 96 * 60 * 1000);
-  const end = new Date(sunrise.getTime() - 48 * 60 * 1000);
-  return { start, end };
+/** Returns Yoga name string */
+export function getYoga(date: Date): string {
+  return getYogaData(date).name;
 }
 
-/**
- * Abhijit Muhurat: The 8th muhurat of the day.
- * Day is divided into 15 muhurats (each = day_duration / 15).
- * Abhijit is the 8th, centered around solar noon.
- */
-export function getAbhijitMuhurat(date: Date): { start: Date; end: Date } {
-  const { sunrise, sunset } = getSunriseSunset(date);
-  const dayDurationMs = sunset.getTime() - sunrise.getTime();
-  const muhurtaDurationMs = dayDurationMs / 15;
-  const start = new Date(sunrise.getTime() + 7 * muhurtaDurationMs);
-  const end = new Date(sunrise.getTime() + 8 * muhurtaDurationMs);
-  return { start, end };
+/** Returns Karana name string */
+export function getKarana(date: Date): string {
+  return getKaranaData(date).name;
 }
 
-// ─── Vikram Samvat ────────────────────────────────────────────────────────────
+/** Returns Paksha string */
+export function getPaksha(date: Date): string {
+  return getTithiData(date).paksha;
+}
 
-/**
- * Vikram Samvat year.
- * VS = Gregorian year + 56 (before Chaitra Shukla Pratipada) or +57 (after).
- * Approximate: VS = Gregorian year + 57 for dates after ~April, else +56.
- */
+/** Returns Vikram Samvat year */
 export function getVikramSamvat(date: Date): number {
-  const month = date.getMonth() + 1; // 1-12
-  const day = date.getDate();
-  // Hindu new year (Chaitra Shukla Pratipada) is roughly in March-April
-  // Approximate: if before April 14, use +56, else +57
-  if (month < 4 || (month === 4 && day < 14)) {
-    return date.getFullYear() + 56;
-  }
-  return date.getFullYear() + 57;
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return month >= 4 ? year + 57 : year + 56;
 }
 
-// ─── Hindu Month ──────────────────────────────────────────────────────────────
-
-export const HINDU_MONTHS: string[] = [
-  'चैत्र', 'वैशाख', 'ज्येष्ठ', 'आषाढ़', 'श्रावण', 'भाद्रपद',
-  'आश्विन', 'कार्तिक', 'मार्गशीर्ष', 'पौष', 'माघ', 'फाल्गुन',
-];
-
-export const HINDU_MONTHS_EN: string[] = [
-  'Chaitra', 'Vaishakha', 'Jyeshtha', 'Ashadha', 'Shravana', 'Bhadrapada',
-  'Ashwin', 'Kartik', 'Margashirsha', 'Pausha', 'Magha', 'Phalguna',
-];
-
-/**
- * Hindu month based on Sun's zodiac sign (Saura month).
- * Sun enters each zodiac sign roughly every 30 days.
- * Aries (0°) = Chaitra, Taurus (30°) = Vaishakha, etc.
- */
-export function getHinduMonth(date: Date): { name: string; nameEn: string } {
-  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET_HOURS * 3600 * 1000);
-  const jd = dateToJD(utcNoon);
-  const sunLon = getSunLongitude(jd);
-
-  // Sun's zodiac sign (0-11)
-  const signIndex = Math.floor(sunLon / 30);
-  return {
-    name: HINDU_MONTHS[signIndex],
-    nameEn: HINDU_MONTHS_EN[signIndex],
-  };
-}
-
-// ─── Ayana ────────────────────────────────────────────────────────────────────
-
-/**
- * Uttarayana: Sun moving north (winter solstice to summer solstice, ~Dec 21 to Jun 21)
- * Dakshinayana: Sun moving south (summer solstice to winter solstice, ~Jun 21 to Dec 21)
- * Based on Sun's ecliptic longitude: 270°-90° = Uttarayana, 90°-270° = Dakshinayana
- */
-export function getAyana(date: Date): { name: string; nameEn: string } {
-  const istNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  const utcNoon = new Date(istNoon.getTime() - IST_OFFSET_HOURS * 3600 * 1000);
-  const jd = dateToJD(utcNoon);
-  const sunLon = getSunLongitude(jd);
-
-  // Uttarayana: Sun longitude 270° to 90° (passing through 0°)
-  const isUttarayana = sunLon >= 270 || sunLon < 90;
-  return {
-    name: isUttarayana ? 'उत्तरायण' : 'दक्षिणायन',
-    nameEn: isUttarayana ? 'Uttarayana' : 'Dakshinayana',
-  };
-}
-
-// ─── Format Helpers ───────────────────────────────────────────────────────────
-
-export function formatTimeIST(date: Date): string {
-  let hours = date.getHours();
-  const minutes = date.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  if (hours === 0) hours = 12;
-  const mm = minutes.toString().padStart(2, '0');
-  return `${hours}:${mm} ${ampm}`;
-}
-
-export function formatDateReadable(date: Date): string {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+/** Returns Hindu month name */
+export function getHinduMonth(date: Date): string {
+  const hinduMonths = [
+    'माघ', 'फाल्गुन', 'चैत्र', 'वैशाख', 'ज्येष्ठ', 'आषाढ़',
+    'श्रावण', 'भाद्रपद', 'आश्विन', 'कार्तिक', 'मार्गशीर्ष', 'पौष',
   ];
-  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  return hinduMonths[date.getMonth()];
 }
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
+/** Returns Ayana name */
+export function getAyana(date: Date): string {
+  const month = date.getMonth() + 1;
+  return month >= 1 && month <= 6 ? 'उत्तरायण' : 'दक्षिणायन';
+}
+
+// ─── Brahma Muhurat (string version for VratModeDashboard) ───────────────────
+
+export function getBrahmaMuhurat(date: Date): { start: string; end: string } {
+  const { sunrise } = computeSunriseSunset(date);
+  const sunriseMs = sunrise.getTime();
+  // Brahma Muhurat: 1.5 hours before sunrise, lasting 48 minutes
+  const endMs = sunriseMs - 24 * 60 * 1000; // 24 min before sunrise
+  const startMs = endMs - 48 * 60 * 1000;   // 48 min duration
+
+  const fmt = (d: Date) => {
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const displayH = h % 12 || 12;
+    return `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  return {
+    start: fmt(new Date(startMs)),
+    end: fmt(new Date(endMs)),
+  };
+}
+
+// ─── Tithi number (for Ekadashi calculation) ─────────────────────────────────
+
+export function getTithiNumber(date: Date): number {
+  return getTithiData(date).number;
+}
+
+// ─── Ekadashi & Shivratri ─────────────────────────────────────────────────────
+
+/**
+ * Compute the next Ekadashi date from today.
+ * Ekadashi is the 11th tithi of each paksha (fortnight), occurring twice per lunar month.
+ */
+export function getNextEkadashi(fromDate: Date = new Date()): { date: Date; daysRemaining: number } {
+  for (let i = 0; i <= 20; i++) {
+    const checkDate = new Date(fromDate);
+    checkDate.setDate(checkDate.getDate() + i);
+    checkDate.setHours(6, 0, 0, 0);
+
+    const tithiNum = getTithiNumber(checkDate);
+    // Ekadashi is tithi 11 (Shukla) or tithi 26 (Krishna = 11th of dark fortnight)
+    if (tithiNum === 11 || tithiNum === 26) {
+      return { date: checkDate, daysRemaining: i };
+    }
+  }
+
+  const fallback = new Date(fromDate);
+  fallback.setDate(fallback.getDate() + 15);
+  return { date: fallback, daysRemaining: 15 };
+}
+
+/**
+ * Compute the next Mahashivratri date.
+ * Mahashivratri falls on the 14th night of Krishna Paksha of Phalguna (Feb/Mar).
+ */
+export function getNextShivratri(fromDate: Date = new Date()): { date: Date; daysRemaining: number } {
+  for (let i = 0; i <= 400; i++) {
+    const checkDate = new Date(fromDate);
+    checkDate.setDate(checkDate.getDate() + i);
+    checkDate.setHours(6, 0, 0, 0);
+
+    const tithiNum = getTithiNumber(checkDate);
+    const month = checkDate.getMonth() + 1;
+    // Chaturdashi of Krishna Paksha = tithi 29 (14th of dark fortnight)
+    // Phalguna = Feb/Mar (month 2 or 3)
+    if (tithiNum === 29 && (month === 2 || month === 3)) {
+      return { date: checkDate, daysRemaining: i };
+    }
+  }
+
+  const fallback = new Date(fromDate.getFullYear() + 1, 1, 18);
+  const diff = Math.round((fallback.getTime() - fromDate.getTime()) / 86400000);
+  return { date: fallback, daysRemaining: diff };
+}
+
+// ─── getPanchangData (used by Panchang.tsx) ───────────────────────────────────
 
 export interface PanchangData {
-  date: Date;
-  tithi: ReturnType<typeof getTithi>;
-  nakshatra: ReturnType<typeof getNakshatra>;
-  yoga: ReturnType<typeof getYoga>;
-  karana: ReturnType<typeof getKarana>;
-  vara: ReturnType<typeof getVara>;
+  tithi: { number: number; name: string; nameEn: string; paksha: string };
+  nakshatra: { number: number; name: string; nameEn: string };
+  yoga: { number: number; name: string; nameEn: string };
+  karana: { name: string; nameEn: string };
+  vara: { name: string; nameEn: string };
   sunrise: Date;
   sunset: Date;
+  brahmaMuhurat: { start: Date; end: Date };
+  abhijitMuhurat: { start: Date; end: Date };
   rahuKaal: { start: Date; end: Date };
   gulikaKaal: { start: Date; end: Date };
   yamagandaKaal: { start: Date; end: Date };
-  brahmaMuhurat: { start: Date; end: Date };
-  abhijitMuhurat: { start: Date; end: Date };
   vikramSamvat: number;
-  hinduMonth: ReturnType<typeof getHinduMonth>;
-  ayana: ReturnType<typeof getAyana>;
+  hinduMonth: { name: string; nameEn: string };
+  ayana: { name: string; nameEn: string };
 }
 
 export function getPanchangData(date: Date): PanchangData {
-  const { sunrise, sunset } = getSunriseSunset(date);
+  const { sunrise, sunset } = computeSunriseSunset(date);
+
+  // Brahma Muhurat: ~96 min before sunrise, 48 min duration
+  const brahmaMuhuratEnd = new Date(sunrise.getTime() - 24 * 60 * 1000);
+  const brahmaMuhuratStart = new Date(brahmaMuhuratEnd.getTime() - 48 * 60 * 1000);
+
+  // Abhijit Muhurat: middle of the day
+  const dayMs = sunset.getTime() - sunrise.getTime();
+  const abhijitStart = new Date(sunrise.getTime() + dayMs * 0.458);
+  const abhijitEnd = new Date(sunrise.getTime() + dayMs * 0.542);
+
+  const rahuKaal = getKaalPeriod(date, RAHU_KAAL_SEGMENT);
+  const gulikaKaal = getKaalPeriod(date, GULIKA_KAAL_SEGMENT);
+  const yamagandaKaal = getKaalPeriod(date, YAMAGANDA_SEGMENT);
+
+  const hinduMonths = [
+    { name: 'माघ', nameEn: 'Magha' },
+    { name: 'फाल्गुन', nameEn: 'Phalguna' },
+    { name: 'चैत्र', nameEn: 'Chaitra' },
+    { name: 'वैशाख', nameEn: 'Vaishakha' },
+    { name: 'ज्येष्ठ', nameEn: 'Jyeshtha' },
+    { name: 'आषाढ़', nameEn: 'Ashadha' },
+    { name: 'श्रावण', nameEn: 'Shravana' },
+    { name: 'भाद्रपद', nameEn: 'Bhadrapada' },
+    { name: 'आश्विन', nameEn: 'Ashwin' },
+    { name: 'कार्तिक', nameEn: 'Kartik' },
+    { name: 'मार्गशीर्ष', nameEn: 'Margashirsha' },
+    { name: 'पौष', nameEn: 'Pausha' },
+  ];
+
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  const vikramSamvat = (month + 1) >= 4 ? year + 57 : year + 56;
+
+  const ayanaMonth = month + 1;
+  const ayana =
+    ayanaMonth >= 1 && ayanaMonth <= 6
+      ? { name: 'उत्तरायण', nameEn: 'Uttarayana' }
+      : { name: 'दक्षिणायन', nameEn: 'Dakshinayana' };
+
   return {
-    date,
-    tithi: getTithi(date),
-    nakshatra: getNakshatra(date),
-    yoga: getYoga(date),
-    karana: getKarana(date),
-    vara: getVara(date),
+    tithi: getTithiData(date),
+    nakshatra: getNakshatraData(date),
+    yoga: getYogaData(date),
+    karana: getKaranaData(date),
+    vara: getVaraData(date),
     sunrise,
     sunset,
-    rahuKaal: getRahuKaal(date),
-    gulikaKaal: getGulikaKaal(date),
-    yamagandaKaal: getYamagandaKaal(date),
-    brahmaMuhurat: getBrahmaMuhurat(date),
-    abhijitMuhurat: getAbhijitMuhurat(date),
-    vikramSamvat: getVikramSamvat(date),
-    hinduMonth: getHinduMonth(date),
-    ayana: getAyana(date),
+    brahmaMuhurat: { start: brahmaMuhuratStart, end: brahmaMuhuratEnd },
+    abhijitMuhurat: { start: abhijitStart, end: abhijitEnd },
+    rahuKaal,
+    gulikaKaal,
+    yamagandaKaal,
+    vikramSamvat,
+    hinduMonth: hinduMonths[month],
+    ayana,
   };
+}
+
+// ─── Formatting helpers (used by Panchang.tsx) ────────────────────────────────
+
+/** Format a Date object to IST time string like "6:30 AM" */
+export function formatTimeIST(date: Date): string {
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const displayH = h % 12 || 12;
+  return `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+/** Format a Date to a readable string like "Monday, 27 February 2026" */
+export function formatDateReadable(date: Date): string {
+  return date.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }

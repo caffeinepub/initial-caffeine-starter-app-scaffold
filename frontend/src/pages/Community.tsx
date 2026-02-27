@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
+import { Heart, Flag, Plus, Send, Loader2, MessageCircle, Users, Lock } from 'lucide-react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useIsCallerApproved, useRequestApproval } from '../hooks/useQueries';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useGetApprovedCommunityPosts,
+  useCreateCommunityPost,
+  useLikeCommunityPost,
+  useReportCommunityPost,
+  useIsCallerApproved,
+  useRequestApproval,
+} from '../hooks/useQueries';
 import {
   Dialog,
   DialogContent,
@@ -12,208 +17,343 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Heart, Flag, Plus, Clock, Loader2, UserCheck } from 'lucide-react';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
-interface Post {
-  id: number;
-  author: string;
-  content: string;
-  timestamp: string;
-  likes: number;
-  status: 'pending' | 'approved';
-  liked: boolean;
-}
-
-const SEED_POSTS: Post[] = [
+// Seed posts shown when no backend posts exist
+const SEED_POSTS = [
   {
-    id: 1,
-    author: 'Priya Sharma',
-    content: 'आज एकादशी का व्रत रखा। भगवान विष्णु की कृपा से मन बहुत शांत है। 🙏',
-    timestamp: '2 hours ago',
+    id: -1,
+    author: 'भक्त रामदास',
+    content: '🙏 आज सुबह ब्रह्म मुहूर्त में उठकर गायत्री मंत्र का जाप किया। मन को अद्भुत शांति मिली। हर हर महादेव! 🕉️',
+    timestamp: Date.now() - 2 * 60 * 60 * 1000,
     likes: 24,
-    status: 'approved',
-    liked: false,
+    comments: 5,
+    reports: 0,
   },
   {
-    id: 2,
-    author: 'Rajesh Kumar',
-    content: 'Visited Kashi Vishwanath temple today. The divine energy there is indescribable. Har Har Mahadev! 🕉️',
-    timestamp: '5 hours ago',
-    likes: 41,
-    status: 'approved',
-    liked: false,
-  },
-  {
-    id: 3,
-    author: 'Meera Devi',
-    content: 'सत्यनारायण कथा सुनी आज। जीवन में सत्य और धर्म का पालन करना ही सबसे बड़ी पूजा है।',
-    timestamp: '1 day ago',
+    id: -2,
+    author: 'माँ लक्ष्मी भक्त',
+    content: '🌸 एकादशी का व्रत रखा और विष्णु सहस्रनाम का पाठ किया। भगवान की कृपा से सब कुछ ठीक हो रहा है। जय श्री हरि! 🙏',
+    timestamp: Date.now() - 5 * 60 * 60 * 1000,
     likes: 18,
-    status: 'approved',
-    liked: false,
+    comments: 3,
+    reports: 0,
+  },
+  {
+    id: -3,
+    author: 'कृष्ण भक्त',
+    content: '🎵 हरे कृष्ण हरे कृष्ण, कृष्ण कृष्ण हरे हरे। आज मंदिर में भजन-कीर्तन में भाग लिया। राधे राधे! 💛',
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
+    likes: 31,
+    comments: 8,
+    reports: 0,
   },
 ];
 
+function timeAgo(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (days > 0) return `${days} दिन पहले`;
+  if (hours > 0) return `${hours} घंटे पहले`;
+  if (minutes > 0) return `${minutes} मिनट पहले`;
+  return 'अभी';
+}
+
+interface SeedPost {
+  id: number;
+  author: string;
+  content: string;
+  timestamp: number;
+  likes: number;
+  comments: number;
+  reports: number;
+}
+
+function SeedPostCard({ post }: { post: SeedPost }) {
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes);
+
+  const handleLike = () => {
+    if (!liked) {
+      setLiked(true);
+      setLikeCount(c => c + 1);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+          {post.author.charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground text-sm">{post.author}</p>
+          <p className="text-muted-foreground text-xs">{timeAgo(post.timestamp)}</p>
+        </div>
+      </div>
+      <p className="text-foreground text-sm leading-relaxed">{post.content}</p>
+      <div className="flex items-center gap-4 pt-1">
+        <button
+          onClick={handleLike}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${
+            liked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${liked ? 'fill-rose-500' : ''}`} />
+          <span>{likeCount}</span>
+        </button>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MessageCircle className="w-4 h-4" />
+          <span>{post.comments}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface BackendPost {
+  id: bigint;
+  author: { toString(): string };
+  content: string;
+  timestamp: bigint;
+  likes: bigint;
+  comments: bigint;
+  reports: bigint;
+}
+
+function BackendPostCard({ post }: { post: BackendPost }) {
+  const { identity } = useInternetIdentity();
+  const likeMutation = useLikeCommunityPost();
+  const reportMutation = useReportCommunityPost();
+  const [localLikes, setLocalLikes] = useState(Number(post.likes));
+  const [liked, setLiked] = useState(false);
+  const [reported, setReported] = useState(false);
+
+  const handleLike = async () => {
+    if (liked || !identity) return;
+    setLiked(true);
+    setLocalLikes(c => c + 1);
+    try {
+      await likeMutation.mutateAsync(post.id);
+    } catch {
+      setLiked(false);
+      setLocalLikes(c => c - 1);
+    }
+  };
+
+  const handleReport = async () => {
+    if (reported || !identity) return;
+    setReported(true);
+    try {
+      await reportMutation.mutateAsync(post.id);
+    } catch {
+      setReported(false);
+    }
+  };
+
+  const authorStr = post.author.toString();
+  const shortAuthor = authorStr.length > 12 ? authorStr.slice(0, 6) + '...' + authorStr.slice(-4) : authorStr;
+  const ts = Number(post.timestamp);
+  const timeDisplay = ts > 1e15 ? timeAgo(Math.floor(ts / 1_000_000)) : timeAgo(ts);
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-saffron to-gold flex items-center justify-center text-white font-bold text-sm shrink-0">
+          भ
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground text-sm font-mono">{shortAuthor}</p>
+          <p className="text-muted-foreground text-xs">{timeDisplay}</p>
+        </div>
+      </div>
+      <p className="text-foreground text-sm leading-relaxed">{post.content}</p>
+      <div className="flex items-center gap-4 pt-1">
+        <button
+          onClick={handleLike}
+          disabled={!identity || liked}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${
+            liked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'
+          } disabled:opacity-50`}
+        >
+          <Heart className={`w-4 h-4 ${liked ? 'fill-rose-500' : ''}`} />
+          <span>{localLikes}</span>
+        </button>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MessageCircle className="w-4 h-4" />
+          <span>{Number(post.comments)}</span>
+        </div>
+        {identity && (
+          <button
+            onClick={handleReport}
+            disabled={reported}
+            className={`flex items-center gap-1.5 text-sm ml-auto transition-colors ${
+              reported ? 'text-orange-500' : 'text-muted-foreground hover:text-orange-500'
+            } disabled:opacity-50`}
+          >
+            <Flag className="w-4 h-4" />
+            <span className="text-xs">{reported ? 'रिपोर्ट किया' : 'रिपोर्ट'}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Community() {
   const { identity } = useInternetIdentity();
-  const { data: isApproved, isLoading: approvalLoading } = useIsCallerApproved();
-  const requestApprovalMutation = useRequestApproval();
-
-  const [posts, setPosts] = useState<Post[]>(SEED_POSTS);
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [newPostContent, setNewPostContent] = useState('');
-
+  const queryClient = useQueryClient();
   const isAuthenticated = !!identity;
 
-  const handleLike = (postId: number) => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to like posts');
-      return;
+  const { data: posts = [], isLoading: postsLoading } = useGetApprovedCommunityPosts();
+  const { data: isApproved, isLoading: approvalLoading } = useIsCallerApproved();
+  const requestApprovalMutation = useRequestApproval();
+  const createPostMutation = useCreateCommunityPost();
+
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [postContent, setPostContent] = useState('');
+  const [approvalRequested, setApprovalRequested] = useState(false);
+
+  const handleRequestApproval = async () => {
+    try {
+      await requestApprovalMutation.mutateAsync();
+      setApprovalRequested(true);
+      queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
+    } catch (err) {
+      console.error('Approval request failed:', err);
     }
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-          : p
-      )
-    );
   };
 
-  const handleReport = (postId: number) => {
-    toast.info('Post reported for review');
-  };
-
-  const handleSubmitPost = () => {
-    if (!newPostContent.trim()) return;
-    const newPost: Post = {
-      id: Date.now(),
-      author: 'You',
-      content: newPostContent.trim(),
-      timestamp: 'Just now',
-      likes: 0,
-      status: 'pending',
-      liked: false,
-    };
-    setPosts((prev) => [newPost, ...prev]);
-    setNewPostContent('');
-    setComposeOpen(false);
-    toast.success('Post submitted for review');
-  };
-
-  const handleRequestApproval = () => {
-    requestApprovalMutation.mutate(undefined, {
-      onSuccess: () => toast.success('Approval request submitted!'),
-      onError: () => toast.error('Failed to submit approval request'),
-    });
+  const handleSubmitPost = async () => {
+    if (!postContent.trim()) return;
+    try {
+      await createPostMutation.mutateAsync(postContent.trim());
+      setPostContent('');
+      setComposeOpen(false);
+    } catch (err) {
+      console.error('Post creation failed:', err);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Community</h1>
-          {isAuthenticated && !approvalLoading && !isApproved && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleRequestApproval}
-              disabled={requestApprovalMutation.isPending}
-              className="gap-1.5"
-            >
-              {requestApprovalMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <UserCheck className="w-4 h-4" />
-              )}
-              Request Access
-            </Button>
-          )}
+      {/* Header */}
+      <div className="bg-gradient-to-r from-amber-900 to-orange-900 px-4 pt-6 pb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">सत्संग समुदाय</h1>
+            <p className="text-amber-200 text-sm mt-1">भक्तों का मिलन स्थल</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-amber-300" />
+            <span className="text-amber-200 text-sm">समुदाय</span>
+          </div>
         </div>
+      </div>
 
-        {/* Posts */}
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <Card key={post.id} className="border border-border">
-              <CardContent className="pt-4 pb-3 px-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <span className="font-semibold text-sm text-foreground">{post.author}</span>
-                    <span className="text-xs text-muted-foreground ml-2">{post.timestamp}</span>
-                  </div>
-                  {post.status === 'pending' && (
-                    <Badge variant="outline" className="text-xs shrink-0">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Pending Review
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-foreground leading-relaxed mb-3">{post.content}</p>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center gap-1 text-xs transition-colors ${
-                      post.liked
-                        ? 'text-rose-500'
-                        : 'text-muted-foreground hover:text-rose-500'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${post.liked ? 'fill-current' : ''}`} />
-                    {post.likes}
-                  </button>
-                  <button
-                    onClick={() => handleReport(post.id)}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <Flag className="w-4 h-4" />
-                    Report
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Floating Compose Button */}
-        {isAuthenticated && (
+      <div className="px-4 -mt-4 space-y-4">
+        {/* Compose button / Auth prompt */}
+        {!isAuthenticated ? (
+          <div className="bg-card border border-border rounded-xl p-4 text-center">
+            <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-foreground font-medium text-sm mb-1">समुदाय में शामिल हों</p>
+            <p className="text-muted-foreground text-xs">पोस्ट करने के लिए लॉगिन करें</p>
+          </div>
+        ) : !approvalLoading && isApproved === false ? (
+          <div className="bg-amber-950 border border-amber-800 rounded-xl p-4">
+            <p className="text-amber-200 font-medium text-sm mb-1">🙏 अनुमोदन आवश्यक है</p>
+            <p className="text-amber-400 text-xs mb-3">
+              पोस्ट करने के लिए व्यवस्थापक की अनुमति आवश्यक है।
+            </p>
+            {approvalRequested ? (
+              <p className="text-green-400 text-sm font-medium">✓ अनुरोध भेज दिया गया है</p>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleRequestApproval}
+                disabled={requestApprovalMutation.isPending}
+                className="bg-amber-600 hover:bg-amber-500 text-white"
+              >
+                {requestApprovalMutation.isPending ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> भेज रहे हैं...</>
+                ) : (
+                  'अनुमोदन अनुरोध करें'
+                )}
+              </Button>
+            )}
+          </div>
+        ) : isAuthenticated && isApproved ? (
           <button
             onClick={() => setComposeOpen(true)}
-            className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors z-20"
+            className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl p-4 flex items-center gap-3 transition-all shadow-md"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">नई पोस्ट लिखें...</span>
           </button>
-        )}
+        ) : null}
 
-        {/* Compose Dialog */}
-        <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Share with Community</DialogTitle>
-            </DialogHeader>
-            <Textarea
-              placeholder="Share your spiritual thoughts, experiences, or prayers... (max 280 characters)"
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value.slice(0, 280))}
-              rows={4}
-              className="resize-none"
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {newPostContent.length}/280
+        {/* Posts feed */}
+        {postsLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+          </div>
+        ) : posts.length > 0 ? (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <BackendPostCard key={String(post.id)} post={post} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-xs text-center py-2">
+              — समुदाय की पोस्टें —
             </p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setComposeOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmitPost}
-                disabled={!newPostContent.trim()}
-              >
-                Submit for Review
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            {SEED_POSTS.map((post) => (
+              <SeedPostCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Compose Dialog */}
+      <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>नई पोस्ट लिखें</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Textarea
+              value={postContent}
+              onChange={(e) => setPostContent(e.target.value)}
+              placeholder="अपने भक्ति अनुभव साझा करें... 🙏"
+              className="min-h-[120px] resize-none"
+              maxLength={500}
+            />
+            <p className="text-muted-foreground text-xs mt-1 text-right">
+              {postContent.length}/500
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setComposeOpen(false)}>
+              रद्द करें
+            </Button>
+            <Button
+              onClick={handleSubmitPost}
+              disabled={!postContent.trim() || createPostMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              {createPostMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> पोस्ट हो रहा है...</>
+              ) : (
+                <><Send className="w-4 h-4 mr-2" /> पोस्ट करें</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

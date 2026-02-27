@@ -1,18 +1,35 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Religious content app featuring Vrat Kathayen (fasting stories) with narration. Currently working on adding 10 long Vrat Kathas including Ekadashi, Solah Somvar, Mangalwar, Sukrwar, Karva Chauth, and others with audio narration support.",
-  "architectural_notes": [],
-  "known_issues": [
-    "Vrat Katha section was empty (no content showing) as of version 32"
+  "summary": "AI chatbox app with Google Gemini integration, where users provide their own free Gemini API key. Features include chat, image generation, and download. Future plans include Ekadashi reminders, subscription option, community tab, and admin panel.",
+  "architectural_notes": [
+    "AI chatbox uses Google Gemini API; users must provide their own Gemini API key (free tier available)",
+    "App features: AI chat, image generation, and download functionality"
   ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-10-complete-long-form-vrat-kathas-in-hindi-to-the-static-data-file-frontend-src-lib-kathadata-ts-under-the-vrat-category-the-10-kathas-must-include-1-ekadashi-vrat-katha-2-solah-somvar-vrat-katha-3-mangalwar-mangalvar-vrat-katha-4-sukrwar-shukravar-vrat-katha-5-karva-chauth-vrat-katha-6-santoshi-mata-vrat-katha-7-pradosh-vrat-katha-8-navratri-vrat-katha-9-satyanarayan-vrat-katha-10-hartalika-teej-vrat-katha-each-katha-must-have-a-full-hindi-text-of-significant-length-at-minimum-400-600-words-of-narrative-content-a-meaningful-title-in-hindi-and-english-associated-deity-name-and-the-vrat-category-tag",
-      "title": "Add 10 complete, long-form Vrat Kathas in Hindi to the static data file `frontend/src/lib/kathaData.ts` under the `vrat` category. The 10 kathas must include: (1) Ekadashi Vrat Katha, (2) Solah Somvar Vrat Katha, (3) Mangalwar (Mangalvar) Vrat Katha, (4) Sukrwar (Shukravar) Vrat Katha, (5) Karva Chauth Vrat Katha, (6) Santoshi Mata Vrat Katha, (7) Pradosh Vrat Katha, (8) Navratri Vrat Katha, (9) Satyanarayan Vrat Katha, (10) Hartalika Teej Vrat Katha. Each katha must have a full Hindi text of significant length (at minimum 400–600 words of narrative content), a meaningful title in Hindi and English, associated deity name, and the `vrat` category tag.",
+      "id": "feature-replace-the-existing-openrouter-based-ai-text-chat-implementation-in-frontend-src-lib-aiengine-ts-with-google-gemini-api-model-gemini-1-5-flash-or-gemini-pro-the-engine-should-send-user-messages-to-the-gemini-rest-endpoint-https-generativelanguage-googleapis-com-v1beta-models-gemini-1-5-flash-generatecontent-using-the-user-s-stored-gemini-api-key-preserve-existing-message-history-handling-error-handling-and-the-helper-functions-for-api-key-storage-retrieval",
+      "title": "Replace the existing OpenRouter-based AI text chat implementation in `frontend/src/lib/aiEngine.ts` with Google Gemini API (model: `gemini-1.5-flash` or `gemini-pro`). The engine should send user messages to the Gemini REST endpoint (`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`) using the user's stored Gemini API key. Preserve existing message history handling, error handling, and the helper functions for API key storage/retrieval.",
       "reqIds": [
         "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-api-key-configuration-ui-in-frontend-src-pages-aiguru-tsx-to-reference-google-gemini-instead-of-openrouter-change-all-labels-placeholder-text-and-help-copy-to-say-gemini-api-key-and-direct-users-to-https-aistudio-google-com-app-apikey-to-obtain-a-free-key-remove-any-openrouter-specific-instructions",
+      "title": "Update the API key configuration UI in `frontend/src/pages/AIGuru.tsx` to reference Google Gemini instead of OpenRouter. Change all labels, placeholder text, and help copy to say 'Gemini API Key' and direct users to `https://aistudio.google.com/app/apikey` to obtain a free key. Remove any OpenRouter-specific instructions.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-env-example-and-any-relevant-comments-or-documentation-strings-in-the-codebase-to-reflect-that-the-app-now-uses-the-google-gemini-api-instead-of-openrouter-openai-note-that-users-obtain-a-free-gemini-api-key-from-google-ai-studio",
+      "title": "Update `frontend/.env.example` and any relevant comments or documentation strings in the codebase to reflect that the app now uses the Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -20,43 +37,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add 10 long Vrat Kathas (Ekadashi, Solah Somvar, Mangalwar, Sukrwar, Karva Chauth, and others) in the Vrat Katha section",
+      "summary": "Switch AI backend from OpenAI to Google Gemini (users provide their own free Gemini API key)",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Add narration (audio) option for each Vrat Katha",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Ensure the Kathayen listing page (`frontend/src/pages/Kathayen.tsx`) correctly displays all 10 Vrat Kathas when the 'vrat' category tab is selected. The section must not appear empty — use the static data from `kathaData.ts` as the primary or fallback source so content always renders even without a backend response.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Add audio narration controls to the Katha detail page (`frontend/src/pages/KathaDetail.tsx`) for Vrat Kathas. Use the existing `useSpeechNarration` hook (`frontend/src/hooks/useSpeechNarration.ts`) to implement Play, Pause, Resume, and Stop buttons. The narration must read the full Hindi text aloud using the Web Speech API with Hindi (`hi-IN`) voice preference. Show narration controls prominently near the top of the katha content. Display current narration state (playing / paused / stopped) visually.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Seed the backend (`backend/main.mo`) with the same 10 Vrat Kathas so they persist in canister state. Each entry must include title, Hindi text body, deity, and category `vrat`. Update the migration file (`backend/migration.mo`) if the current state schema change requires it to preserve existing data while adding the new vrat katha entries.",
-      "reqIds": [
-        "REQ-4"
-      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Divya Darshan",
+  "projectName": "AI Guru Devotional",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

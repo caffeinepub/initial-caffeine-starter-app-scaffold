@@ -1,339 +1,238 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Mic, MicOff, Pause, Play, Square, Volume2, AlertCircle } from 'lucide-react';
-import { useGetKatha } from '../hooks/useQueries';
+import { useParams, Link } from '@tanstack/react-router';
+import { ArrowLeft, Play, Pause, Square, Globe, BookOpen, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useActor } from '../hooks/useActor';
 import { staticKathaData } from '../lib/kathaData';
-import { KathaCategory } from '../backend';
-import type { Katha } from '../backend';
 import { useSpeechNarration } from '../hooks/useSpeechNarration';
-
-// Helper: detect if a katha is a Ramayan katha
-function isRamayanKatha(katha: Katha): boolean {
-  return (
-    katha.tags.some((t) => t === 'रामायण') ||
-    katha.title.startsWith('रामायण')
-  );
-}
-
-// Helper: detect if a katha is a Krishna Leela katha (Hindi-only)
-function isKrishnaLeelaKatha(katha: Katha): boolean {
-  return (
-    katha.tags.some((t) => t === 'कृष्ण लीला') ||
-    katha.title === 'श्री कृष्ण लीला'
-  );
-}
-
-// Helper: detect if a katha is Hindi-only (no English text)
-function isHindiOnly(katha: Katha): boolean {
-  return isRamayanKatha(katha) || isKrishnaLeelaKatha(katha) || !katha.englishText || katha.englishText.trim() === '';
-}
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import type { Katha } from '../backend';
 
 export default function KathaDetail() {
   const { id } = useParams({ from: '/kathayen/$id' });
-  const navigate = useNavigate();
-  const [language, setLanguage] = useState<'hindi' | 'english'>('hindi');
+  const [showHindi, setShowHindi] = useState(true);
+  const { actor, isFetching: actorFetching } = useActor();
 
-  const kathaId = BigInt(id);
-  const { data: backendKatha, isLoading } = useGetKatha(kathaId);
+  const { data: backendKatha, isLoading } = useQuery({
+    queryKey: ['katha', id],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getKatha(BigInt(id));
+    },
+    enabled: !!actor && !actorFetching && !isNaN(Number(id)),
+  });
 
-  // Find static fallback
-  const staticKatha = staticKathaData.find((k) => k.id === kathaId);
+  // Use backend data if available, otherwise fall back to static data
+  // staticKathaData uses bigint ids, so compare with BigInt(id)
+  const staticKatha = staticKathaData.find((k) => k.id === BigInt(id));
   const katha: Katha | null = backendKatha ?? staticKatha ?? null;
 
-  // Determine if this is a Ramayan katha (Hindi-only)
-  const isRamayan = katha ? isRamayanKatha(katha) : false;
-  // Determine if this is a Krishna Leela katha (Hindi-only)
-  const isKrishnaLeela = katha ? isKrishnaLeelaKatha(katha) : false;
-  // Determine if this katha is Hindi-only (no language toggle)
-  const hindiOnly = katha ? isHindiOnly(katha) : false;
+  const hasEnglish = katha && katha.englishText && katha.englishText.trim().length > 0;
+  const currentText = showHindi
+    ? katha?.hindiText || ''
+    : katha?.englishText || '';
 
-  const {
-    isPlaying,
-    isPaused,
-    speechSupported,
-    playNarration,
-    pauseNarration,
-    resumeNarration,
-    stopNarration,
-  } = useSpeechNarration();
-
-  // Stop narration when navigating away
-  useEffect(() => {
-    return () => {
-      stopNarration();
-    };
-  }, [stopNarration]);
+  const narrationLang = showHindi ? 'hi-IN' : 'en-US';
+  const narration = useSpeechNarration(narrationLang);
 
   // Stop narration when language changes
   useEffect(() => {
-    stopNarration();
-  }, [language, stopNarration]);
+    narration.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHindi]);
 
-  // For Hindi-only kathas, always use Hindi
-  const effectiveLanguage = hindiOnly ? 'hindi' : language;
+  // Stop narration on unmount
+  useEffect(() => {
+    return () => {
+      narration.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleNarrate = () => {
-    if (!katha) return;
-    if (isPlaying) {
-      pauseNarration();
-      return;
+  const handlePlay = () => {
+    if (!currentText) return;
+    if (narration.state === 'paused') {
+      narration.resume();
+    } else {
+      narration.play(currentText);
     }
-    if (isPaused) {
-      resumeNarration();
-      return;
-    }
-    const text = effectiveLanguage === 'hindi' ? katha.hindiText : katha.englishText;
-
-    // Guard: ensure text is not empty
-    if (!text || text.trim() === '') return;
-
-    // Use hi-IN for Hindi text, en-IN for English text in an Indian context
-    const lang = effectiveLanguage === 'hindi' ? 'hi-IN' : 'en-IN';
-    playNarration(text, lang);
   };
 
-  if (isLoading) {
+  const handlePause = () => {
+    narration.pause();
+  };
+
+  const handleStop = () => {
+    narration.stop();
+  };
+
+  const handleLanguageToggle = () => {
+    narration.stop();
+    setShowHindi((prev) => !prev);
+  };
+
+  if (isLoading && actorFetching) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!katha) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground text-lg">कथा नहीं मिली</p>
-        <Button onClick={() => navigate({ to: '/kathayen' })}>कथाओं पर वापस जाएँ</Button>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-6">
+        <BookOpen className="w-16 h-16 text-muted-foreground" />
+        <h2 className="text-xl font-semibold text-foreground">कथा नहीं मिली</h2>
+        <p className="text-muted-foreground text-center">यह कथा उपलब्ध नहीं है।</p>
+        <Link to="/kathayen">
+          <Button variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            वापस जाएं
+          </Button>
+        </Link>
       </div>
     );
   }
 
-  const categoryLabel = katha.category === KathaCategory.puranik ? 'पौराणिक' : 'व्रत';
-  const categoryColor =
-    katha.category === KathaCategory.puranik
-      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-      : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300';
-
-  const getNarrationButtonLabel = () => {
-    if (!speechSupported) return '🔇 उपलब्ध नहीं';
-    if (isPlaying) return 'रोकें';
-    if (isPaused) return 'जारी रखें';
-    return '🎙️ सुनें';
-  };
-
-  const getNarrationIcon = () => {
-    if (!speechSupported) return <MicOff className="w-4 h-4" />;
-    if (isPlaying) return <Pause className="w-4 h-4" />;
-    if (isPaused) return <Play className="w-4 h-4" />;
-    return <Mic className="w-4 h-4" />;
-  };
-
-  // Determine if narration text is available
-  const narrationText = effectiveLanguage === 'hindi' ? katha.hindiText : katha.englishText;
-  const hasNarrationText = !!narrationText && narrationText.trim() !== '';
+  const isVrat = katha.category === 'vrat' || String(katha.category) === 'vrat';
+  const categoryLabel = isVrat ? 'व्रत कथा' : 'पौराणिक कथा';
+  const categoryColor = isVrat
+    ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Back Button */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate({ to: '/kathayen' })}
-          className="shrink-0"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <h1 className="font-semibold text-foreground truncate">{katha.title}</h1>
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link to="/kathayen">
+          <Button variant="ghost" size="icon" className="shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-semibold text-foreground truncate">{katha.title}</h1>
+          <p className="text-xs text-muted-foreground">{katha.deity}</p>
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${categoryColor}`}>
-              {categoryLabel}
-            </span>
-            <Badge variant="outline" className="text-xs">
-              {katha.deity}
+        {/* Meta */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`text-xs font-medium px-2 py-1 rounded-full ${categoryColor}`}>
+            {categoryLabel}
+          </span>
+          <Badge variant="outline" className="text-xs">
+            {katha.deity}
+          </Badge>
+          {katha.tags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="text-xs">
+              {tag}
             </Badge>
-            {isRamayan && (
-              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
-                🏹 रामायण
-              </span>
-            )}
-            {isKrishnaLeela && (
-              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                🦚 कृष्ण लीला
-              </span>
-            )}
-          </div>
-          <h2 className="text-2xl font-bold text-foreground">{katha.title}</h2>
-
-          {/* Tags */}
-          {katha.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {katha.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
 
-        {/* Controls Row */}
+        {/* Controls */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Language Toggle — hidden for Hindi-only kathas */}
-          {!hindiOnly && (
-            <>
-              <Button
-                variant={language === 'hindi' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setLanguage('hindi')}
-              >
-                हिंदी
-              </Button>
-              <Button
-                variant={language === 'english' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setLanguage('english')}
-              >
-                English
-              </Button>
-            </>
-          )}
-
-          {/* Hindi-only label */}
-          {hindiOnly && (
-            <span className="text-sm font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1">
-              🇮🇳 हिंदी में
-            </span>
-          )}
-
-          <div className={`flex items-center gap-2 ${hindiOnly ? '' : 'ml-auto'}`}>
-            {/* Main narrate/pause/resume button */}
-            <Button
-              size="sm"
-              onClick={handleNarrate}
-              disabled={!speechSupported || !hasNarrationText}
-              className={`font-semibold gap-2 shadow-md transition-all ${
-                isPlaying
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                  : isPaused
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-amber-600 hover:bg-amber-700 text-white'
-              }`}
-            >
-              {getNarrationIcon()}
-              {getNarrationButtonLabel()}
-              {isPlaying && (
-                <span className="flex gap-0.5 items-end h-4">
-                  <span className="w-0.5 bg-white rounded-full animate-[bounce_0.6s_ease-in-out_infinite]" style={{ height: '60%' }} />
-                  <span className="w-0.5 bg-white rounded-full animate-[bounce_0.6s_ease-in-out_0.1s_infinite]" style={{ height: '100%' }} />
-                  <span className="w-0.5 bg-white rounded-full animate-[bounce_0.6s_ease-in-out_0.2s_infinite]" style={{ height: '70%' }} />
-                  <span className="w-0.5 bg-white rounded-full animate-[bounce_0.6s_ease-in-out_0.3s_infinite]" style={{ height: '40%' }} />
-                </span>
+          {/* Narration controls */}
+          {narration.isSupported && (
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              {narration.state === 'playing' ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePause}
+                  className="h-8 px-3 text-xs gap-1"
+                  title="रोकें"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  रोकें
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePlay}
+                  className="h-8 px-3 text-xs gap-1 text-primary"
+                  title="सुनें"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  {narration.state === 'paused' ? 'जारी रखें' : 'सुनें'}
+                </Button>
               )}
-            </Button>
+              {narration.state !== 'idle' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleStop}
+                  className="h-8 px-3 text-xs gap-1 text-destructive"
+                  title="बंद करें"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                  बंद
+                </Button>
+              )}
+            </div>
+          )}
 
-            {/* Stop button — only shown when playing or paused */}
-            {(isPlaying || isPaused) && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={stopNarration}
-                className="gap-1 border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                बंद करें
-              </Button>
+          {/* Language toggle */}
+          {hasEnglish && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLanguageToggle}
+              className="h-8 px-3 text-xs gap-1"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              {showHindi ? 'English' : 'हिंदी'}
+            </Button>
+          )}
+
+          {/* Narration status indicator */}
+          {narration.state === 'playing' && (
+            <div className="flex items-center gap-1 text-xs text-primary">
+              <span className="inline-flex gap-0.5">
+                <span
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <span
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <span
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                />
+              </span>
+              <span>सुन रहे हैं...</span>
+            </div>
+          )}
+          {narration.state === 'paused' && (
+            <span className="text-xs text-muted-foreground">⏸ रुका हुआ</span>
+          )}
+        </div>
+
+        {/* Katha Text */}
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+          <div className="prose prose-sm max-w-none">
+            {currentText.split('\n').map((para, i) =>
+              para.trim() ? (
+                <p
+                  key={i}
+                  className={`mb-4 leading-relaxed text-foreground ${
+                    showHindi ? 'text-base' : 'text-sm'
+                  }`}
+                >
+                  {para}
+                </p>
+              ) : (
+                <br key={i} />
+              )
             )}
           </div>
         </div>
-
-        {/* Narration Status Banner */}
-        {isPlaying && (
-          <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
-            <Volume2 className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
-            <div>
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                कथा सुनाई जा रही है...
-              </p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                रोकने के लिए "रोकें" दबाएं
-              </p>
-            </div>
-          </div>
-        )}
-
-        {isPaused && (
-          <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3">
-            <Pause className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                कथा रुकी हुई है
-              </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400">
-                जारी रखने के लिए "जारी रखें" दबाएं
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* No Speech Support Banner */}
-        {!speechSupported && (
-          <div className="flex items-start gap-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-800 dark:text-red-300">
-                वाणी उपलब्ध नहीं
-              </p>
-              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                आपका ब्राउज़र वाणी (Speech) का समर्थन नहीं करता। कृपया Chrome या Edge ब्राउज़र का उपयोग करें।
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Story Text */}
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <div className="bg-card border border-border rounded-xl p-5 leading-relaxed text-foreground whitespace-pre-line">
-            {effectiveLanguage === 'hindi' ? katha.hindiText : katha.englishText}
-          </div>
-        </div>
-
-        {/* Narration Info Card — shown when idle and supported */}
-        {speechSupported && !isPlaying && !isPaused && hasNarrationText && (
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <Volume2 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              <h3 className="font-semibold text-amber-800 dark:text-amber-300">
-                कथा सुनें
-              </h3>
-            </div>
-            <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
-              इस कथा को आवाज़ में सुनने के लिए ऊपर "🎙️ सुनें" बटन दबाएं।
-              {effectiveLanguage === 'hindi' && (
-                <span className="block mt-1 text-xs opacity-75">हिंदी आवाज़ (hi-IN) में सुनाई जाएगी।</span>
-              )}
-            </p>
-            <Button
-              size="sm"
-              onClick={handleNarrate}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold gap-2"
-            >
-              <Mic className="w-4 h-4" />
-              🎙️ कथा सुनें
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

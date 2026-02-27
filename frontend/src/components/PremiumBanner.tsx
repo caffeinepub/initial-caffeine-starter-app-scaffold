@@ -1,62 +1,71 @@
-import { useState } from 'react';
-import { X, Crown, Zap, Star, Shield, Music } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { X, Star, Bell, BookOpen, Zap } from 'lucide-react';
+
+const DISMISS_KEY = 'premium_banner_dismissed';
+
+const benefits = [
+  { icon: <Star className="w-4 h-4" />, text: 'विज्ञापन-मुक्त अनुभव' },
+  { icon: <Bell className="w-4 h-4" />, text: 'एकादशी व त्योहार रिमाइंडर' },
+  { icon: <BookOpen className="w-4 h-4" />, text: 'सभी कथाएँ व आरती अनलॉक' },
+  { icon: <Zap className="w-4 h-4" />, text: 'AI गुरु अनलिमिटेड चैट' },
+];
 
 export default function PremiumBanner() {
-  const [dismissed, setDismissed] = useState(() => {
-    return sessionStorage.getItem('premiumBannerDismissed') === 'true';
-  });
+  const [dismissed, setDismissed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const isDismissed = localStorage.getItem(DISMISS_KEY) === 'true';
+    setDismissed(isDismissed);
+    setMounted(true);
+  }, []);
 
   const handleDismiss = () => {
-    sessionStorage.setItem('premiumBannerDismissed', 'true');
+    localStorage.setItem(DISMISS_KEY, 'true');
     setDismissed(true);
   };
 
-  if (dismissed) return null;
-
-  const benefits = [
-    { icon: Zap, text: 'Ad-free experience' },
-    { icon: Music, text: 'Exclusive Aartis & Bhajans' },
-    { icon: Star, text: 'Leaderboard Gold Badge' },
-    { icon: Shield, text: 'Early access to new features' },
-  ];
+  if (!mounted || dismissed) return null;
 
   return (
-    <div className="relative bg-gradient-to-br from-gold/20 to-saffron/10 rounded-2xl border-2 border-gold/40 p-4 overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full -translate-y-12 translate-x-12" />
+    <div className="relative bg-gradient-to-br from-amber-900 to-orange-900 border border-amber-700 rounded-xl p-4 mb-4 shadow-lg overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-2 right-8 text-6xl">🕉️</div>
+      </div>
+
+      {/* Dismiss button */}
       <button
         onClick={handleDismiss}
-        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors z-10"
+        className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/10 transition-colors text-amber-300"
+        aria-label="बंद करें"
       >
-        <X className="h-4 w-4" />
+        <X className="w-4 h-4" />
       </button>
 
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-3">
-          <Crown className="h-5 w-5 text-gold-dark" />
-          <h3 className="font-devanagari text-base font-bold text-foreground">Sanatan Pro Premium</h3>
-          <span className="text-xs bg-gold text-foreground px-2 py-0.5 rounded-full font-body font-semibold">
-            UPGRADE
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {benefits.map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-1.5">
-              <Icon className="h-3.5 w-3.5 text-saffron shrink-0" />
-              <span className="text-xs font-body text-foreground/80">{text}</span>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          className="w-full bg-gradient-to-r from-saffron to-gold text-white font-body font-semibold hover:opacity-90 border-0 shadow-gold"
-          size="sm"
-        >
-          <Crown className="h-4 w-4 mr-2" />
-          Upgrade to Premium — ₹99/month
-        </Button>
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3 pr-6">
+        <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+        <h3 className="text-amber-200 font-bold text-base">प्रीमियम सदस्यता</h3>
+        <span className="ml-auto bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+          ₹99/माह
+        </span>
       </div>
+
+      {/* Benefits */}
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {benefits.map((benefit, index) => (
+          <div key={index} className="flex items-center gap-2 text-amber-200">
+            <span className="text-amber-400 shrink-0">{benefit.icon}</span>
+            <span className="text-xs leading-tight">{benefit.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Upgrade button */}
+      <button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold py-2.5 px-4 rounded-lg transition-all shadow-md text-sm">
+        अभी अपग्रेड करें — ₹99/माह
+      </button>
     </div>
   );
 }

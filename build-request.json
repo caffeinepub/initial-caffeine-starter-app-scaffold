@@ -1,97 +1,70 @@
 {
   "kind": "build_request",
-  "title": "Add 10 Long Vrat Kathas with Narration to Vrat Katha Section",
-  "projectName": "Divya Darshan",
-  "priority": "high",
+  "title": "Switch AI engine from OpenRouter to Google Gemini",
+  "projectName": "AI Guru Devotional",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add 10 complete, long-form Vrat Kathas in Hindi to the static data file `frontend/src/lib/kathaData.ts` under the `vrat` category. The 10 kathas must include: (1) Ekadashi Vrat Katha, (2) Solah Somvar Vrat Katha, (3) Mangalwar (Mangalvar) Vrat Katha, (4) Sukrwar (Shukravar) Vrat Katha, (5) Karva Chauth Vrat Katha, (6) Santoshi Mata Vrat Katha, (7) Pradosh Vrat Katha, (8) Navratri Vrat Katha, (9) Satyanarayan Vrat Katha, (10) Hartalika Teej Vrat Katha. Each katha must have a full Hindi text of significant length (at minimum 400–600 words of narrative content), a meaningful title in Hindi and English, associated deity name, and the `vrat` category tag.",
+      "text": "Replace the existing OpenRouter-based AI text chat implementation in `frontend/src/lib/aiEngine.ts` with Google Gemini API (model: `gemini-1.5-flash` or `gemini-pro`). The engine should send user messages to the Gemini REST endpoint (`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`) using the user's stored Gemini API key. Preserve existing message history handling, error handling, and the helper functions for API key storage/retrieval.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "add only 10 long vrat katha on ekadashi solah somvar mangalwar sukrwar ekadashi krva chauth and other"
+          "Switch to Google Gemini (which has more generous free limits than OpenAI)?"
         ]
       },
       "acceptanceCriteria": [
-        "Exactly 10 Vrat Katha entries exist in the static data with category 'vrat'",
-        "Each katha includes: Ekadashi, Solah Somvar, Mangalwar, Sukrwar, Karva Chauth, Santoshi Mata, Pradosh, Navratri, Satyanarayan, Hartalika Teej",
-        "Each katha's Hindi text is long-form (400+ words of narrative)",
-        "Each katha has a title, deity, and category field populated"
+        "Sending a text message in the AI Guru chat triggers a request to the Gemini API endpoint, not OpenRouter.",
+        "The response from Gemini is displayed correctly in the chat UI.",
+        "If no API key is stored, the user is prompted to enter their Gemini API key.",
+        "The stored API key is used for all subsequent requests."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the Kathayen listing page (`frontend/src/pages/Kathayen.tsx`) correctly displays all 10 Vrat Kathas when the 'vrat' category tab is selected. The section must not appear empty — use the static data from `kathaData.ts` as the primary or fallback source so content always renders even without a backend response.",
+      "text": "Update the API key configuration UI in `frontend/src/pages/AIGuru.tsx` to reference Google Gemini instead of OpenRouter. Change all labels, placeholder text, and help copy to say 'Gemini API Key' and direct users to `https://aistudio.google.com/app/apikey` to obtain a free key. Remove any OpenRouter-specific instructions.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "No there nothing in vrat katha section"
+          "Switch to Google Gemini (which has more generous free limits than OpenAI)?"
         ]
       },
       "acceptanceCriteria": [
-        "Vrat Katha tab/filter shows exactly 10 katha cards",
-        "Content renders from static fallback even if the backend returns no data",
-        "Each card shows the correct title, deity, and a Hindi text preview"
+        "The API key input panel shows 'Google Gemini API Key' as the label.",
+        "A help link or instruction text points users to https://aistudio.google.com/app/apikey.",
+        "No mention of OpenRouter remains in the UI."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add audio narration controls to the Katha detail page (`frontend/src/pages/KathaDetail.tsx`) for Vrat Kathas. Use the existing `useSpeechNarration` hook (`frontend/src/hooks/useSpeechNarration.ts`) to implement Play, Pause, Resume, and Stop buttons. The narration must read the full Hindi text aloud using the Web Speech API with Hindi (`hi-IN`) voice preference. Show narration controls prominently near the top of the katha content. Display current narration state (playing / paused / stopped) visually.",
+      "text": "Update `frontend/.env.example` and any relevant comments or documentation strings in the codebase to reflect that the app now uses the Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "with narration option"
+          "msg-6"
         ]
       },
       "acceptanceCriteria": [
-        "Play button starts reading the katha text aloud in Hindi",
-        "Pause button pauses mid-narration and Resume resumes from the same position",
-        "Stop button cancels narration completely",
-        "Narration controls are visible for all Vrat Kathas on the detail page",
-        "Active narration state (playing/paused) is reflected in button styling",
-        "Narration uses hi-IN voice preference via the useSpeechNarration hook"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Seed the backend (`backend/main.mo`) with the same 10 Vrat Kathas so they persist in canister state. Each entry must include title, Hindi text body, deity, and category `vrat`. Update the migration file (`backend/migration.mo`) if the current state schema change requires it to preserve existing data while adding the new vrat katha entries.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "add only 10 long vrat katha"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend actor contains 10 seeded Vrat Katha records with category 'vrat'",
-        "Existing data (temples, community posts, jap counters, other kathas) is not lost after upgrade",
-        "Each backend katha record has title, text, deity, and category fields populated"
+        "frontend/.env.example references Gemini, not OpenRouter or OpenAI.",
+        "No stale references to OpenRouter API keys remain in comments or documentation strings."
       ]
     }
   ],
   "constraints": [
-    "Do not remove or modify any existing Katha entries (Ramayan, Mahabharat chapters, etc.)",
-    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
-    "Narration must use the existing useSpeechNarration hook — do not reimplement Web Speech API logic",
-    "All user-facing text labels for narration controls must be in English"
+    "Image generation should continue to use Pollinations.ai (free, no key required) — do not route image generation through Gemini.",
+    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+    "Do not add any backend changes — API key storage and AI calls remain entirely client-side."
   ],
   "nonGoals": [
-    "Adding Ramayan or Krishna Leela content in this build",
-    "Adding any paid/premium audio files or external TTS services",
-    "Building a custom audio player UI beyond play/pause/resume/stop controls",
-    "Adding new backend routes or changing the Katha data schema"
+    "Embedding a shared/hardcoded API key for all users — each user must supply their own Gemini key.",
+    "Switching the image generation provider away from Pollinations.ai.",
+    "Any changes to the backend Motoko actor."
   ],
   "imageRequirements": {
     "required": [],

@@ -1,57 +1,58 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add 10 Long Vrat Kathas with Narration to Vrat Katha Section",
+  "title": "Switch AI engine from OpenRouter to Google Gemini",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add 10 complete, long-form Vrat Kathas in Hindi to the static data file under the vrat category",
+      "summary": "Replace OpenRouter AI engine with Google Gemini API in aiEngine.ts, preserving message history and error handling",
       "acceptanceCriteria": [
-        "Exactly 10 Vrat Katha entries exist in the static data with category 'vrat'",
-        "Each katha includes: Ekadashi, Solah Somvar, Mangalwar, Sukrwar, Karva Chauth, Santoshi Mata, Pradosh, Navratri, Satyanarayan, Hartalika Teej",
-        "Each katha's Hindi text is long-form (400+ words of narrative)",
-        "Each katha has a title, deity, and category field populated"
+        "Sending a text message in the AI Guru chat triggers a request to the Gemini API endpoint, not OpenRouter.",
+        "The response from Gemini is displayed correctly in the chat UI.",
+        "If no API key is stored, the user is prompted to enter their Gemini API key.",
+        "The stored API key is used for all subsequent requests."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/kathaData.ts",
+          "path": "frontend/src/lib/aiEngine.ts",
           "operation": "modify",
-          "description": "Add 10 new Vrat Katha entries to the kathas array with category 'vrat'. Each entry must include: (1) Ekadashi Vrat Katha dedicated to Lord Vishnu, (2) Solah Somvar Vrat Katha dedicated to Lord Shiva, (3) Mangalwar (Mangalvar) Vrat Katha dedicated to Lord Hanuman, (4) Sukrwar (Shukravar) Vrat Katha dedicated to Goddess Santoshi Mata, (5) Karva Chauth Vrat Katha dedicated to Goddess Parvati, (6) Santoshi Mata Vrat Katha dedicated to Goddess Santoshi, (7) Pradosh Vrat Katha dedicated to Lord Shiva, (8) Navratri Vrat Katha dedicated to Goddess Durga, (9) Satyanarayan Vrat Katha dedicated to Lord Vishnu/Satyanarayan, (10) Hartalika Teej Vrat Katha dedicated to Goddess Parvati. Each katha must have a full Hindi narrative text (hindiText field) of at least 400-600 words describing the vrat story, significance, and observance method. Include appropriate title (in Hindi), deity name, englishText (can be a brief English summary), tags array with relevant keywords, and category set to KathaCategory.vrat. Assign sequential IDs starting from the next available ID after existing kathas. Do not modify or remove any existing Ramayan or Mahabharat katha entries."
+          "description": "Replace the OpenRouter text chat implementation with Google Gemini API. Update the sendMessage function to call the Gemini REST endpoint (https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent) using the stored Gemini API key. Preserve the existing message history array handling, error handling patterns, and the helper functions getStoredApiKey() and setStoredApiKey(). Keep the Pollinations.ai image generation logic unchanged. Update the isImageRequest function if needed to ensure Hindi keywords still trigger image generation."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Ensure the Kathayen listing page correctly displays all 10 Vrat Kathas when the vrat category tab is selected",
+      "summary": "Update API key configuration UI in AIGuru.tsx to reference Google Gemini instead of OpenRouter",
       "acceptanceCriteria": [
-        "Vrat Katha tab/filter shows exactly 10 katha cards",
-        "Content renders from static fallback even if the backend returns no data",
-        "Each card shows the correct title, deity, and a Hindi text preview"
+        "The API key input panel shows 'Google Gemini API Key' as the label.",
+        "A help link or instruction text points users to https://aistudio.google.com/app/apikey.",
+        "No mention of OpenRouter remains in the UI."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/Kathayen.tsx",
+          "path": "frontend/src/pages/AIGuru.tsx",
           "operation": "modify",
-          "description": "Update the category filter logic to ensure the 'vrat' tab displays all kathas with category KathaCategory.vrat from the static kathaData fallback. Verify that the filter buttons include a 'Vrat' option that correctly filters the katha list. Ensure the static data from kathaData.ts is used as the primary or fallback source when backend data is unavailable or empty for the vrat category. Confirm that the KathaCard components render correctly for all 10 vrat kathas, showing title, deity, and Hindi text preview. The static fallback must guarantee that the vrat section is never empty after REQ-1 is implemented."
+          "description": "Update all API key configuration UI elements to reference 'Google Gemini API Key' instead of 'OpenRouter'. Change input labels, placeholder text, and help copy to direct users to https://aistudio.google.com/app/apikey to obtain a free Gemini API key. Remove any OpenRouter-specific instructions or links. Ensure the API key state management (useState, localStorage interaction) continues to work with the updated labels."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Add audio narration controls to the Katha detail page for Vrat Kathas using the existing useSpeechNarration hook",
+      "summary": "Update .env.example and code comments to reflect Google Gemini API usage",
       "acceptanceCriteria": [
-        "Play button starts reading the katha text aloud in Hindi",
-        "Pause button pauses mid-narration and Resume resumes from the same position",
-        "Stop button cancels narration completely",
-        "Narration controls are visible for all Vrat Kathas on the detail page",
-        "Active narration state (playing/paused) is reflected in button styling",
-        "Narration uses hi-IN voice preference via the useSpeechNarration hook"
+        "frontend/.env.example references Gemini, not OpenRouter or OpenAI.",
+        "No stale references to OpenRouter API keys remain in comments or documentation strings."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/KathaDetail.tsx",
+          "path": "frontend/.env.example",
           "operation": "modify",
-          "description": "Import and integrate the existing useSpeechNarration hook from frontend/src/hooks/useSpeechNarration.ts to add Play, Pause, Resume, and Stop narration controls for Vrat Kathas. Position the narration controls prominently near the top of the katha content section, above or beside the language toggle. Wire the Play button to call the hook's play function with the full Hindi text (katha.hindiText) and hi-IN voice preference. Wire Pause, Resume, and Stop buttons to the corresponding hook methods. Display the current narration state (isPlaying, isPaused) visually by updating button styles (e.g., highlighting the active button, disabling unavailable actions). Ensure controls are visible for all kathas but emphasize they work best for long-form vrat kathas. Verify the hook's usage instructions in the hook file before implementing. Do not reimplement Web Speech API logic; use only the provided hook."
+          "description": "Update the environment variable documentation to reference Google Gemini API instead of OpenRouter/OpenAI. Note that users obtain a free Gemini API key from Google AI Studio (https://aistudio.google.com/app/apikey). Remove any references to VITE_OPENROUTER_API_KEY or similar OpenRouter-specific variables. Clarify that the API key is stored client-side in localStorage."
+        },
+        {
+          "path": "frontend/src/lib/aiEngine.ts",
+          "operation": "modify",
+          "description": "Update any inline comments or JSDoc documentation strings that reference OpenRouter or OpenAI to mention Google Gemini instead. Ensure function-level comments for sendMessage, getStoredApiKey, and setStoredApiKey reflect the Gemini API usage. Remove any stale references to OpenRouter endpoints or authentication patterns."
         }
       ]
     }

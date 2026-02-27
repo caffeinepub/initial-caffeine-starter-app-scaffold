@@ -1,32 +1,16 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T04:47:45.076Z",
-  "summary": "The diff shows additions to backend/migration.mo, backend/main.mo, and frontend/src/lib/kathaData.ts. REQ-1 and REQ-4 appear partially addressed (static data and backend seeding present, though truncated). REQ-2 (Kathayen.tsx) and REQ-3 (KathaDetail.tsx) show no evidence of modification in the diff — neither file appears in the modified files list.",
-  "missing_requirements": [
-    {
-      "id": "REQ-2",
-      "requirement": "Ensure the Kathayen listing page (frontend/src/pages/Kathayen.tsx) correctly displays all 10 Vrat Kathas when the 'vrat' category tab is selected, using static data as primary/fallback source.",
-      "reason": "frontend/src/pages/Kathayen.tsx is not listed in the modified or added files. There is no evidence the listing page was updated to use static fallback data or display the 10 vrat kathas.",
-      "evidence": [
-        "frontend/src/pages/Kathayen.tsx"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Add audio narration controls (Play, Pause, Resume, Stop) to frontend/src/pages/KathaDetail.tsx using the existing useSpeechNarration hook with hi-IN voice preference, with visual state indication.",
-      "reason": "frontend/src/pages/KathaDetail.tsx is not listed in the modified or added files. There is no evidence that narration controls were added to the detail page.",
-      "evidence": [
-        "frontend/src/pages/KathaDetail.tsx"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-27T07:46:33.964Z",
+  "summary": "All three requirements are implemented in the diff. REQ-1 is addressed by rewriting frontend/src/lib/aiEngine.ts to use the Gemini REST endpoint, preserving image generation via Pollinations.ai, and keeping API key storage helpers. REQ-2 is addressed by updating frontend/src/pages/AIGuru.tsx with 'Google Gemini API Key' labels, a link to https://aistudio.google.com/app/apikey, and no OpenRouter references. REQ-3 is addressed by updating frontend/.env.example to reference Gemini instead of OpenRouter/OpenAI.",
+  "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.82,
+  "confidence": 0.97,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
-    "frontend/src/lib/kathaData.ts",
+    "frontend-file-summaries.txt",
+    "frontend/.env.example",
+    "frontend/src/lib/aiEngine.ts",
+    "frontend/src/pages/AIGuru.tsx",
     "project_state.json"
   ]
 }
