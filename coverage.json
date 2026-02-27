@@ -1,50 +1,38 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T16:50:19.064Z",
+  "generatedAt": "2026-02-26T17:15:09.506Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 3,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add Radha Nam (राधा नाम) and Jai Shree Ram (जय श्री राम) as selectable mantra/name options in the Nam Jap (Jap.tsx) page, alongside existing options. Each option must be selectable and update the Jap counter context accordingly.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/Jap.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/Jap.tsx"
-        ]
+        "summary": "Add a comprehensive Ramayan full katha entry to the backend Katha data store. The entry must include: title 'Ramayan - Sampurna Katha', category 'Puranik', deity 'Ram', full Hindi narrative text covering all major episodes (Bal Kand: Ram's birth and childhood, Ayodhya Kand: exile decision, Aranya Kand: forest life and Sita's abduction by Ravan, Kishkindha Kand: alliance with Sugriva and Hanuman, Sundar Kand: Hanuman's Lanka mission, Lanka Kand/Yuddha Kand: the war and Ravan's defeat, Uttar Kand: return to Ayodhya and Ram Rajya), and an English summary. The entry should appear before Mahabharat in ordering.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Fix the Nam Jap count persistence so that: (a) the count is saved to localStorage for session/temporary persistence so it survives page refreshes, and (b) for authenticated users the count is synced and saved to the backend canister for permanent persistence. On page load, restore the count from backend (if authenticated) or localStorage (if guest).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/Jap.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/Jap.tsx"
-        ]
+        "summary": "Add a comprehensive Mahabharat full katha entry to the backend Katha data store after the Ramayan entry. The entry must include: title 'Mahabharat - Sampurna Katha', category 'Puranik', deity 'Krishna', full Hindi narrative text covering all major parvas (Adi Parva: origins and Pandava birth, Sabha Parva: dice game and exile, Vana Parva: forest exile, Virata Parva, Udyoga Parva: war preparations, Bhishma/Drona/Karna/Shalya Parvas: the 18-day Kurukshetra war, Stri/Shanti/Anushasana Parvas, Ashvamedha Parva, and the Swargarohana Parva), and an English summary.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Add meaningful animations to the Nam Jap (Jap.tsx) section. This should include: a smooth ripple or glow pulse effect on the main tap/count button each time it is pressed, a subtle entrance animation for the mala bead ring and counter display when the page loads, and a celebratory animation (e.g., divine light burst or petal shower) when a full mala (108 counts) is completed.",
+        "summary": "Update the static fallback katha data in frontend/src/lib/kathaData.ts to include both the Ramayan full katha and Mahabharat full katha entries (matching the backend data structure) so the Kathayen page renders them correctly even when the backend returns no results. Ramayan must appear before Mahabharat.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/Jap.tsx",
-          "frontend/src/components/SacredRipple.tsx",
-          "frontend/src/components/LotusBloomOverlay.tsx"
+          "frontend/src/lib/kathaData.ts"
         ],
         "matchedFiles": [
-          "frontend/src/pages/Jap.tsx",
-          "frontend/src/components/SacredRipple.tsx",
-          "frontend/src/components/LotusBloomOverlay.tsx"
+          "frontend/src/lib/kathaData.ts"
         ]
       }
     ]
@@ -55,13 +43,9 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/LotusBloomOverlay.tsx",
-    "frontend/src/components/SacredRipple.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/pages/Jap.tsx",
+    "frontend/src/lib/kathaData.ts",
+    "frontend/src/pages/KathaDetail.tsx",
+    "frontend/src/pages/Kathayen.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

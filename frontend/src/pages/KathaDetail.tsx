@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Mic, MicOff, Pause, Play, Square, Volume2, AlertCircle } from 'lucide-react';
 import { useGetKatha } from '../hooks/useQueries';
-import staticKathaData from '../lib/kathaData';
+import { staticKathaData } from '../lib/kathaData';
 import { KathaCategory } from '../backend';
 import type { Katha } from '../backend';
 import { useSpeechNarration } from '../hooks/useSpeechNarration';

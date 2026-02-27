@@ -1,66 +1,24 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Nam Jap count saving, add Radha Nam & Jai Shree Ram options, and add animations",
+  "title": "Add Ramayan and Mahabharat full kathas to the Katha section",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add Radha Nam (राधा नाम) and Jai Shree Ram (जय श्री राम) as selectable mantra/name options in the Nam Jap page",
-      "acceptanceCriteria": [
-        "Radha Nam (राधा नाम) option appears in the name/mantra selector on the Jap page",
-        "Jai Shree Ram (जय श्री राम) option appears in the name/mantra selector on the Jap page",
-        "Selecting either option updates the displayed mantra name and the Jap counter context",
-        "Previously existing mantra options remain functional"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/Jap.tsx",
-          "operation": "modify",
-          "description": "Add Radha Nam and Jai Shree Ram as selectable mantra options in the mantra selector UI. Update the mantra display logic to show the selected mantra name in both Hindi and transliteration. Ensure the mantra selection state updates the Jap counter context with the selected mantra. The backend already defines radhaNamJap and jaiShreeRamNamJap in the Mantra enum, so wire these options into the frontend selector dropdown/list alongside existing mantras like hareKrishna, omNamahShivaya, etc."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Fix Nam Jap count persistence with localStorage for guest users and backend sync for authenticated users",
-      "acceptanceCriteria": [
-        "Jap count persists in localStorage so refreshing the page does not reset the count for guest users",
-        "For authenticated users, the Jap count is saved to the backend canister and restored on page load",
-        "Switching between mantras saves and restores the correct count per mantra",
-        "Count is not lost when navigating away from the Jap page and returning"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/Jap.tsx",
-          "operation": "modify",
-          "description": "Implement dual-persistence logic for the Jap count: (a) For guest (unauthenticated) users, save the count per mantra to localStorage on each increment and restore from localStorage on page load. Use a localStorage key structure like 'jap_count_<mantraName>' to store counts separately per mantra. (b) For authenticated users, continue using the existing backend incrementJap and getJapStats queries/mutations, and ensure the count is fetched from the backend on mount and synced on increment. Add useEffect hooks to handle restoration from localStorage when the user is not authenticated, and to restore from backend JapStats when authenticated. Ensure switching mantras retrieves the correct persisted count for that mantra. The existing debounced backend sync in Jap.tsx should remain for authenticated users; add localStorage writes for guest users immediately on count changes."
-        }
-      ]
-    },
-    {
       "id": "REQ-3",
-      "summary": "Add meaningful animations to the Nam Jap page: ripple on tap, entrance animations, and celebratory animation on 108 completion",
+      "summary": "Add comprehensive Ramayan and Mahabharat full katha entries to the frontend static fallback data with complete Hindi narratives covering all major episodes",
       "acceptanceCriteria": [
-        "Each tap on the Jap count button triggers a visible ripple or glow pulse animation on the button",
-        "The mala ring and counter display animate in smoothly when the Jap page first loads",
-        "Completing 108 counts triggers a celebratory visual animation (light burst, petal shower, or similar devotional effect)",
-        "Animations are smooth and do not cause layout shifts or performance degradation"
+        "kathaData.ts contains a Ramayan katha entry with full Hindi text and all major kandas",
+        "kathaData.ts contains a Mahabharat katha entry with full Hindi text and all major parvas",
+        "Both entries appear in the Kathayen listing page under the 'Puranik' category tab",
+        "Both entries are clickable and open their full text in the KathaDetail page",
+        "The KathaDetail page renders the full Hindi text with narration support via the existing TTS hook",
+        "Ramayan is listed before Mahabharat"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/Jap.tsx",
+          "path": "frontend/src/lib/kathaData.ts",
           "operation": "modify",
-          "description": "Add entrance animations for the mala ring and counter display when the Jap page first loads using CSS transitions or Tailwind animation classes (e.g., fade-in, slide-up). On each tap of the Jap count button, trigger the existing SacredRipple component by incrementing its trigger prop, and optionally add a brief scale or glow pulse effect using Tailwind classes or inline animations. On completing 108 counts (when count % 108 === 0 and count > 0), trigger the existing LotusBloomOverlay component to display a celebratory lotus bloom animation. Ensure all animations are smooth and do not block the UI thread or cause layout shifts."
-        },
-        {
-          "path": "frontend/src/components/SacredRipple.tsx",
-          "operation": "modify",
-          "description": "Ensure the SacredRipple component renders concentric ripple rings that expand and fade out smoothly on each trigger. Verify the animation duration and easing provide a visually pleasing ripple effect suitable for the devotional context. No major changes needed if the existing implementation is sufficient; otherwise, refine the animation timing or styling."
-        },
-        {
-          "path": "frontend/src/components/LotusBloomOverlay.tsx",
-          "operation": "modify",
-          "description": "Ensure the LotusBloomOverlay component displays a full-screen celebratory animation (lotus bloom image with a congratulatory message) when triggered. Verify the animation auto-hides after a short duration and does not interfere with further Jap counting. Confirm the existing implementation uses the generated lotus bloom asset at frontend/public/assets/generated/lotus-bloom.dim_400x400.png. No major changes needed if the existing implementation is sufficient."
+          "description": "Add two new Katha entries to the staticKathaList array: (1) Ramayan - Sampurna Katha with category 'puranik', deity 'Ram', full Hindi narrative text covering all seven major kandas (Bal Kand: Ram's birth, childhood, breaking of Shiv Dhanush and marriage to Sita; Ayodhya Kand: Dasharath's promise, Kaikeyi's demand, Ram's 14-year exile decision; Aranya Kand: forest life, golden deer, Sita's abduction by Ravan; Kishkindha Kand: alliance with Sugriva, meeting Hanuman, search for Sita; Sundar Kand: Hanuman's leap to Lanka, meeting Sita, burning Lanka; Lanka Kand/Yuddha Kand: building Ram Setu, 18-day war, Ravan's defeat, Sita's agni pariksha; Uttar Kand: return to Ayodhya, Ram's coronation, establishment of Ram Rajya), and English summary, with status 'approved', tags ['Puranik', 'Ram', 'Epic'], id as next available bigint; (2) Mahabharat - Sampurna Katha with category 'puranik', deity 'Krishna', full Hindi narrative text covering all major parvas (Adi Parva: Kuru dynasty origins, Pandava and Kaurava birth, Draupadi swayamvar; Sabha Parva: Yudhishthira's Rajasuya yagna, dice game with Shakuni, Draupadi's vastraharan, 13-year exile; Vana Parva: forest exile stories, Krishna's visits; Virata Parva: incognito year in Virat's kingdom; Udyoga Parva: peace negotiations fail, war preparations, Krishna as envoy; Bhishma Parva: war begins, Bhagavad Gita on battlefield, Bhishma's fall on bed of arrows; Drona/Karna/Shalya Parvas: key battles of the 18-day Kurukshetra war, deaths of major warriors; Stri Parva: lamentation of widows; Shanti/Anushasana Parvas: Bhishma's teachings to Yudhishthira; Ashvamedha Parva: Yudhishthira's horse sacrifice; Swargarohana Parva: Pandavas' final journey to heaven), and English summary, with status 'approved', tags ['Puranik', 'Krishna', 'Epic'], id as next available bigint. Ensure Ramayan is inserted before Mahabharat in the array order. Match the existing Katha interface structure exactly (id as bigint, status as KathaApprovalStatus, category as KathaCategory, createdAt as bigint timestamp, hindiText and englishText as strings, tags as string array)."
         }
       ]
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useSetUserProfile, useGetJapStats } from '../hooks/useQueries';
 import { Mantra } from '../backend';
@@ -32,6 +32,8 @@ export default function Profile() {
   const [selectedMantra, setSelectedMantra] = useState<string>(getStoredMantra());
   const [isSavingMantra, setIsSavingMantra] = useState(false);
 
+  const adContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (isAuthenticated && userProfile?.selectedMantra) {
       setSelectedMantra(userProfile.selectedMantra as string);
@@ -39,6 +41,35 @@ export default function Profile() {
       setSelectedMantra(getStoredMantra());
     }
   }, [isAuthenticated, userProfile]);
+
+  useEffect(() => {
+    const container = adContainerRef.current;
+    if (!container) return;
+
+    const script1 = document.createElement('script');
+    script1.type = 'text/javascript';
+    script1.innerHTML = `
+      atOptions = {
+        'key' : '3d7a4183dc9896593608ed10d4da6100',
+        'format' : 'iframe',
+        'height' : 50,
+        'width' : 320,
+        'params' : {}
+      };
+    `;
+
+    const script2 = document.createElement('script');
+    script2.type = 'text/javascript';
+    script2.src = 'https://www.highperformanceformat.com/3d7a4183dc9896593608ed10d4da6100/invoke.js';
+
+    container.appendChild(script1);
+    container.appendChild(script2);
+
+    return () => {
+      if (container.contains(script1)) container.removeChild(script1);
+      if (container.contains(script2)) container.removeChild(script2);
+    };
+  }, []);
 
   const handleMantraSelect = async (mantraKey: string) => {
     setSelectedMantra(mantraKey);
@@ -252,7 +283,7 @@ export default function Profile() {
 
         {/* Logout */}
         {isAuthenticated && (
-          <div className="text-center">
+          <div className="text-center mb-6">
             <button
               onClick={handleLogout}
               className="px-8 py-3 rounded-full font-medium transition-all"
@@ -266,6 +297,9 @@ export default function Profile() {
             </button>
           </div>
         )}
+
+        {/* Ad Banner */}
+        <div className="flex justify-center mt-4" ref={adContainerRef} />
       </div>
     </div>
   );

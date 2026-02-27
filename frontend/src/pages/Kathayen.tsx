@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import KathaCard from '../components/KathaCard';
 import { useGetAllKathayen } from '../hooks/useQueries';
-import staticKathaData from '../lib/kathaData';
+import { staticKathaData } from '../lib/kathaData';
 import { KathaCategory } from '../backend';
 import type { Katha } from '../backend';
 import { Search, BookOpen } from 'lucide-react';
@@ -117,22 +117,23 @@ export default function Kathayen() {
                       <Skeleton className="h-3 w-1/2" />
                       <div className="flex gap-2 pt-1">
                         <Skeleton className="h-5 w-16 rounded-full" />
-                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-20 rounded-full" />
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-lg font-medium">No kathayen found</p>
-                <p className="text-sm mt-1">Try a different search or category</p>
+              <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                <BookOpen className="w-12 h-12 text-muted-foreground/40" />
+                <p className="text-muted-foreground">
+                  {search ? `"${search}" के लिए कोई कथा नहीं मिली` : 'कोई कथा उपलब्ध नहीं है'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filtered.map((katha) => (
-                  <KathaCard key={katha.id.toString()} katha={katha} />
+                  <KathaCard key={String(katha.id)} katha={katha} />
                 ))}
               </div>
             )}

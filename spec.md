@@ -1,15 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix Nam Jap count persistence, add Radha Nam and Jai Shree Ram mantra options, and add animations to the Jap page.
+**Goal:** Add full Ramayan and Mahabharat kathas to the Katha section of the Nam Jap app.
 
 **Planned changes:**
-- Add "राधा नाम" (Radha Nam) and "जय श्री राम" (Jai Shree Ram) as selectable mantra options on the Jap page alongside existing options
-- Fix Jap count persistence: save count to localStorage for guest users so it survives page refreshes
-- For authenticated users, sync and save Jap count to the backend canister and restore it on page load
-- Save and restore the correct count per mantra when switching between mantra options
-- Add a ripple/glow pulse animation on the tap/count button each time it is pressed
-- Add a smooth entrance animation for the mala bead ring and counter display on page load
-- Add a celebratory animation (e.g., divine light burst or petal shower) when 108 counts (full mala) is completed
+- Add a "Ramayan - Sampurna Katha" entry to the backend Katha data store with category "Puranik", deity "Ram", and full Hindi narrative covering all major kandas (Bal, Ayodhya, Aranya, Kishkindha, Sundar, Lanka/Yuddha, Uttar Kand) plus an English summary
+- Add a "Mahabharat - Sampurna Katha" entry to the backend Katha data store with category "Puranik", deity "Krishna", and full Hindi narrative covering all major parvas plus an English summary; positioned after Ramayan
+- Update the frontend static fallback data in `kathaData.ts` to include both entries matching the backend structure, with Ramayan listed before Mahabharat
 
-**User-visible outcome:** Users can now select Radha Nam and Jai Shree Ram for jap counting, their counts are saved and restored across page refreshes and navigation (persistently for logged-in users), and the Jap page features smooth animations including button press effects and a celebratory animation at 108 counts.
+**User-visible outcome:** Users can browse the Kathayen section, find both Ramayan and Mahabharat under the "Puranik" category, tap either entry to read the full Hindi text, and use the existing text-to-speech narration feature on both kathas.

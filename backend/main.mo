@@ -125,8 +125,54 @@ actor {
     status : KathaApprovalStatus;
   };
 
-  let kathayen = Map.empty<Nat, Katha>();
-  var kathaCounter = 0;
+  let kathayen = Map.fromIter<Nat, Katha>(
+    [
+      // Ramayan full Katha entry
+      (
+        0,
+        {
+          id = 0;
+          title = "Ramayan - Sampurna Katha";
+          category = #puranik;
+          deity = "Ram";
+          hindiText = "बाल काण्ड: राजा दशरथ की तीन रानियां, राम का जन्म, बचपन की लीलाएं।\n" #
+          "अयोध्या काण्ड: राजा दशरथ द्वारा राम को वनवास, भरत की भक्ति।\n" #
+          "अरण्य काण्ड: जंगल में साधु जीवन, रावण द्वारा सीता हरण।\n" #
+          "किष्किन्धा काण्ड: हनुमान, सुग्रीव और वानर सेना से मित्रता।\n" #
+          "सुंदर काण्ड: हनुमान जी द्वारा लंका यात्रा, सीता जी को संदेश।\n" #
+          "लंकाकाण्ड/युद्ध काण्ड: राम-रावण युद्ध, रावण वध।\n" #
+          "उत्तर काण्ड: अयोध्या लौटना, राम राज्य की स्थापना।";
+          englishText = "The complete epic of Ramayan containing all major chapters and divine stories of Lord Ram's life.";
+          tags = ["Ramayan", "Ram", "Hindu", "Puranik", "Story"];
+          createdAt = 1;
+          status = #approved;
+        },
+      ),
+      // Mahabharat full Katha entry (after Ramayan)
+      (
+        1,
+        {
+          id = 1;
+          title = "Mahabharat - Sampurna Katha";
+          category = #puranik;
+          deity = "Krishna";
+          hindiText = "आदि पर्व: इतिहास, कौरव और पांडवों का जन्म, गुरु द्रोण।\n" #
+          "सभा पर्व: युधिष्ठिर की राज्य सभा, चौसर खेल, द्रौपदी का अपमान।\n" #
+          "वन पर्व: तेरह वर्ष का वनवास, विभिन्न तपस्याएं और कथाएं।\n" #
+          "विराट पर्व: पांडवों का अज्ञातवास।\n" #
+          "उद्योग पर्व: युद्ध की तैयारियां, श्रीकृष्ण का शांति संदेश।\n" #
+          "भीष्म, द्रोण, कर्ण, शल्य पर्व: अठारह दिन का युद्ध।\n" #
+          "शांति और अनुशासन पर्व: भीष्म द्वारा धर्म शिक्षा।\n" #
+          "अश्वमेध, महाप्रस्थानिक और स्वर्गारोहण पर्व: धर्मराज युधिष्ठिर का राज्याभिषेक, स्वर्ग गमन।";
+          englishText = "The epic saga of Mahabharat including all major parvas, divine stories, Dharma teachings and the great Kurukshetra war.";
+          tags = ["Mahabharat", "Krishna", "Hindu", "Puranik", "Epic"];
+          createdAt = 2;
+          status = #approved;
+        },
+      ),
+    ].values(),
+  );
+  var kathaCounter = 2; // Next ID after seeded entries
 
   // Krishna Leela Full Story in Hindi (seeded data)
   public type KrishnaLeela = {
