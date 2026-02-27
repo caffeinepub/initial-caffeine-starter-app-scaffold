@@ -1,51 +1,93 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Hindu religious app featuring a Radha Rani profile banner, vrat kathayen, Ramayan, Mahabharat, and Krishna Leela content with narration options.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
-  "existing_features": [
-    {
-      "id": "feature-update-the-static-fallback-katha-data-in-frontend-src-lib-kathadata-ts-to-include-both-the-ramayan-full-katha-and-mahabharat-full-katha-entries-matching-the-backend-data-structure-so-the-kathayen-page-renders-them-correctly-even-when-the-backend-returns-no-results-ramayan-must-appear-before-mahabharat",
-      "title": "Update the static fallback katha data in frontend/src/lib/kathaData.ts to include both the Ramayan full katha and Mahabharat full katha entries (matching the backend data structure) so the Kathayen page renders them correctly even when the backend returns no results. Ramayan must appear before Mahabharat.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    }
-  ],
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add Ramayan full katha in the Katha section",
+      "summary": "Add all 20 vrat kathayen with full text content",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add full Mahabharat in the Katha section (after Ramayan)",
+      "summary": "Add full Ramayan content",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Add a comprehensive Ramayan full katha entry to the backend Katha data store. The entry must include: title 'Ramayan - Sampurna Katha', category 'Puranik', deity 'Ram', full Hindi narrative text covering all major episodes (Bal Kand: Ram's birth and childhood, Ayodhya Kand: exile decision, Aranya Kand: forest life and Sita's abduction by Ravan, Kishkindha Kand: alliance with Sugriva and Hanuman, Sundar Kand: Hanuman's Lanka mission, Lanka Kand/Yuddha Kand: the war and Ravan's defeat, Uttar Kand: return to Ayodhya and Ram Rajya), and an English summary. The entry should appear before Mahabharat in ordering.",
+      "summary": "Add full Mahabharat content",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Add Krishna Leela stories/content",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add narration (audio/text-to-speech) option for all content sections",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Add all 20 Vrat Kathayen to the static katha data in frontend/src/lib/kathaData.ts. Each katha must include: category 'Vrat', appropriate deity name, full Hindi title, full Hindi narrative text (complete story, not truncated), and approved status. The 20 vrat kathayen should cover major Hindu fasts including: Ekadashi, Pradosh, Somvar (Shivji), Mangalvar (Hanumanji), Budhvar (Ganeshji), Brihaspativar (Vishnu/Guruvar), Shukravar (Santoshi Mata/Devi), Shanivaar (Shani Dev), Navratri Vrat, Kartik Vrat, Ahoi Ashtami, Hariyali Teej, Hartalika Teej, Karva Chauth, Vat Savitri, Jivitputrika (Jitiya), Solah Somvar, Satyanarayan Vrat, Sakat Chauth, and Janmashtami Vrat.",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-4",
-      "summary": "Add a comprehensive Mahabharat full katha entry to the backend Katha data store after the Ramayan entry. The entry must include: title 'Mahabharat - Sampurna Katha', category 'Puranik', deity 'Krishna', full Hindi narrative text covering all major parvas (Adi Parva: origins and Pandava birth, Sabha Parva: dice game and exile, Vana Parva: forest exile, Virata Parva, Udyoga Parva: war preparations, Bhishma/Drona/Karna/Shalya Parvas: the 18-day Kurukshetra war, Stri/Shanti/Anushasana Parvas, Ashvamedha Parva, and the Swargarohana Parva), and an English summary.",
+      "id": "AR-7",
+      "summary": "Expand the Ramayan content in frontend/src/lib/kathaData.ts to include the full Ramayan with all major kandas: Bal Kand, Ayodhya Kand, Aranya Kand, Kishkindha Kand, Sundar Kand, Lanka Kand (Yuddha Kand), and Uttar Kand. Each kanda should be a separate katha entry with category 'Puranik', deity 'Ram', full Hindi title, and complete Hindi narrative text covering all major events of that kanda.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Expand the Mahabharat content in frontend/src/lib/kathaData.ts to include all major parvas as separate katha entries: Adi Parva, Sabha Parva, Vana Parva, Virata Parva, Udyoga Parva, Bhishma Parva (including Bhagavad Gita summary), Drona Parva, Karna Parva, Shalya Parva, Sauptika Parva, Stri Parva, Shanti Parva, and Swargarohana Parva. Each parva should have category 'Puranik', deity 'Krishna' or appropriate deity, full Hindi title, and complete Hindi narrative.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Add a dedicated 'Krishna Leela' category section with at least 10 Krishna Leela stories in frontend/src/lib/kathaData.ts. Stories should include: Janmotsav (birth), Putana Vadh, Makhan Chor Leela, Govardhan Parvat Dharana, Kaliya Nag Daman, Raas Leela, Kans Vadh, Sudama Milan, Draupadi Cheerharan and Krishna's intervention, and Kurukshetra Geeta Updesh. Each entry must have category 'Krishna Leela', deity 'Krishna', full Hindi title, and complete Hindi narrative.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Ensure the Kathayen page (frontend/src/pages/Kathayen.tsx) has a 'Krishna Leela' filter tab alongside the existing All, Puranik, and Vrat tabs. The tab should filter and display only Krishna Leela category kathayen. The tab label should be 'कृष्ण लीला' in Hindi.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Add prominent narration controls to the KathaDetail page (frontend/src/pages/KathaDetail.tsx) using the existing useSpeechNarration hook. The narration UI must include: a Play/Pause toggle button, a Stop button, and a visible 'Narration' label. When narration is active, highlight the currently narrated section if possible. Prefer Hindi voice for Hindi text. Show a tooltip or label indicating the narration language. The narration controls should be placed in a sticky or easily accessible position (e.g., top of content or floating bottom bar).",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "status": "pending"
     }
   ],
-  "projectName": "Nam Jap",
+  "gameProjectType": "none",
+  "projectName": "Dharma Darshan",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

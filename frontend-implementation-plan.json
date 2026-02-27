@@ -1,24 +1,115 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add Ramayan and Mahabharat full kathas to the Katha section",
+  "title": "Add 20 Vrat Kathayen, Full Ramayan, Mahabharat & Krishna Leela with Narration",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Add comprehensive Ramayan and Mahabharat full katha entries to the frontend static fallback data with complete Hindi narratives covering all major episodes",
+      "id": "REQ-1",
+      "summary": "Add all 20 Vrat Kathayen to the static katha data with complete Hindi narratives covering major Hindu fasts",
       "acceptanceCriteria": [
-        "kathaData.ts contains a Ramayan katha entry with full Hindi text and all major kandas",
-        "kathaData.ts contains a Mahabharat katha entry with full Hindi text and all major parvas",
-        "Both entries appear in the Kathayen listing page under the 'Puranik' category tab",
-        "Both entries are clickable and open their full text in the KathaDetail page",
-        "The KathaDetail page renders the full Hindi text with narration support via the existing TTS hook",
-        "Ramayan is listed before Mahabharat"
+        "Exactly 20 vrat kathayen entries exist in kathaData.ts under the 'Vrat' category",
+        "Each katha has a full Hindi narrative (minimum 300 words per story)",
+        "All 20 appear in the Kathayen page under the Vrat filter tab",
+        "Each entry has a unique ID, correct category, deity, and title"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/kathaData.ts",
           "operation": "modify",
-          "description": "Add two new Katha entries to the staticKathaList array: (1) Ramayan - Sampurna Katha with category 'puranik', deity 'Ram', full Hindi narrative text covering all seven major kandas (Bal Kand: Ram's birth, childhood, breaking of Shiv Dhanush and marriage to Sita; Ayodhya Kand: Dasharath's promise, Kaikeyi's demand, Ram's 14-year exile decision; Aranya Kand: forest life, golden deer, Sita's abduction by Ravan; Kishkindha Kand: alliance with Sugriva, meeting Hanuman, search for Sita; Sundar Kand: Hanuman's leap to Lanka, meeting Sita, burning Lanka; Lanka Kand/Yuddha Kand: building Ram Setu, 18-day war, Ravan's defeat, Sita's agni pariksha; Uttar Kand: return to Ayodhya, Ram's coronation, establishment of Ram Rajya), and English summary, with status 'approved', tags ['Puranik', 'Ram', 'Epic'], id as next available bigint; (2) Mahabharat - Sampurna Katha with category 'puranik', deity 'Krishna', full Hindi narrative text covering all major parvas (Adi Parva: Kuru dynasty origins, Pandava and Kaurava birth, Draupadi swayamvar; Sabha Parva: Yudhishthira's Rajasuya yagna, dice game with Shakuni, Draupadi's vastraharan, 13-year exile; Vana Parva: forest exile stories, Krishna's visits; Virata Parva: incognito year in Virat's kingdom; Udyoga Parva: peace negotiations fail, war preparations, Krishna as envoy; Bhishma Parva: war begins, Bhagavad Gita on battlefield, Bhishma's fall on bed of arrows; Drona/Karna/Shalya Parvas: key battles of the 18-day Kurukshetra war, deaths of major warriors; Stri Parva: lamentation of widows; Shanti/Anushasana Parvas: Bhishma's teachings to Yudhishthira; Ashvamedha Parva: Yudhishthira's horse sacrifice; Swargarohana Parva: Pandavas' final journey to heaven), and English summary, with status 'approved', tags ['Puranik', 'Krishna', 'Epic'], id as next available bigint. Ensure Ramayan is inserted before Mahabharat in the array order. Match the existing Katha interface structure exactly (id as bigint, status as KathaApprovalStatus, category as KathaCategory, createdAt as bigint timestamp, hindiText and englishText as strings, tags as string array)."
+          "description": "Add 20 new vrat katha entries to the kathas array. Each entry must have category: KathaCategory.vrat, status: KathaApprovalStatus.approved, and include complete Hindi narratives for: Ekadashi Vrat, Pradosh Vrat, Somvar Vrat (Shivji), Mangalvar Vrat (Hanumanji), Budhvar Vrat (Ganeshji), Brihaspativar Vrat (Vishnu/Guruvar), Shukravar Vrat (Santoshi Mata/Devi), Shanivaar Vrat (Shani Dev), Navratri Vrat, Kartik Vrat, Ahoi Ashtami Vrat, Hariyali Teej Vrat, Hartalika Teej Vrat, Karva Chauth Vrat, Vat Savitri Vrat, Jivitputrika (Jitiya) Vrat, Solah Somvar Vrat, Satyanarayan Vrat, Sakat Chauth Vrat, and Janmashtami Vrat. Each narrative should be at least 300 words in Hindi, describing the vrat katha, vidhi (method), significance, and benefits. Assign appropriate deity names for each vrat."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Expand Ramayan content to include all 7 major kandas as separate katha entries with complete Hindi narratives",
+      "acceptanceCriteria": [
+        "All 7 Ramayan kandas are present as individual katha entries",
+        "Each kanda entry has full narrative text in Hindi covering major events",
+        "All Ramayan entries appear under the Puranik category filter",
+        "Entries are ordered sequentially (Bal Kand through Uttar Kand)"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/kathaData.ts",
+          "operation": "modify",
+          "description": "Add or expand 7 Ramayan kanda entries: Bal Kand, Ayodhya Kand, Aranya Kand, Kishkindha Kand, Sundar Kand, Lanka Kand (Yuddha Kand), and Uttar Kand. Each entry must have category: KathaCategory.puranik, deity: 'Ram', status: KathaApprovalStatus.approved, and a complete Hindi narrative covering all major events of that kanda. Ensure sequential ordering by assigning appropriate IDs or maintaining array order. Each narrative should comprehensively cover the kanda's story arc in Hindi."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Expand Mahabharat content to include all major parvas as separate katha entries with complete Hindi narratives",
+      "acceptanceCriteria": [
+        "All major Mahabharat parvas exist as individual katha entries",
+        "Each parva entry contains complete Hindi narrative of major events",
+        "All Mahabharat entries appear under the Puranik category filter",
+        "Bhishma Parva entry includes a summary of the Bhagavad Gita"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/kathaData.ts",
+          "operation": "modify",
+          "description": "Add or expand Mahabharat parva entries including: Adi Parva, Sabha Parva, Vana Parva, Virata Parva, Udyoga Parva, Bhishma Parva (with Bhagavad Gita summary), Drona Parva, Karna Parva, Shalya Parva, Sauptika Parva, Stri Parva, Shanti Parva, and Swargarohana Parva. Each entry must have category: KathaCategory.puranik, deity: 'Krishna' (or appropriate deity for the parva context), status: KathaApprovalStatus.approved, and a complete Hindi narrative covering major events. Bhishma Parva must include a dedicated section summarizing the Bhagavad Gita teachings in Hindi."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add a dedicated 'Krishna Leela' category section with at least 10 Krishna Leela stories with complete Hindi narratives",
+      "acceptanceCriteria": [
+        "At least 10 Krishna Leela stories exist in kathaData.ts",
+        "All entries have category 'Krishna Leela'",
+        "Krishna Leela tab/filter on the Kathayen page shows these stories",
+        "Each story has complete Hindi narrative text"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/kathaData.ts",
+          "operation": "modify",
+          "description": "Add a new KathaCategory enum value 'krishnaLeela' (if not present) and create at least 10 Krishna Leela katha entries with category: KathaCategory.krishnaLeela, deity: 'Krishna', status: KathaApprovalStatus.approved. Include these stories: Janmotsav (Krishna's birth), Putana Vadh, Makhan Chor Leela (butter thief), Govardhan Parvat Dharana, Kaliya Nag Daman (serpent subduing), Raas Leela, Kans Vadh (killing of Kansa), Sudama Milan (meeting with Sudama), Draupadi Cheerharan and Krishna's intervention, and Kurukshetra Geeta Updesh (Bhagavad Gita teaching). Each entry must have a complete Hindi narrative describing the leela in detail."
+        },
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Add 'krishnaLeela' to the KathaCategory enum if it does not already exist. Update the enum definition to include: vrat = 'vrat', puranik = 'puranik', krishnaLeela = 'krishnaLeela'. This ensures type safety between frontend and backend category definitions."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Ensure the Kathayen page has a 'Krishna Leela' filter tab that filters and displays only Krishna Leela category kathayen",
+      "acceptanceCriteria": [
+        "A 'कृष्ण लीला' tab is visible on the Kathayen page",
+        "Selecting the tab filters the katha list to only Krishna Leela entries",
+        "The tab integrates visually with the existing filter tab row",
+        "Tab is active-highlighted when selected"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/Kathayen.tsx",
+          "operation": "modify",
+          "description": "Add a 'कृष्ण लीला' (Krishna Leela) filter tab to the existing category filter tabs (All, Puranik, Vrat). Update the filter state to include 'krishnaLeela' as a valid category filter option. When the Krishna Leela tab is selected, filter the displayed katha list to show only entries with category KathaCategory.krishnaLeela. Ensure the tab styling matches the existing tabs and applies active highlighting (golden glow or similar) when selected. The tab should be positioned logically in the tab row alongside the existing category tabs."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Add prominent narration controls to the KathaDetail page using the existing useSpeechNarration hook with Play, Pause, Stop, and language indication",
+      "acceptanceCriteria": [
+        "KathaDetail page shows Play, Pause, and Stop narration buttons",
+        "Clicking Play begins text-to-speech of the katha text using useSpeechNarration",
+        "Clicking Pause pauses narration; clicking Play/Resume resumes from where it paused",
+        "Clicking Stop ends narration and resets state",
+        "Narration controls are accessible without scrolling (sticky or floating placement)",
+        "Hindi voice is used when available via the existing hook",
+        "Narration works for Vrat Kathayen, Ramayan, Mahabharat, and Krishna Leela entries"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/KathaDetail.tsx",
+          "operation": "modify",
+          "description": "Integrate the useSpeechNarration hook into the KathaDetail page. Add a narration control panel with three buttons: Play/Resume (toggle between play and resume states), Pause, and Stop. The controls should be positioned in a sticky header or floating bottom bar for easy access without scrolling. Display a 'Narration' label or icon indicating the feature. When Play is clicked, pass the current katha's hindiText (or englishText if Hindi is unavailable) to the narration hook's play function. Handle pause/resume state transitions properly using the hook's pause and resume methods. On Stop, call the hook's stop method to reset narration state. Show visual feedback for the active narration state (e.g., a pulsing icon or highlighted text). Use Hindi voice preference via the hook's configuration. Ensure narration controls work for all katha categories (Vrat, Puranik, Krishna Leela)."
         }
       ]
     }

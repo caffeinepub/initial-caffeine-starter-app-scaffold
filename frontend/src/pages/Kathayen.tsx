@@ -1,144 +1,157 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import KathaCard from '../components/KathaCard';
+import React, { useState, useMemo } from 'react';
+import { Link } from '@tanstack/react-router';
+import { Search, BookOpen, Star } from 'lucide-react';
 import { useGetAllKathayen } from '../hooks/useQueries';
 import { staticKathaData } from '../lib/kathaData';
-import { KathaCategory } from '../backend';
-import type { Katha } from '../backend';
-import { Search, BookOpen } from 'lucide-react';
+import KathaCard from '../components/KathaCard';
+import { KathaCategory, Katha } from '../backend';
+
+type FilterTab = 'all' | 'puranik' | 'vrat' | 'krishna';
 
 export default function Kathayen() {
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'puranik' | 'vrat'>('all');
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
-  const { data: backendKathayen, isLoading, isFetched } = useGetAllKathayen();
+  const { data: backendKathayen, isLoading } = useGetAllKathayen();
 
-  // Only fall back to static data AFTER loading completes and backend returned 0 results
-  // During loading: show skeleton
-  // After load with data: show backend data
-  // After load with 0 results: show static fallback
-  const allKathayen: Katha[] = (() => {
-    if (isLoading) return [];
-    if (backendKathayen && backendKathayen.length > 0) return backendKathayen;
-    if (isFetched) return staticKathaData;
+  // Use backend data if available and non-empty, else fall back to static data
+  const allKathayen: Katha[] = useMemo(() => {
+    if (!isLoading && backendKathayen && backendKathayen.length > 0) {
+      return backendKathayen;
+    }
     return staticKathaData;
-  })();
+  }, [backendKathayen, isLoading]);
 
-  const filtered = allKathayen.filter((k) => {
-    const matchesSearch =
-      search === '' ||
-      k.title.toLowerCase().includes(search.toLowerCase()) ||
-      k.deity.toLowerCase().includes(search.toLowerCase()) ||
-      k.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+  const filteredKathayen = useMemo(() => {
+    let list = allKathayen;
 
-    const matchesTab =
-      activeTab === 'all' ||
-      (activeTab === 'puranik' && k.category === KathaCategory.puranik) ||
-      (activeTab === 'vrat' && k.category === KathaCategory.vrat);
+    // Category filter
+    if (activeTab === 'puranik') {
+      list = list.filter((k) => k.category === KathaCategory.puranik && k.deity !== 'Krishna');
+    } else if (activeTab === 'vrat') {
+      list = list.filter((k) => k.category === KathaCategory.vrat);
+    } else if (activeTab === 'krishna') {
+      list = list.filter((k) => k.deity === 'Krishna');
+    }
 
-    return matchesSearch && matchesTab;
-  });
+    // Search filter
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (k) =>
+          k.title.toLowerCase().includes(q) ||
+          k.deity.toLowerCase().includes(q) ||
+          k.tags.some((t) => t.toLowerCase().includes(q))
+      );
+    }
 
-  const puranikCount = allKathayen.filter((k) => k.category === KathaCategory.puranik).length;
-  const vratCount = allKathayen.filter((k) => k.category === KathaCategory.vrat).length;
+    return list;
+  }, [allKathayen, activeTab, search]);
+
+  const counts = useMemo(
+    () => ({
+      all: allKathayen.length,
+      puranik: allKathayen.filter((k) => k.category === KathaCategory.puranik && k.deity !== 'Krishna').length,
+      vrat: allKathayen.filter((k) => k.category === KathaCategory.vrat).length,
+      krishna: allKathayen.filter((k) => k.deity === 'Krishna').length,
+    }),
+    [allKathayen]
+  );
+
+  const tabs: { key: FilterTab; label: string; emoji: string }[] = [
+    { key: 'all', label: 'सभी', emoji: '📖' },
+    { key: 'puranik', label: 'पौराणिक', emoji: '🕉️' },
+    { key: 'krishna', label: 'कृष्ण लीला', emoji: '🦚' },
+    { key: 'vrat', label: 'व्रत कथाएँ', emoji: '🪔' },
+  ];
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
       {/* Hero Banner */}
-      <div className="relative h-48 md:h-64 overflow-hidden">
+      <div className="relative h-48 overflow-hidden">
         <img
           src="/assets/generated/kathayen-banner.dim_1200x400.png"
-          alt="Kathayen Banner"
+          alt="Kathayen"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex flex-col items-center justify-center">
-          <img
-            src="/assets/generated/om-lotus-ornament.dim_512x256.png"
-            alt="Om Lotus"
-            className="h-12 mb-2 opacity-90"
-          />
-          <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">कथाएँ</h1>
-          <p className="text-white/80 text-sm mt-1">Sacred Stories &amp; Spiritual Narratives</p>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70 flex flex-col items-center justify-center">
+          <h1 className="text-3xl font-bold text-amber-300 drop-shadow-lg">कथाएँ</h1>
+          <p className="text-amber-100/80 text-sm mt-1">पवित्र कथाएँ और लीलाएँ</p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Search */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search by title, deity, or tag..."
+      {/* Search */}
+      <div className="px-4 py-4 sticky top-0 bg-background/95 backdrop-blur z-10 border-b border-border">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="कथा खोजें..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
+      </div>
 
-        {/* Category Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'puranik' | 'vrat')}>
-          <TabsList className="mb-6 w-full">
-            <TabsTrigger value="all" className="flex-1">
-              All
-              {!isLoading && allKathayen.length > 0 && (
-                <span className="ml-1.5 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                  {allKathayen.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="puranik" className="flex-1">
-              Puranik
-              {!isLoading && puranikCount > 0 && (
-                <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
-                  {puranikCount}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="vrat" className="flex-1">
-              Vrat
-              {!isLoading && vratCount > 0 && (
-                <span className="ml-1.5 text-xs bg-rose-500/20 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded-full">
-                  {vratCount}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      {/* Category Tabs */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === tab.key
+                  ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              <span>{tab.emoji}</span>
+              <span>{tab.label}</span>
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === tab.key ? 'bg-white/20' : 'bg-background'
+                }`}
+              >
+                {counts[tab.key]}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <TabsContent value={activeTab}>
-            {isLoading ? (
-              /* Loading skeleton grid */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="rounded-xl border border-border overflow-hidden">
-                    <Skeleton className="h-32 w-full" />
-                    <div className="p-4 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <div className="flex gap-2 pt-1">
-                        <Skeleton className="h-5 w-16 rounded-full" />
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-                <BookOpen className="w-12 h-12 text-muted-foreground/40" />
-                <p className="text-muted-foreground">
-                  {search ? `"${search}" के लिए कोई कथा नहीं मिली` : 'कोई कथा उपलब्ध नहीं है'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filtered.map((katha) => (
-                  <KathaCard key={String(katha.id)} katha={katha} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+      {/* Krishna Leela Banner */}
+      {activeTab === 'krishna' && (
+        <div className="mx-4 mt-3 rounded-2xl overflow-hidden">
+          <img
+            src="/assets/generated/krishna-leela-banner.dim_800x400.png"
+            alt="Krishna Leela"
+            className="w-full h-32 object-cover"
+          />
+        </div>
+      )}
+
+      {/* Katha List */}
+      <div className="px-4 py-4 pb-24">
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : filteredKathayen.length === 0 ? (
+          <div className="text-center py-16">
+            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">कोई कथा नहीं मिली</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredKathayen.map((katha) => (
+              <KathaCard key={katha.id.toString()} katha={katha} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

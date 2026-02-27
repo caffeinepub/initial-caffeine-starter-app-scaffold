@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useSetUserProfile, useGetJapStats } from '../hooks/useQueries';
 import { Mantra } from '../backend';
@@ -32,8 +32,6 @@ export default function Profile() {
   const [selectedMantra, setSelectedMantra] = useState<string>(getStoredMantra());
   const [isSavingMantra, setIsSavingMantra] = useState(false);
 
-  const adContainerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (isAuthenticated && userProfile?.selectedMantra) {
       setSelectedMantra(userProfile.selectedMantra as string);
@@ -41,35 +39,6 @@ export default function Profile() {
       setSelectedMantra(getStoredMantra());
     }
   }, [isAuthenticated, userProfile]);
-
-  useEffect(() => {
-    const container = adContainerRef.current;
-    if (!container) return;
-
-    const script1 = document.createElement('script');
-    script1.type = 'text/javascript';
-    script1.innerHTML = `
-      atOptions = {
-        'key' : '3d7a4183dc9896593608ed10d4da6100',
-        'format' : 'iframe',
-        'height' : 50,
-        'width' : 320,
-        'params' : {}
-      };
-    `;
-
-    const script2 = document.createElement('script');
-    script2.type = 'text/javascript';
-    script2.src = 'https://www.highperformanceformat.com/3d7a4183dc9896593608ed10d4da6100/invoke.js';
-
-    container.appendChild(script1);
-    container.appendChild(script2);
-
-    return () => {
-      if (container.contains(script1)) container.removeChild(script1);
-      if (container.contains(script2)) container.removeChild(script2);
-    };
-  }, []);
 
   const handleMantraSelect = async (mantraKey: string) => {
     setSelectedMantra(mantraKey);
@@ -132,6 +101,52 @@ export default function Profile() {
               मेरी प्रोफ़ाइल
             </h1>
           </div>
+        </div>
+
+        {/* Radha Rani Banner */}
+        <div className="mb-6 animate-divine-entrance">
+          <a
+            href="https://www.effectivegatecpm.com/m4jprjpym?key=9d48cb2b050fbc9bab37e1bd7c0415da"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block group"
+          >
+            <div
+              className="relative overflow-hidden rounded-2xl transition-all duration-300 group-hover:scale-[1.02]"
+              style={{
+                border: '2px solid oklch(0.82 0.18 80 / 0.6)',
+                boxShadow: '0 0 20px oklch(0.82 0.18 80 / 0.25), 0 4px 16px oklch(0.72 0.19 55 / 0.15)',
+              }}
+            >
+              <img
+                src="/assets/generated/radha-rani-banner.dim_800x300.png"
+                alt="राधा रानी की कृपा"
+                className="w-full h-auto object-cover"
+                style={{ display: 'block' }}
+              />
+              {/* Subtle golden overlay on hover */}
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, oklch(0.82 0.18 80 / 0.08), oklch(0.72 0.19 55 / 0.05))',
+                }}
+              />
+              {/* Devotional label */}
+              <div
+                className="absolute bottom-0 left-0 right-0 py-2 px-4 text-center"
+                style={{
+                  background: 'linear-gradient(0deg, oklch(0.35 0.14 20 / 0.65) 0%, transparent 100%)',
+                }}
+              >
+                <p
+                  className="font-heading text-sm tracking-wide"
+                  style={{ color: 'oklch(0.95 0.06 80)', textShadow: '0 1px 4px oklch(0.2 0.1 20 / 0.8)' }}
+                >
+                  🌸 राधे राधे — राधा रानी की कृपा 🌸
+                </p>
+              </div>
+            </div>
+          </a>
         </div>
 
         {/* Avatar & Name */}
@@ -297,9 +312,6 @@ export default function Profile() {
             </button>
           </div>
         )}
-
-        {/* Ad Banner */}
-        <div className="flex justify-center mt-4" ref={adContainerRef} />
       </div>
     </div>
   );

@@ -1,26 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-update-the-static-fallback-katha-data-in-frontend-src-lib-kathadata-ts-to-include-both-the-ramayan-full-katha-and-mahabharat-full-katha-entries-matching-the-backend-data-structure-so-the-kathayen-page-renders-them-correctly-even-when-the-backend-returns-no-results-ramayan-must-appear-before-mahabharat",
-      "featureTitle": "Update the static fallback katha data in frontend/src/lib/kathaData.ts to include both the Ramayan full katha and Mahabharat full katha entries (matching the backend data structure) so the Kathayen page renders them correctly even when the backend returns no results. Ramayan must appear before Mahabharat.",
-      "files": [
-        "frontend/src/lib/kathaData.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

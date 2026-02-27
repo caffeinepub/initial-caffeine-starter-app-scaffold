@@ -1,444 +1,374 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetJapStats, useIncrementJap } from '../hooks/useQueries';
+import { Mantra } from '../backend';
 import MalaRing from '../components/MalaRing';
-import LotusBloomOverlay from '../components/LotusBloomOverlay';
 import SacredRipple from '../components/SacredRipple';
+import LotusBloomOverlay from '../components/LotusBloomOverlay';
+import OmParticleBurst from '../components/OmParticleBurst';
 
-const MALA_SIZE = 108;
-
-interface MantraOption {
-  key: string;
-  label: string;
-  subLabel: string;
-  emoji: string;
-}
-
-const MANTRA_OPTIONS: MantraOption[] = [
-  { key: 'omNamahShivaya', label: 'ॐ नमः शिवाय', subLabel: 'Om Namah Shivaya', emoji: '🔱' },
-  { key: 'hareKrishna', label: 'हरे कृष्ण हरे राम', subLabel: 'Hare Krishna Hare Ram', emoji: '🦚' },
-  { key: 'radhaNamJap', label: 'राधे राधे', subLabel: 'Radha Nam Jap', emoji: '🌸' },
-  { key: 'jaiShreeRamNamJap', label: 'जय श्री राम', subLabel: 'Jai Shree Ram', emoji: '🏹' },
-  { key: 'gayatriMantra', label: 'ॐ भूर्भुवः स्वः', subLabel: 'Gayatri Mantra', emoji: '☀️' },
-  { key: 'mahamrityunjayaMantra', label: 'ॐ त्र्यम्बकं यजामहे', subLabel: 'Mahamrityunjaya', emoji: '🌙' },
-  { key: 'saiRam', label: 'ॐ साईं राम', subLabel: 'Sai Ram', emoji: '✨' },
-  { key: 'sitaram', label: 'सीताराम सीताराम', subLabel: 'Sita Ram', emoji: '🪷' },
-  { key: 'omMantra', label: 'ॐ', subLabel: 'Om Mantra', emoji: '🕉️' },
+const MANTRAS: { key: Mantra; label: string; short: string; color: string }[] = [
+  { key: Mantra.omNamahShivaya, label: 'ॐ नमः शिवाय', short: 'शिव', color: 'from-blue-900 to-indigo-900' },
+  { key: Mantra.hareKrishna, label: 'हरे कृष्ण हरे राम', short: 'कृष्ण', color: 'from-yellow-800 to-amber-900' },
+  { key: Mantra.gayatriMantra, label: 'गायत्री मंत्र', short: 'गायत्री', color: 'from-orange-800 to-red-900' },
+  { key: Mantra.mahamrityunjayaMantra, label: 'महामृत्युंजय मंत्र', short: 'मृत्युंजय', color: 'from-green-900 to-teal-900' },
+  { key: Mantra.saiRam, label: 'ॐ साईं राम', short: 'साईं', color: 'from-orange-900 to-yellow-900' },
+  { key: Mantra.sitaram, label: 'सीताराम सीताराम', short: 'सीताराम', color: 'from-pink-900 to-rose-900' },
+  { key: Mantra.omMantra, label: 'ॐ', short: 'ॐ', color: 'from-purple-900 to-violet-900' },
+  { key: Mantra.radhaNamJap, label: 'राधे राधे', short: 'राधे', color: 'from-pink-800 to-fuchsia-900' },
+  { key: Mantra.jaiShreeRamNamJap, label: 'जय श्री राम', short: 'राम', color: 'from-amber-800 to-orange-900' },
 ];
 
-function getLocalStorageKey(mantraKey: string) {
-  return `jap_count_${mantraKey}`;
-}
+const STORAGE_KEY_PREFIX = 'jap_count_';
+const STORAGE_MANTRA_KEY = 'jap_selected_mantra';
 
-function loadLocalCount(mantraKey: string): number {
-  try {
-    const val = localStorage.getItem(getLocalStorageKey(mantraKey));
-    return val ? parseInt(val, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function saveLocalCount(mantraKey: string, count: number) {
-  try {
-    localStorage.setItem(getLocalStorageKey(mantraKey), String(count));
-  } catch {
-    // ignore
-  }
+function getStorageKey(mantra: Mantra) {
+  return `${STORAGE_KEY_PREFIX}${mantra}`;
 }
 
 export default function Jap() {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  const { data: japStats } = useGetJapStats();
-  const incrementJapMutation = useIncrementJap();
-
-  // Selected mantra
-  const [selectedMantra, setSelectedMantra] = useState<string>(() => {
+  const [selectedMantra, setSelectedMantra] = useState<Mantra>(() => {
     try {
-      return localStorage.getItem('jap_selected_mantra') || 'omNamahShivaya';
+      const saved = localStorage.getItem(STORAGE_MANTRA_KEY);
+      return (saved as Mantra) || Mantra.omNamahShivaya;
     } catch {
-      return 'omNamahShivaya';
+      return Mantra.omNamahShivaya;
     }
   });
-  const [showMantraSelector, setShowMantraSelector] = useState(false);
 
-  // Local optimistic state
-  const [sessionCount, setSessionCount] = useState<number>(() => loadLocalCount(selectedMantra));
-  const [localLifetime, setLocalLifetime] = useState<number>(0);
+  // Session count: counts taps in the current session
+  const [sessionCount, setSessionCount] = useState(0);
+  // Local lifetime: the displayed lifetime count (backend value + unsynced session taps)
+  const [localLifetime, setLocalLifetime] = useState(0);
+  // Whether we've initialized localLifetime from backend
+  const [lifetimeInitialized, setLifetimeInitialized] = useState(false);
 
-  // Trigger counter for LotusBloomOverlay (increments on each mala completion)
-  const [bloomTrigger, setBloomTrigger] = useState(0);
+  // Ripple trigger counter (increments on each tap)
   const [rippleTrigger, setRippleTrigger] = useState(0);
-  const [isPressed, setIsPressed] = useState(false);
-  const [completingMala, setCompletingMala] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [showParticles, setShowParticles] = useState(false);
+  // Lotus bloom trigger counter (increments on each 108 completion)
+  const [bloomTrigger, setBloomTrigger] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncedCount, setLastSyncedCount] = useState(0);
 
-  // Pending increments to batch-sync to backend
-  const pendingRef = useRef(0);
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevSessionRef = useRef(sessionCount);
+  const particleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Entrance animation
+  const { data: japStats, isLoading: statsLoading } = useGetJapStats();
+  const incrementJap = useIncrementJap();
+
+  // Initialize localLifetime from backend when japStats loads
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 50);
-    return () => clearTimeout(t);
-  }, []);
-
-  // Initialize lifetime from backend stats (authenticated users)
-  useEffect(() => {
-    if (japStats && isAuthenticated) {
-      setLocalLifetime(Number(japStats.lifetime));
+    if (japStats && !lifetimeInitialized) {
+      const backendLifetime = Number(japStats.lifetime);
+      setLocalLifetime(backendLifetime);
+      setLifetimeInitialized(true);
     }
-  }, [japStats, isAuthenticated]);
+  }, [japStats, lifetimeInitialized]);
 
-  // For guest users, compute lifetime from all mantra localStorage counts
+  // When japStats refreshes after a sync, update localLifetime to reflect the new backend value
+  useEffect(() => {
+    if (japStats && lifetimeInitialized && !isSyncing) {
+      const backendLifetime = Number(japStats.lifetime);
+      const unsyncedTaps = sessionCount - lastSyncedCount;
+      setLocalLifetime(backendLifetime + Math.max(0, unsyncedTaps));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [japStats]);
+
+  // For guest users: load session count from localStorage
   useEffect(() => {
     if (!isAuthenticated) {
-      const total = MANTRA_OPTIONS.reduce((sum, m) => sum + loadLocalCount(m.key), 0);
-      setLocalLifetime(total);
+      try {
+        const saved = localStorage.getItem(getStorageKey(selectedMantra));
+        const savedCount = saved ? parseInt(saved, 10) : 0;
+        setSessionCount(savedCount);
+        setLocalLifetime(savedCount);
+        setLifetimeInitialized(true);
+      } catch {
+        setSessionCount(0);
+        setLocalLifetime(0);
+        setLifetimeInitialized(true);
+      }
     }
-  }, [isAuthenticated, sessionCount]);
+  }, [selectedMantra, isAuthenticated]);
 
-  // When mantra changes, load its persisted count
-  const handleMantraChange = useCallback((key: string) => {
-    // Save current count before switching
-    saveLocalCount(selectedMantra, sessionCount);
-    setSelectedMantra(key);
-    try {
-      localStorage.setItem('jap_selected_mantra', key);
-    } catch { /* ignore */ }
-    const saved = loadLocalCount(key);
-    setSessionCount(saved);
-    prevSessionRef.current = saved;
-    setShowMantraSelector(false);
-  }, [selectedMantra, sessionCount]);
-
-  // Derived values
-  const beadsInRound = sessionCount % MALA_SIZE;
-  const progressPercent = (beadsInRound / MALA_SIZE) * 100;
-  const sessionMalaCount = Math.floor(sessionCount / MALA_SIZE);
-
-  // Detect mala completion
+  // Save mantra selection
   useEffect(() => {
-    if (sessionCount > 0 && sessionCount > prevSessionRef.current) {
-      const prevMalas = Math.floor(prevSessionRef.current / MALA_SIZE);
-      const currMalas = Math.floor(sessionCount / MALA_SIZE);
-      if (currMalas > prevMalas) {
-        setCompletingMala(true);
-        setTimeout(() => {
-          setCompletingMala(false);
-          setBloomTrigger((t) => t + 1);
-        }, 300);
-      }
+    try {
+      localStorage.setItem(STORAGE_MANTRA_KEY, selectedMantra);
+    } catch { /* ignore */ }
+  }, [selectedMantra]);
+
+  // Save guest count to localStorage
+  useEffect(() => {
+    if (!isAuthenticated) {
+      try {
+        localStorage.setItem(getStorageKey(selectedMantra), sessionCount.toString());
+      } catch { /* ignore */ }
     }
-    prevSessionRef.current = sessionCount;
-  }, [sessionCount]);
+  }, [sessionCount, selectedMantra, isAuthenticated]);
 
-  // Async backend sync (debounced, non-blocking)
-  const scheduleSyncToBackend = useCallback(() => {
-    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      if (pendingRef.current > 0 && isAuthenticated) {
-        const toSync = pendingRef.current;
-        pendingRef.current = 0;
-        incrementJapMutation.mutate(BigInt(toSync), {
-          onError: (err) => {
-            console.error('Jap sync error:', err);
-          },
-        });
-      }
-    }, 1500);
-  }, [isAuthenticated, incrementJapMutation]);
+  // Auto-sync for authenticated users (debounced)
+  const scheduleSync = useCallback(
+    (count: number) => {
+      if (!isAuthenticated) return;
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = setTimeout(async () => {
+        const toSync = count - lastSyncedCount;
+        if (toSync <= 0) return;
+        setIsSyncing(true);
+        try {
+          await incrementJap.mutateAsync(BigInt(toSync));
+          setLastSyncedCount(count);
+        } catch (e) {
+          console.error('Sync failed:', e);
+        } finally {
+          setIsSyncing(false);
+        }
+      }, 3000);
+    },
+    [isAuthenticated, lastSyncedCount, incrementJap]
+  );
 
-  const handleJap = useCallback(() => {
-    const newCount = sessionCount + 1;
+  const handleTap = useCallback(() => {
+    const newSession = sessionCount + 1;
+    setSessionCount(newSession);
+    setLocalLifetime((prev) => prev + 1);
 
-    // Immediate optimistic update
-    setSessionCount(newCount);
+    // Ripple — increment trigger
     setRippleTrigger((t) => t + 1);
 
-    // Persist to localStorage immediately
-    saveLocalCount(selectedMantra, newCount);
+    // Particles on multiples of 27
+    if (newSession % 27 === 0) {
+      setShowParticles(true);
+      if (particleTimeoutRef.current) clearTimeout(particleTimeoutRef.current);
+      particleTimeoutRef.current = setTimeout(() => setShowParticles(false), 800);
+    }
 
-    // Queue backend sync for authenticated users
-    pendingRef.current += 1;
-    scheduleSyncToBackend();
-  }, [sessionCount, selectedMantra, scheduleSyncToBackend]);
+    // Lotus bloom on 108 — increment trigger
+    if (newSession % 108 === 0) {
+      setBloomTrigger((t) => t + 1);
+    }
 
-  const handleReset = () => {
+    scheduleSync(newSession);
+  }, [sessionCount, scheduleSync]);
+
+  const handleReset = useCallback(async () => {
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+
+    // Sync any remaining before reset
+    const toSync = sessionCount - lastSyncedCount;
+    if (isAuthenticated && toSync > 0) {
+      try {
+        await incrementJap.mutateAsync(BigInt(toSync));
+      } catch (e) {
+        console.error('Final sync failed:', e);
+      }
+    }
+
     setSessionCount(0);
-    saveLocalCount(selectedMantra, 0);
-    prevSessionRef.current = 0;
-  };
+    setLastSyncedCount(0);
+    if (!isAuthenticated) {
+      try {
+        localStorage.setItem(getStorageKey(selectedMantra), '0');
+      } catch { /* ignore */ }
+      setLocalLifetime(0);
+    }
+  }, [sessionCount, lastSyncedCount, isAuthenticated, selectedMantra, incrementJap]);
 
-  const progressWidth = completingMala ? 100 : progressPercent;
-  const currentMantra = MANTRA_OPTIONS.find((m) => m.key === selectedMantra) || MANTRA_OPTIONS[0];
+  const handleMantraChange = useCallback(
+    async (mantra: Mantra) => {
+      if (mantra === selectedMantra) return;
+
+      // Sync current session before switching
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      const toSync = sessionCount - lastSyncedCount;
+      if (isAuthenticated && toSync > 0) {
+        try {
+          await incrementJap.mutateAsync(BigInt(toSync));
+        } catch (e) {
+          console.error('Sync on mantra change failed:', e);
+        }
+      }
+
+      setSelectedMantra(mantra);
+      setSessionCount(0);
+      setLastSyncedCount(0);
+      setLifetimeInitialized(false);
+    },
+    [selectedMantra, sessionCount, lastSyncedCount, isAuthenticated, incrementJap]
+  );
+
+  const currentMantra = MANTRAS.find((m) => m.key === selectedMantra) || MANTRAS[0];
+  // beadsInRound: 0–107 for MalaRing count prop
+  const beadsInRound = sessionCount % 108;
+  const malas = Math.floor(sessionCount / 108);
+
+  const dailyCount = japStats ? Number(japStats.daily) : 0;
+  const weeklyCount = japStats ? Number(japStats.weekly) : 0;
 
   return (
-    <div className="min-h-screen bg-background pb-24 overflow-hidden">
-      {/* LotusBloomOverlay uses trigger-based API */}
+    <div className={`min-h-screen bg-gradient-to-b ${currentMantra.color} text-white`}>
+      {/* Lotus Bloom Overlay — trigger-based */}
       <LotusBloomOverlay trigger={bloomTrigger} />
 
       {/* Header */}
-      <div
-        className="bg-primary/10 border-b border-primary/20 px-4 py-4"
-        style={{
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0)' : 'translateY(-16px)',
-          transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
-        }}
-      >
-        <h1 className="text-2xl font-bold text-primary text-center">नाम जप</h1>
-        <p className="text-center text-muted-foreground text-sm mt-1">{currentMantra.label}</p>
+      <div className="pt-6 pb-4 px-4 text-center">
+        <h1 className="text-2xl font-bold text-amber-300">नाम जप</h1>
+        <p className="text-sm text-amber-200/70 mt-1">Nam Jap Counter</p>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-6 space-y-5">
-
-        {/* Mantra Selector Button */}
-        <div
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity 0.5s ease-out 0.1s, transform 0.5s ease-out 0.1s',
-          }}
-        >
-          <button
-            onClick={() => setShowMantraSelector((v) => !v)}
-            className="w-full flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{currentMantra.emoji}</span>
-              <div className="text-left">
-                <div className="font-semibold text-foreground text-sm">{currentMantra.label}</div>
-                <div className="text-xs text-muted-foreground">{currentMantra.subLabel}</div>
-              </div>
-            </div>
-            <span
-              className="text-muted-foreground text-lg transition-transform duration-300"
-              style={{ transform: showMantraSelector ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            >
-              ▾
-            </span>
-          </button>
-
-          {/* Mantra Dropdown */}
-          {showMantraSelector && (
-            <div className="mt-1 bg-card border border-border rounded-xl overflow-hidden shadow-lg z-10 relative">
-              {MANTRA_OPTIONS.map((m, i) => (
-                <button
-                  key={m.key}
-                  onClick={() => handleMantraChange(m.key)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60 transition-colors ${
-                    m.key === selectedMantra ? 'bg-primary/10' : ''
-                  } ${i < MANTRA_OPTIONS.length - 1 ? 'border-b border-border/50' : ''}`}
-                  style={{
-                    opacity: 1,
-                    animation: `slideDown 0.2s ease-out ${i * 0.04}s both`,
-                  }}
-                >
-                  <span className="text-xl">{m.emoji}</span>
-                  <div>
-                    <div className="font-medium text-foreground text-sm">{m.label}</div>
-                    <div className="text-xs text-muted-foreground">{m.subLabel}</div>
-                  </div>
-                  {m.key === selectedMantra && (
-                    <span className="ml-auto text-primary text-sm">✓</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Mala Ring */}
-        <div
-          className="flex justify-center"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'scale(1)' : 'scale(0.85)',
-            transition: 'opacity 0.6s ease-out 0.2s, transform 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s',
-          }}
-        >
-          <MalaRing count={beadsInRound} />
-        </div>
-
-        {/* Progress Bar */}
-        <div
-          className="space-y-2"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(16px)',
-            transition: 'opacity 0.5s ease-out 0.35s, transform 0.5s ease-out 0.35s',
-          }}
-        >
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>माला प्रगति</span>
-            <span>{beadsInRound} / {MALA_SIZE}</span>
-          </div>
-          <div className="h-3 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-              style={{
-                width: `${progressWidth}%`,
-                transition: completingMala
-                  ? 'width 0.3s ease-out'
-                  : 'width 0.15s ease-out',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div
-          className="grid grid-cols-3 gap-3"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(16px)',
-            transition: 'opacity 0.5s ease-out 0.45s, transform 0.5s ease-out 0.45s',
-          }}
-        >
-          <div className="bg-card border border-border rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-primary tabular-nums">{sessionCount}</div>
-            <div className="text-xs text-muted-foreground mt-1">इस सत्र में</div>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-accent tabular-nums">{sessionMalaCount}</div>
-            <div className="text-xs text-muted-foreground mt-1">माला</div>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-foreground tabular-nums">{localLifetime}</div>
-            <div className="text-xs text-muted-foreground mt-1">जीवनकाल</div>
-          </div>
-        </div>
-
-        {/* JAP Button */}
-        <div
-          className="flex justify-center py-4 relative"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'scale(1)' : 'scale(0.7)',
-            transition: 'opacity 0.6s ease-out 0.55s, transform 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.55s',
-          }}
-        >
-          {/* Ripple container */}
-          <div className="relative">
-            <SacredRipple trigger={rippleTrigger} />
+      {/* Mantra Selector */}
+      <div className="px-4 mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {MANTRAS.map((m) => (
             <button
-              onPointerDown={() => setIsPressed(true)}
-              onPointerUp={() => {
-                setIsPressed(false);
-                handleJap();
-              }}
-              onPointerLeave={() => setIsPressed(false)}
-              className="relative w-40 h-40 rounded-full select-none touch-none flex flex-col items-center justify-center gap-1"
-              style={{
-                background:
-                  'radial-gradient(circle at 35% 35%, oklch(0.85 0.18 60), oklch(0.65 0.22 40))',
-                boxShadow: isPressed
-                  ? '0 2px 8px oklch(0.5 0.2 40 / 0.4), inset 0 2px 6px oklch(0.3 0.1 40 / 0.3)'
-                  : '0 8px 32px oklch(0.5 0.2 40 / 0.6), 0 2px 8px oklch(0.4 0.15 40 / 0.3), 0 0 0 4px oklch(0.75 0.18 60 / 0.3)',
-                transform: isPressed ? 'scale(0.93)' : 'scale(1)',
-                transition: 'transform 0.1s ease-out, box-shadow 0.15s ease-out',
-              }}
+              key={m.key}
+              onClick={() => handleMantraChange(m.key)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                selectedMantra === m.key
+                  ? 'bg-amber-400 text-amber-900 shadow-lg scale-105'
+                  : 'bg-white/10 text-white/80 hover:bg-white/20'
+              }`}
             >
-              <span
-                className="text-4xl select-none pointer-events-none"
-                style={{
-                  animation: isPressed ? 'none' : 'omPulse 2.5s ease-in-out infinite',
-                }}
-              >
-                {currentMantra.emoji}
-              </span>
-              <span
-                className="text-xs font-bold select-none pointer-events-none"
-                style={{ color: 'oklch(0.25 0.08 30)' }}
-              >
-                जप करें
-              </span>
+              {m.short}
             </button>
-          </div>
+          ))}
         </div>
+      </div>
 
-        {/* Mantra text display */}
-        <div
-          className="text-center"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transition: 'opacity 0.5s ease-out 0.65s',
-          }}
-        >
-          <p
-            className="text-lg font-semibold text-primary"
-            style={{ animation: 'textGlow 3s ease-in-out infinite' }}
-          >
-            {currentMantra.label}
-          </p>
-        </div>
+      {/* Mantra Display */}
+      <div className="text-center px-4 mb-6">
+        <p className="text-3xl font-bold text-amber-300 leading-relaxed">{currentMantra.label}</p>
+      </div>
 
-        {/* Reset Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleReset}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-muted"
-          >
-            सत्र रीसेट करें
-          </button>
-        </div>
+      {/* Mala Ring + Tap Button */}
+      <div className="flex flex-col items-center px-4 mb-6">
+        <div className="relative">
+          {/* MalaRing uses count prop (0–108) */}
+          <MalaRing count={beadsInRound} />
 
-        {/* Login prompt */}
-        {!isAuthenticated && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              💾 जप गिनती स्वचालित रूप से सहेजी जा रही है (स्थानीय)
-            </p>
-            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-              क्लाउड में सहेजने के लिए लॉगिन करें
-            </p>
-          </div>
-        )}
-
-        {/* Daily stats from backend */}
-        {isAuthenticated && japStats && (
-          <div className="bg-card border border-border rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">☁️ क्लाउड प्रगति</h3>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="text-lg font-bold text-primary tabular-nums">
-                  {Number(japStats.daily)}
-                </div>
-                <div className="text-xs text-muted-foreground">आज</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-accent tabular-nums">
-                  {Number(japStats.weekly)}
-                </div>
-                <div className="text-xs text-muted-foreground">इस सप्ताह</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-primary tabular-nums">{localLifetime}</div>
-                <div className="text-xs text-muted-foreground">जीवनकाल</div>
-              </div>
+          {/* Tap Button */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative">
+              {/* SacredRipple uses trigger prop */}
+              <SacredRipple trigger={rippleTrigger} />
+              {showParticles && <OmParticleBurst />}
+              <button
+                onClick={handleTap}
+                className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-2xl flex flex-col items-center justify-center active:scale-95 transition-transform touch-manipulation"
+                aria-label="Tap to count jap"
+              >
+                <span className="text-4xl font-bold text-white">
+                  {beadsInRound === 0 && sessionCount > 0 ? 108 : beadsInRound}
+                </span>
+                <span className="text-xs text-white/80 mt-0.5">जप</span>
+              </button>
             </div>
+          </div>
+        </div>
+
+        {/* Mala count */}
+        {malas > 0 && (
+          <div className="mt-3 bg-white/10 rounded-full px-4 py-1.5 text-sm text-amber-200">
+            🙏 {malas} माला पूर्ण
           </div>
         )}
       </div>
 
-      <style>{`
-        @keyframes omPulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
-        }
-        @keyframes textGlow {
-          0%, 100% { opacity: 0.85; text-shadow: 0 0 8px oklch(0.65 0.22 40 / 0.3); }
-          50% { opacity: 1; text-shadow: 0 0 16px oklch(0.65 0.22 40 / 0.6); }
-        }
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      {/* Stats */}
+      <div className="px-4 mb-6">
+        <div className="grid grid-cols-3 gap-3">
+          {/* Session */}
+          <div className="bg-white/10 rounded-2xl p-3 text-center">
+            <p className="text-2xl font-bold text-amber-300">{sessionCount}</p>
+            <p className="text-xs text-white/60 mt-0.5">आज का जप</p>
+          </div>
+
+          {/* Lifetime */}
+          <div className="bg-white/10 rounded-2xl p-3 text-center">
+            {statsLoading && isAuthenticated ? (
+              <div className="flex items-center justify-center h-8">
+                <div className="w-5 h-5 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <p className="text-2xl font-bold text-amber-300">{localLifetime.toLocaleString('hi-IN')}</p>
+            )}
+            <p className="text-xs text-white/60 mt-0.5">जीवन जप</p>
+          </div>
+
+          {/* Weekly (authenticated only) */}
+          <div className="bg-white/10 rounded-2xl p-3 text-center">
+            {isAuthenticated ? (
+              <>
+                <p className="text-2xl font-bold text-amber-300">{weeklyCount.toLocaleString('hi-IN')}</p>
+                <p className="text-xs text-white/60 mt-0.5">साप्ताहिक</p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-amber-300/40">—</p>
+                <p className="text-xs text-white/40 mt-0.5">लॉगिन करें</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Sync indicator */}
+        {isAuthenticated && (
+          <div className="mt-2 text-center">
+            {isSyncing ? (
+              <span className="text-xs text-amber-300/70 flex items-center justify-center gap-1">
+                <span className="w-3 h-3 border border-amber-300 border-t-transparent rounded-full animate-spin inline-block" />
+                सिंक हो रहा है...
+              </span>
+            ) : (
+              <span className="text-xs text-white/30">☁ स्वतः सहेजा जाता है</span>
+            )}
+          </div>
+        )}
+
+        {!isAuthenticated && (
+          <p className="text-center text-xs text-white/40 mt-2">
+            जीवन जप सहेजने के लिए लॉगिन करें
+          </p>
+        )}
+      </div>
+
+      {/* Daily stats for authenticated */}
+      {isAuthenticated && (
+        <div className="px-4 mb-4">
+          <div className="bg-white/5 rounded-2xl p-3 flex justify-between items-center">
+            <div className="text-center">
+              <p className="text-lg font-bold text-amber-200">{dailyCount.toLocaleString('hi-IN')}</p>
+              <p className="text-xs text-white/50">दैनिक</p>
+            </div>
+            <div className="w-px h-8 bg-white/20" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-amber-200">{weeklyCount.toLocaleString('hi-IN')}</p>
+              <p className="text-xs text-white/50">साप्ताहिक</p>
+            </div>
+            <div className="w-px h-8 bg-white/20" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-amber-200">{localLifetime.toLocaleString('hi-IN')}</p>
+              <p className="text-xs text-white/50">जीवन काल</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Button */}
+      <div className="px-4 pb-24 flex justify-center">
+        <button
+          onClick={handleReset}
+          className="px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white/70 text-sm transition-colors"
+        >
+          सत्र रीसेट करें
+        </button>
+      </div>
     </div>
   );
 }

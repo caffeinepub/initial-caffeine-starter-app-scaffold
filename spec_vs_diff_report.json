@@ -1,50 +1,61 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T17:15:09.502Z",
-  "summary": "The diff implements all three requirements: backend Ramayan and Mahabharat katha entries in main.mo, and frontend static fallback entries in kathaData.ts. However, there are notable gaps in content coverage for both backend entries compared to the detailed parva/kanda requirements specified, and the KathaDetail page was modified in ways not requested.",
+  "generatedAt": "2026-02-27T03:48:06.311Z",
+  "summary": "The diff only modifies project_state.json, which is a planning/tracking file. All actual implementation requirements (REQ-1 through REQ-6) remain in 'pending' status and have not been implemented. No source code files were added or modified.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Backend Ramayan entry must include full Hindi narrative text covering all major kandas comprehensively.",
-      "reason": "The backend main.mo entry contains very brief one-line summaries per kanda (e.g., 'बाल काण्ड: राजा दशरथ की तीन रानियां, राम का जन्म, बचपन की लीलाएं।') rather than full narrative text. The AC requires 'full Hindi narrative text covering all major episodes'. The frontend kathaData.ts does contain full narrative text for Ramayan, but the backend entry appears minimal.",
+      "requirement": "Add all 20 Vrat Kathayen to frontend/src/lib/kathaData.ts with category 'Vrat', deity, full Hindi title, full Hindi narrative, and approved status.",
+      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
       "evidence": [
-        "backend/main.mo"
+        "project_state.json"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Backend Mahabharat entry must include full Hindi narrative text covering all major parvas including Stri/Shanti/Anushasana Parvas, Ashvamedha Parva, and Swargarohana Parva.",
-      "reason": "The backend main.mo Mahabharat entry similarly contains brief one-line summaries per parva. The content is truncated and coverage of Stri/Shanti/Anushasana Parvas, Ashvamedha Parva, and Swargarohana Parva is not confirmed in the visible diff.",
+      "requirement": "Expand Ramayan content in frontend/src/lib/kathaData.ts with all 7 kandas as separate entries with category 'Puranik', deity 'Ram', and full Hindi narratives.",
+      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
       "evidence": [
-        "backend/main.mo"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "KathaDetail.tsx was modified to add helper functions isRamayanKatha(), isKrishnaLeelaKatha(), and isHindiOnly() that control language toggle visibility and narration behavior specifically for Ramayan and Krishna Leela kathas.",
-      "reason": "The build request explicitly states as a non-goal: 'Adding any new UI components or layout changes to the Kathayen or KathaDetail pages'. These represent new behavioral logic changes to the KathaDetail page that were not requested. Requirements only asked for data entries.",
-      "evidence": [
-        "frontend/src/pages/KathaDetail.tsx"
+        "project_state.json"
       ]
     },
     {
-      "description": "The frontend kathaData.ts uses a different title 'रामायण — सम्पूर्ण कथा' in Devanagari script with id BigInt(1001), whereas the backend uses title 'Ramayan - Sampurna Katha' with id 0.",
-      "reason": "REQ-3 requires entries matching the backend data structure. The title and id mismatch between frontend static fallback and backend entries means they do not match as required.",
+      "id": "REQ-3",
+      "requirement": "Expand Mahabharat content in frontend/src/lib/kathaData.ts with all major parvas as separate entries including Bhagavad Gita summary in Bhishma Parva.",
+      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
       "evidence": [
-        "frontend/src/lib/kathaData.ts",
-        "backend/main.mo"
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Add at least 10 Krishna Leela stories in frontend/src/lib/kathaData.ts with category 'Krishna Leela', deity 'Krishna', and complete Hindi narratives.",
+      "reason": "No changes were made to kathaData.ts or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Add a 'कृष्ण लीला' filter tab to the Kathayen page (frontend/src/pages/Kathayen.tsx) that filters and displays only Krishna Leela category entries.",
+      "reason": "No changes were made to Kathayen.tsx or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Add prominent narration controls (Play/Pause/Stop) to KathaDetail page using the existing useSpeechNarration hook, with sticky/floating placement and Hindi voice preference.",
+      "reason": "No changes were made to KathaDetail.tsx or any frontend source file. The feature is only recorded as 'pending' in project_state.json.",
+      "evidence": [
+        "project_state.json"
       ]
     }
   ],
-  "confidence": 0.62,
+  "hallucinated_features": [],
+  "confidence": 0.98,
   "changed_files": [
-    "backend/main.mo",
-    "frontend-file-summaries.txt",
-    "frontend/src/lib/kathaData.ts",
-    "frontend/src/pages/KathaDetail.tsx",
-    "frontend/src/pages/Kathayen.tsx",
     "project_state.json"
   ]
 }

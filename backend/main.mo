@@ -170,9 +170,121 @@ actor {
           status = #approved;
         },
       ),
+      (
+        2,
+        {
+          id = 2;
+          title = "Ekadashi Vrat Katha";
+          category = #vrat;
+          deity = "Vishnu";
+          hindiText = "एक समय में धर्मराज ने मनुष्यों को उपदेश दिया कि एकादशी व्रत अवश्य करना चाहिए। यह व्रत भगवान विष्णु की पूजा और निर्जल उपवास के साथ किया जाता है...";
+          englishText = "The story and procedure for observing Ekadashi fast dedicated to Lord Vishnu.";
+          tags = ["Ekadashi", "Vishnu", "Vrat", "Fast", "Hindu"];
+          createdAt = 3;
+          status = #approved;
+        },
+      ),
+      (
+        3,
+        {
+          id = 3;
+          title = "Somvar Vrat Katha (Monday Fast)";
+          category = #vrat;
+          deity = "Shiva";
+          hindiText = "शिवभक्त एक समय सोमवार का व्रत करते थे। इस व्रत में भगवान शिव की विशेष पूजा और उपवास किया जाता है...";
+          englishText = "Story and rituals of observing Somvar fast dedicated to Lord Shiva.";
+          tags = ["Somvar", "Shiva", "Vrat", "Fast", "Hindu"];
+          createdAt = 4;
+          status = #approved;
+        },
+      ),
+      (
+        4,
+        {
+          id = 4;
+          title = "Satyanarayan Vrat Katha";
+          category = #vrat;
+          deity = "Vishnu";
+          hindiText = "प्राचीन काल में एक गरीब ब्राह्मण भगवान सत्यनारायण का व्रत कर धनवान हुआ। यह व्रत पूर्ण श्रद्धा और कथा के साथ किया जाता है...";
+          englishText = "The famous story of Satyanarayan fast and puja dedicated to Lord Vishnu.";
+          tags = ["Satyanarayan", "Vishnu", "Vrat", "Fast", "Puja"];
+          createdAt = 5;
+          status = #approved;
+        },
+      ),
+      (
+        5,
+        {
+          id = 5;
+          title = "Shivratri Vrat Katha";
+          category = #vrat;
+          deity = "Shiva";
+          hindiText = "शिवरात्रि का व्रत भगवान शिव के विवाह और जगत की भलाई के लिए किया जाता है। इसमें रात्रि जागरण, उपवास और विशेष पूजा होती है...";
+          englishText = "Story and rituals of Maha Shivratri fast and its divine significance.";
+          tags = ["Shivratri", "Shiva", "Vrat", "Fast", "Puja"];
+          createdAt = 6;
+          status = #approved;
+        },
+      ),
+      (
+        6,
+        {
+          id = 6;
+          title = "Makhan Chor Leela";
+          category = #puranik;
+          deity = "Krishna";
+          hindiText = "बाल श्रीकृष्ण अपने मित्रों के साथ मक्खन चुराने की लीलाएं करते थे। इन लीलाओं में माता यशोदा का स्नेह और भक्ति का भाव है...";
+          englishText = "Divine childhood stories of Lord Krishna stealing butter and spreading love.";
+          tags = ["Krishna", "MakhanChor", "Leela", "BalLeela", "Devotional"];
+          createdAt = 7;
+          status = #approved;
+        },
+      ),
+      (
+        7,
+        {
+          id = 7;
+          title = "Kaliya Mardan Leela";
+          category = #puranik;
+          deity = "Krishna";
+          hindiText = "यमुना नदी में रहने वाले कालिया नाग का उद्धार भगवान कृष्ण ने अपने पैरों से किया। यह लीला बुराई पर अच्छाई की जीत है...";
+          englishText = "The miracle of Lord Krishna subduing the serpent Kaliya in Yamuna.";
+          tags = ["KrishnaLeela", "Kaliya", "Serpent", "Miracles", "GoodVsEvil"];
+          createdAt = 8;
+          status = #approved;
+        },
+      ),
+      (
+        8,
+        {
+          id = 8;
+          title = "Govardhan Leela";
+          category = #puranik;
+          deity = "Krishna";
+          hindiText = "इंद्र के क्रोध में बरसात को शांत करने के लिए श्री कृष्ण ने गोवर्धन पर्वत उठाया। इससे गौ, ग्वाल और भक्तों की रक्षा हुई...";
+          englishText = "Divine miracle of Lord Krishna holding Govardhan mountain for protection.";
+          tags = ["Krishna", "Govardhan", "Miracles", "Protection", "Devotion"];
+          createdAt = 9;
+          status = #approved;
+        },
+      ),
+      (
+        9,
+        {
+          id = 9;
+          title = "Janmashtami Katha";
+          category = #puranik;
+          deity = "Krishna";
+          hindiText = "श्री कृष्ण का जन्म कंस के अत्याचारों से दुनिया को बचाने के लिए अर्जुन के परिवार में हुआ। उनका जीवन धर्म, भक्ति और बलिदान की मिसाल है...";
+          englishText = "Story of Lord Krishna's divine birth and his mission to uphold Dharma.";
+          tags = ["KrishnaLeela", "Janmashtami", "Birth", "Avataar", "Dharma"];
+          createdAt = 10;
+          status = #approved;
+        },
+      ),
     ].values(),
   );
-  var kathaCounter = 2; // Next ID after seeded entries
+  var kathaCounter = 10; // Next ID after seeded entries
 
   // Krishna Leela Full Story in Hindi (seeded data)
   public type KrishnaLeela = {

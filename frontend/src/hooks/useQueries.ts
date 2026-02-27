@@ -1,8 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { UserProfile, Katha, KathaCategory, DharmaQuote, Festival, JapStatsInternal, JapStats, KrishnaLeela, VratKatha } from '../backend';
-import { UserRole } from '../backend';
-import type { Principal } from '@dfinity/principal';
+import { useInternetIdentity } from './useInternetIdentity';
+import {
+  UserProfile,
+  Mantra,
+  DharmaQuote,
+  Festival,
+  JapStatsInternal,
+  JapStats,
+  KathaCategory,
+  Katha,
+  UserApprovalInfo,
+  UserRole,
+} from '../backend';
+import { Principal } from '@dfinity/principal';
 
 // ── User Profile ──────────────────────────────────────────────────────────────
 
@@ -44,7 +55,8 @@ export function useSetUserProfile() {
 // ── Jap Counter ───────────────────────────────────────────────────────────────
 
 export function useGetJapStats() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   return useQuery<JapStatsInternal>({
     queryKey: ['japStats'],
@@ -52,28 +64,44 @@ export function useGetJapStats() {
       if (!actor) throw new Error('Actor not available');
       return actor.getJapStats();
     },
-    enabled: !!actor && !isFetching,
-    staleTime: 30000, // Don't refetch too often
+    enabled: !!actor && !actorFetching && !!identity,
+    retry: false,
   });
 }
 
 export function useIncrementJap() {
   const { actor } = useActor();
-  // Do NOT invalidate japStats on success to avoid overwriting optimistic UI state
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (count: bigint) => {
       if (!actor) throw new Error('Actor not available');
       return actor.incrementJap(count);
     },
-    onError: (err) => {
-      console.error('Failed to sync jap count to backend:', err);
+    onSuccess: () => {
+      // Invalidate japStats so the lifetime count is refreshed from backend
+      queryClient.invalidateQueries({ queryKey: ['japStats'] });
+    },
+  });
+}
+
+export function useResetJapStats() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.resetJapStats();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['japStats'] });
     },
   });
 }
 
 export function useGetJapLeaderboard() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<JapStats[]>({
     queryKey: ['japLeaderboard'],
@@ -81,14 +109,14 @@ export function useGetJapLeaderboard() {
       if (!actor) return [];
       return actor.getJapLeaderboard();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
 // ── Dharma Quote ──────────────────────────────────────────────────────────────
 
 export function useGetDharmaQuote() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<DharmaQuote | null>({
     queryKey: ['dharmaQuote'],
@@ -96,7 +124,7 @@ export function useGetDharmaQuote() {
       if (!actor) return null;
       return actor.getDharmaQuoteOfDay();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
@@ -105,9 +133,19 @@ export function useAddDharmaQuote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (quote: { id: bigint; englishText: string; hindiText: string; author: string }) => {
+    mutationFn: async ({
+      id,
+      englishText,
+      hindiText,
+      author,
+    }: {
+      id: bigint;
+      englishText: string;
+      hindiText: string;
+      author: string;
+    }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addDharmaQuote(quote.id, quote.englishText, quote.hindiText, quote.author);
+      return actor.addDharmaQuote(id, englishText, hindiText, author);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dharmaQuote'] });
@@ -118,7 +156,7 @@ export function useAddDharmaQuote() {
 // ── Festivals ─────────────────────────────────────────────────────────────────
 
 export function useGetFestivals() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Festival[]>({
     queryKey: ['festivals'],
@@ -126,14 +164,14 @@ export function useGetFestivals() {
       if (!actor) return [];
       return actor.getFestivals();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
 // ── Kathayen ──────────────────────────────────────────────────────────────────
 
 export function useGetAllKathayen() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Katha[]>({
     queryKey: ['kathayen'],
@@ -141,12 +179,12 @@ export function useGetAllKathayen() {
       if (!actor) return [];
       return actor.getAllKathayen();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
 export function useGetKatha(id: bigint) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Katha | null>({
     queryKey: ['katha', id.toString()],
@@ -154,12 +192,12 @@ export function useGetKatha(id: bigint) {
       if (!actor) return null;
       return actor.getKatha(id);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
 export function useGetKathayenByCategory(category: KathaCategory) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Katha[]>({
     queryKey: ['kathayen', category],
@@ -167,7 +205,7 @@ export function useGetKathayenByCategory(category: KathaCategory) {
       if (!actor) return [];
       return actor.listKathayenByCategory(category);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
@@ -185,7 +223,14 @@ export function useAddKatha() {
       tags: string[];
     }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addKatha(katha.title, katha.category, katha.deity, katha.hindiText, katha.englishText, katha.tags);
+      return actor.addKatha(
+        katha.title,
+        katha.category,
+        katha.deity,
+        katha.hindiText,
+        katha.englishText,
+        katha.tags
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kathayen'] });
@@ -208,53 +253,11 @@ export function useApproveKatha() {
   });
 }
 
-// ── Krishna Leela ─────────────────────────────────────────────────────────────
-
-export function useGetKrishnaLeelaStory() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<KrishnaLeela>({
-    queryKey: ['krishnaLeela'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getKrishnaLeelaStory();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// ── Vrat Kathas ───────────────────────────────────────────────────────────────
-
-export function useGetAllVratKathas() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<VratKatha[]>({
-    queryKey: ['vratKathas'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllVratKathas();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetVratKathaById(id: bigint) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<VratKatha | null>({
-    queryKey: ['vratKatha', id.toString()],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getVratKathaById(id);
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   return useQuery<boolean>({
     queryKey: ['isAdmin'],
@@ -262,35 +265,34 @@ export function useIsCallerAdmin() {
       if (!actor) return false;
       return actor.isCallerAdmin();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching && !!identity,
   });
 }
 
-export function useAssignUserRole() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
+export function useGetCallerUserRole() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
-  return useMutation({
-    mutationFn: async ({ user, role }: { user: Principal; role: UserRole }) => {
+  return useQuery<UserRole>({
+    queryKey: ['callerUserRole'],
+    queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.assignCallerUserRole(user, role);
+      return actor.getCallerUserRole();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['approvals'] });
-    },
+    enabled: !!actor && !actorFetching && !!identity,
   });
 }
 
 export function useListApprovals() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
-  return useQuery({
+  return useQuery<UserApprovalInfo[]>({
     queryKey: ['approvals'],
     queryFn: async () => {
       if (!actor) return [];
       return actor.listApprovals();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
@@ -309,16 +311,32 @@ export function useSetApproval() {
   });
 }
 
+export function useAssignUserRole() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ user, role }: { user: Principal; role: UserRole }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.assignCallerUserRole(user, role);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
+    },
+  });
+}
+
 export function useIsCallerApproved() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   return useQuery<boolean>({
-    queryKey: ['isApproved'],
+    queryKey: ['isCallerApproved'],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isCallerApproved();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching && !!identity,
   });
 }
 
@@ -332,7 +350,21 @@ export function useRequestApproval() {
       return actor.requestApproval();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['isApproved'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
     },
+  });
+}
+
+export function useGetUserMantra() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<Mantra>({
+    queryKey: ['userMantra'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getUserMantra();
+    },
+    enabled: !!actor && !actorFetching && !!identity,
   });
 }
