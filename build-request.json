@@ -1,201 +1,90 @@
 {
   "kind": "build_request",
-  "title": "Redesign Devotional App with Saffron/Gold Hindu Theme",
-  "projectName": "Divya Darshan",
-  "priority": "normal",
+  "title": "Fix Admin Access & Add Media Upload to Community Posts",
+  "projectName": "BairagiBeats",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Redesign the entire frontend visual theme to use a saffron (deep orange #FF6B00), gold (#FFD700), red (#C0392B), and warm yellow (#FFA500) devotional color palette. Replace the dark theme with a warm, light-to-rich devotional aesthetic inspired by Hindu temple decor — think marigold garlands, temple brass, and sacred fire. Apply consistent saffron/gold gradients to headers, cards, and section backgrounds. Use cream/off-white (#FFF8E7) as the base background.",
-      "target": "frontend",
+      "text": "Fix the admin bootstrap logic so that the very first user to register/create a profile is automatically assigned the Admin role. If no admin exists yet when a new user profile is created, that user should be promoted to Admin without requiring any manual token claim.",
+      "target": "backend",
       "source": {
         "messageIds": [
           "msg-3",
-          "msg-5",
-          "msg-7"
+          "msg-5"
+        ],
+        "quotes": [
+          "Admin access نہیں مل رہی",
+          "پہلا registered user automatically Admin بنے"
         ]
       },
       "acceptanceCriteria": [
-        "All pages use the saffron/gold/red-yellow color palette consistently",
-        "No dark background remains on any page or component",
-        "Cards and containers use warm cream or gradient backgrounds",
-        "Header and BottomNav reflect the saffron/gold devotional theme",
-        "Text is clearly legible on all backgrounds with proper contrast"
+        "When the very first user profile is created, the backend assigns them the Admin role automatically.",
+        "Subsequent users are NOT automatically made Admin.",
+        "The admin panel is accessible to the first registered user without any additional steps.",
+        "If an admin already exists, new users are created as regular users."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Redesign the Home page (frontend/src/pages/Home.tsx) with a grand devotional hero banner featuring an Om symbol, Sanskrit greeting text, and the current Panchang tithi displayed prominently. Include beautifully styled category cards for Mantras/Shlokas, Aarti, Puja Vidhi, and Bhajans with deity icons/emojis. Display the Daily Dharma Quote and a featured Shloka card in an ornate card style with gold borders.",
-      "target": "frontend",
+      "text": "Update the backend CommunityPost data type and related functions to support optional image, video, and file attachments stored as blobs. Each post should support: a text/caption field (already present), an optional image blob field, an optional video blob field, and an optional file attachment blob with its filename.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5",
-          "msg-9"
+          "msg-3",
+          "msg-7"
+        ],
+        "quotes": [
+          "Community میں Photo/Image add کرنے کا option",
+          "Video/File upload بھی support ہوگا community posts میں"
         ]
       },
       "acceptanceCriteria": [
-        "Hero banner prominently displays Om symbol and Sanskrit greeting",
-        "Four category cards (Mantras, Aarti, Puja Vidhi, Bhajans) are visible",
-        "Daily Dharma Quote uses gold/saffron decorative styling",
-        "Shloka card has ornate gold-border card design",
-        "Overall layout feels like a sacred devotional portal"
+        "CommunityPost type includes optional fields for image blob, video blob, and file attachment blob plus filename.",
+        "Backend exposes updated createCommunityPost function accepting these optional media fields.",
+        "Existing posts without media continue to display correctly.",
+        "Media blobs are stored and retrievable via the backend actor."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Redesign the AppLayout (frontend/src/components/AppLayout.tsx) header to feature a saffron-to-gold gradient background with the Om (ॐ) logo in gold, app name in Devanagari-style typography, and subtle mandala/floral decorative elements. Remove all dark styling from the header.",
+      "text": "Update the Community page post submission form to allow users to attach an image (JPG/PNG/GIF), a video (MP4/WebM), or a file, alongside their text/caption. Show a preview of the selected image before posting. Display a caption/text input field alongside the media picker. On submit, send the media blob(s) together with the post text to the backend.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-3",
-          "msg-9"
+          "msg-7"
+        ],
+        "quotes": [
+          "Community میں Image upload",
+          "photo کے ساتھ text/caption بھی لکھ سکیں گے",
+          "Video/File upload بھی support ہوگا"
         ]
       },
       "acceptanceCriteria": [
-        "Header has saffron-to-gold gradient background",
-        "Om logo is rendered in gold color",
-        "App title uses devotional typography",
-        "No dark backgrounds or text remain in the header"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Redesign the BottomNav (frontend/src/components/BottomNav.tsx) with a warm cream/saffron background, gold active state indicators, and saffron icon highlights. Active navigation items should glow with a soft golden halo effect.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "BottomNav background uses warm cream or light saffron",
-        "Active nav item is highlighted with gold/saffron color",
-        "Icons use saffron coloring with gold active state",
-        "No dark theme styling remains"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Redesign all page-level containers and card components (AartiCard, KathaCard, ShlokaCard, FestivalCountdownCard, DailyDharmaQuote) with warm devotional styling: gold/saffron borders, cream or warm gradient card backgrounds, ornate corner flourishes via CSS, and saffron-tinted section headers in Devanagari-inspired typography.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "All card components use warm cream/gold backgrounds instead of dark",
-        "Cards have visible gold or saffron border accents",
-        "Section headers are styled with saffron/gold colors",
-        "Text in cards is dark (dark brown or maroon) for readability on light backgrounds"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Redesign the Jap counter page (frontend/src/pages/Jap.tsx) with a devotional sacred atmosphere: saffron/gold background gradient, the MalaRing rendered with gold/amber beads, mantra text displayed in large Sanskrit/Devanagari styling in saffron, and the count displayed in an ornate golden circle. The LotusBloomOverlay should use bright golden/saffron colors.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Jap page background uses saffron/gold warm gradient",
-        "MalaRing beads appear in gold/amber tones",
-        "Mantra text is large and styled in saffron Devanagari font",
-        "Count display is in an ornate golden circle design"
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Redesign the Aarti pages (frontend/src/pages/Aarti.tsx and frontend/src/pages/AartiDetail.tsx) with a devotional temple aesthetic: saffron hero banner with diya/flame imagery, gold-bordered aarti text cards, and warm amber/saffron background throughout. Aarti text should be displayed with high readability using dark maroon on cream background.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Aarti list page has saffron/gold hero banner",
-        "Individual aarti cards use warm cream with gold borders",
-        "Aarti detail page text is clearly readable (dark on light)",
-        "Overall feel matches a sacred temple environment"
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Update the global CSS (frontend/src/index.css and frontend/tailwind.config.js) to replace dark theme CSS custom properties with warm devotional light-theme values. Set the default color scheme to the saffron/gold palette. Ensure Tailwind devotional color tokens (saffron, gold, maroon, cream) are the primary palette used across the app. Remove dark mode class-based overrides that apply dark backgrounds.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "CSS custom properties reflect warm devotional colors (no dark backgrounds as default)",
-        "Tailwind config devotional palette (saffron, gold, maroon, cream) is fully utilized",
-        "Body/root background is cream or warm white, not dark",
-        "Font imports for Devanagari and Poppins remain intact"
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "text": "Redesign the Kathayen and KathaDetail pages (frontend/src/pages/Kathayen.tsx, frontend/src/pages/KathaDetail.tsx) with warm saffron/gold styling. Tab filters should use saffron active states. Story cards should use cream backgrounds with gold borders. The detail page should present katha text with comfortable reading typography in dark maroon on cream.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Kathayen page tabs use saffron for active filter state",
-        "Katha cards use cream/gold styling",
-        "Detail page text is legible with proper contrast",
-        "No dark backgrounds on these pages"
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "text": "Redesign the Profile and Panchang pages (frontend/src/pages/Profile.tsx, frontend/src/pages/Panchang.tsx) with the devotional saffron/gold theme. Panchang data cells should use warm amber/cream card styling with gold borders. Profile page should use saffron accents for mantra selection and stats display.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-9"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Panchang page uses warm amber/cream card styling",
-        "Profile page stats and mantra selector use saffron accents",
-        "Both pages are fully consistent with the overall devotional theme"
+        "Community post form has a media attachment button with options for image, video, or file upload.",
+        "After selecting an image, a preview thumbnail is shown before submission.",
+        "Text/caption field is present and required alongside any media.",
+        "Submitted posts containing images display the image inline in the community feed.",
+        "Submitted posts containing videos display a playable video player in the feed.",
+        "Submitted posts containing files display a downloadable file link in the feed.",
+        "File type and size validation provides user-friendly error messages for unsupported types."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
-    "Preserve all existing backend logic in backend/main.mo — no backend changes required",
-    "Preserve all existing functional features (Jap counter, Aarti display, Panchang calculations, AI Guru chat, Community posts)",
-    "Maintain Devanagari/Hindi font imports (Tiro Devanagari Hindi, Poppins)"
+    "Do not change the existing community post approval workflow.",
+    "All blob/media storage must remain within the Motoko backend actor — no external storage services.",
+    "Immutable frontend paths (hooks/useInternetIdentity.ts, hooks/useActor.ts, main.tsx, components/ui) must not be modified."
   ],
   "nonGoals": [
-    "Adding new content sections beyond what already exists",
-    "Changing backend data models or API endpoints",
-    "Adding new pages not already in the app",
-    "Implementing payment or authentication changes",
-    "Adding English-only UI — Hindi/Sanskrit content should remain"
+    "Real-time media streaming or live video features.",
+    "External CDN or cloud storage for media files.",
+    "Adding media upload support to any page other than Community posts.",
+    "Changing the existing admin panel UI or its feature tabs."
   ],
   "imageRequirements": {
-    "required": [
-      "Ornate saffron and gold mandala with Om symbol in center, suitable for app hero background (mandala-hero.dim_1200x400.png)",
-      "Decorative Hindu temple lotus flower in gold and saffron tones (lotus-decoration.dim_256x256.png)",
-      "Diya (oil lamp) flame illustration in warm golden tones (diya-icon.dim_128x128.png)"
-    ],
+    "required": [],
     "edits": []
   }
 }

@@ -1,287 +1,212 @@
 import { useState, useEffect } from 'react';
-import { useGetCallerUserProfile, useSetUserProfile, useGetJapStats } from '../hooks/useQueries';
-import { Mantra } from '../backend';
-import { User, Settings, Flame, Heart, BookOpen, Bell, BellOff, BellRing } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { Link } from '@tanstack/react-router';
+import { useGetJapStats, useIsCallerAdmin, useGetCallerUserProfile } from '../hooks/useQueries';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import VratModeToggle from '../components/VratModeToggle';
-import VratModeDashboard from '../components/VratModeDashboard';
-import { useDailyNotifications } from '../hooks/useDailyNotifications';
-
-const MANTRA_LABELS: Record<Mantra, string> = {
-  [Mantra.omNamahShivaya]: 'ॐ नमः शिवाय',
-  [Mantra.hareKrishna]: 'हरे कृष्ण हरे राम',
-  [Mantra.gayatriMantra]: 'गायत्री मंत्र',
-  [Mantra.mahamrityunjayaMantra]: 'महामृत्युंजय मंत्र',
-  [Mantra.saiRam]: 'साईं राम',
-  [Mantra.sitaram]: 'सीताराम',
-  [Mantra.omMantra]: 'ॐ',
-  [Mantra.radhaNamJap]: 'राधे राधे',
-  [Mantra.jaiShreeRamNamJap]: 'जय श्री राम',
-};
-
-const VRAT_MODE_KEY = 'vrat-mode-enabled';
-
-const PERMISSION_LABELS: Record<string, { label: string; color: string }> = {
-  granted: { label: 'अनुमति दी गई ✓', color: 'text-green-400' },
-  denied: { label: 'अनुमति अस्वीकृत ✗', color: 'text-red-400' },
-  default: { label: 'अनुमति नहीं दी गई', color: 'text-amber-400' },
-  unsupported: { label: 'ब्राउज़र में उपलब्ध नहीं', color: 'text-muted-foreground' },
-};
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Profile() {
-  const { data: userProfile } = useGetCallerUserProfile();
-  const { mutate: setUserProfile } = useSetUserProfile();
-  const { data: japStats, isLoading: japStatsLoading } = useGetJapStats();
+  const { data: japStats, isLoading: statsLoading } = useGetJapStats();
+  const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
+  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
+  const { identity } = useInternetIdentity();
+  const [vratMode, setVratMode] = useState(false);
 
-  const [selectedMantra, setSelectedMantra] = useState<Mantra>(Mantra.omNamahShivaya);
-  const [vratModeEnabled, setVratModeEnabled] = useState(false);
-
-  const {
-    isEnabled: notificationsEnabled,
-    permissionStatus,
-    enableNotifications,
-    disableNotifications,
-    isSupported: notificationsSupported,
-  } = useDailyNotifications();
-
-  // Load vrat mode from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(VRAT_MODE_KEY);
-    setVratModeEnabled(stored === 'true');
+    const stored = localStorage.getItem('vratMode');
+    setVratMode(stored === 'true');
   }, []);
 
-  // Sync mantra from profile
-  useEffect(() => {
-    if (userProfile?.selectedMantra) {
-      setSelectedMantra(userProfile.selectedMantra);
-    }
-  }, [userProfile]);
-
-  const handleVratModeToggle = (enabled: boolean) => {
-    setVratModeEnabled(enabled);
-    localStorage.setItem(VRAT_MODE_KEY, String(enabled));
+  const handleVratToggle = (enabled: boolean) => {
+    setVratMode(enabled);
+    localStorage.setItem('vratMode', String(enabled));
   };
 
-  const handleMantraChange = (mantra: Mantra) => {
-    setSelectedMantra(mantra);
-    if (userProfile) {
-      setUserProfile({ ...userProfile, selectedMantra: mantra });
-    }
-  };
-
-  const handleNotificationToggle = async (checked: boolean) => {
-    if (checked) {
-      await enableNotifications();
-    } else {
-      disableNotifications();
-    }
-  };
-
-  const displayName = userProfile?.name || 'भक्त';
-
-  const lifetimeCount = japStats ? Number(japStats.lifetime) : 0;
-  const malaCount = japStats ? Number(japStats.mala) : 0;
-  const streakCount = japStats ? Number(japStats.streak) : 0;
-
-  const permInfo = PERMISSION_LABELS[permissionStatus] ?? PERMISSION_LABELS['default'];
+  const lifetimeJaps = japStats ? Number(japStats.lifetime) : 0;
+  const malaCount = Math.floor(lifetimeJaps / 108);
+  const isAuthenticated = !!identity;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-to-b from-primary/10 to-background px-4 pt-8 pb-6">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center">
-              <User className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{displayName}</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">भक्त</p>
-            </div>
-          </div>
+      <div className="bg-gradient-to-b from-saffron-800 to-background px-4 pt-6 pb-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-saffron-600 to-gold-500 flex items-center justify-center text-4xl mx-auto mb-3 shadow-lg ring-4 ring-gold-500/30">
+          🙏
         </div>
+        {profileLoading ? (
+          <Skeleton className="h-6 w-32 mx-auto mb-1" />
+        ) : (
+          <h1 className="text-xl font-bold text-white">
+            {userProfile?.name ? `🙏 ${userProfile.name}` : 'भक्त प्रोफाइल'}
+          </h1>
+        )}
+        <p className="text-amber-200 text-sm mt-1">आपकी भक्ति यात्रा</p>
+        {isAuthenticated && userProfile?.selectedMantra && (
+          <div className="mt-2 inline-block bg-white/10 border border-white/20 rounded-full px-3 py-1">
+            <p className="text-amber-100 text-xs">
+              🕉️ {getMantraLabel(userProfile.selectedMantra)}
+            </p>
+          </div>
+        )}
+        {/* Admin badge */}
+        {isAuthenticated && !adminLoading && isAdmin && (
+          <div className="mt-2 inline-block bg-gold-500/20 border border-gold-500/40 rounded-full px-3 py-1 ml-2">
+            <p className="text-gold-400 text-xs">👑 Admin</p>
+          </div>
+        )}
       </div>
 
-      <div className="max-w-lg mx-auto px-4 space-y-4">
-        {/* Radha Rani Banner */}
-        <a
-          href="https://www.iskcon.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block"
-        >
-          <div className="relative rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-lg group">
-            <img
-              src="/assets/generated/radha-rani-banner.dim_800x300.png"
-              alt="Radha Rani"
-              className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center px-4">
-              <div>
-                <p className="text-white font-bold text-sm drop-shadow">राधे राधे 🌸</p>
-                <p className="text-white/80 text-xs">श्री राधा रानी की कृपा सदा बनी रहे</p>
-              </div>
-            </div>
-            <div className="absolute inset-0 ring-2 ring-amber-400/0 group-hover:ring-amber-400/60 rounded-2xl transition-all" />
-          </div>
-        </a>
-
-        {/* Devotional Stats — Lifetime & Streak (read-only) */}
-        <div className="bg-gradient-to-br from-amber-900/60 to-orange-900/40 border border-amber-700/40 rounded-2xl p-4">
-          <p className="text-xs text-amber-300/70 uppercase tracking-widest mb-3 font-medium">
-            🙏 भक्ति आँकड़े
-          </p>
-          {japStatsLoading ? (
-            <div className="flex justify-center py-4">
-              <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-3">
-              {/* Lifetime Nam Jap */}
-              <div className="bg-black/20 rounded-xl p-3 text-center">
-                <Heart className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-                <p className="text-xl font-bold text-amber-300 tabular-nums">
-                  {lifetimeCount.toLocaleString('hi-IN')}
-                </p>
-                <p className="text-xs text-amber-200/60 mt-0.5 leading-tight">जीवन जप</p>
-              </div>
-
-              {/* Total Malas */}
-              <div className="bg-black/20 rounded-xl p-3 text-center">
-                <BookOpen className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-                <p className="text-xl font-bold text-amber-300 tabular-nums">
-                  {malaCount.toLocaleString('hi-IN')}
-                </p>
-                <p className="text-xs text-amber-200/60 mt-0.5 leading-tight">कुल माला</p>
-              </div>
-
-              {/* Streak */}
-              <div className="bg-black/20 rounded-xl p-3 text-center">
-                <Flame className="w-4 h-4 text-orange-400 mx-auto mb-1 animate-pulse" />
-                <p className="text-xl font-bold text-orange-300 tabular-nums">
-                  {streakCount}
-                </p>
-                <p className="text-xs text-amber-200/60 mt-0.5 leading-tight">दिन स्ट्रीक</p>
-              </div>
-            </div>
-          )}
-          <p className="text-xs text-amber-200/30 text-center mt-3">
-            ये आँकड़े स्थायी हैं और रीसेट नहीं होते
-          </p>
-        </div>
-
-        {/* Daily Notifications Settings */}
-        <div
-          className="rounded-2xl border p-4"
-          style={{
-            background: 'linear-gradient(135deg, oklch(0.28 0.10 20 / 0.8), oklch(0.32 0.12 30 / 0.6))',
-            borderColor: notificationsEnabled
-              ? 'oklch(0.82 0.18 80 / 0.5)'
-              : 'oklch(0.82 0.18 80 / 0.2)',
-          }}
-        >
-          {/* Header row */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              {notificationsEnabled ? (
-                <BellRing className="w-4 h-4 text-amber-400 animate-pulse" />
+      <div className="px-4 space-y-4 pb-8">
+        {/* Lifetime Stats */}
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
+            <span>⭐</span> जीवन भर के आंकड़े
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 border border-amber-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl mb-1">🕉️</p>
+              {statsLoading ? (
+                <Skeleton className="h-7 w-16 mx-auto mb-1" />
               ) : (
-                <Bell className="w-4 h-4 text-amber-400/60" />
+                <p className="text-2xl font-bold text-gold-400">{lifetimeJaps.toLocaleString('hi-IN')}</p>
               )}
-              <h3 className="font-semibold text-amber-200 text-sm">दैनिक स्मरण सूचनाएं</h3>
+              <p className="text-xs text-muted-foreground">कुल नाम जाप</p>
             </div>
-            <Switch
-              checked={notificationsEnabled}
-              onCheckedChange={handleNotificationToggle}
-              disabled={!notificationsSupported}
-              className="data-[state=checked]:bg-amber-500"
-            />
-          </div>
-
-          {/* Description */}
-          <p className="text-xs text-amber-200/60 mb-3 leading-relaxed">
-            दिन में <span className="text-amber-300 font-semibold">7 बार</span> स्मरण सूचनाएं मिलेंगी —
-            नाम जप, आरती और व्रत के लिए।{' '}
-            <span className="text-amber-200/40">
-              (7 daily reminders for Nam Jap, Aarti &amp; Vrat)
-            </span>
-          </p>
-
-          {/* Notification times */}
-          {notificationsEnabled && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {['6:00', '8:00', '10:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => {
-                const icons = ['🌅', '🕉️', '🙏', '🪔', '📿', '🌇', '🌙'];
-                return (
-                  <span
-                    key={time}
-                    className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                  >
-                    {icons[i]} {time}
-                  </span>
-                );
-              })}
+            <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 border border-amber-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl mb-1">📿</p>
+              {statsLoading ? (
+                <Skeleton className="h-7 w-16 mx-auto mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-gold-400">{malaCount.toLocaleString('hi-IN')}</p>
+              )}
+              <p className="text-xs text-muted-foreground">माला पूर्ण (108)</p>
             </div>
-          )}
-
-          {/* Permission status */}
-          <div className="flex items-center gap-1.5">
-            {permissionStatus === 'denied' ? (
-              <BellOff className="w-3 h-3 text-red-400" />
-            ) : (
-              <Bell className="w-3 h-3 text-amber-400/60" />
-            )}
-            <span className={`text-xs ${permInfo.color}`}>{permInfo.label}</span>
           </div>
-
-          {/* Denied instructions */}
-          {permissionStatus === 'denied' && (
-            <p className="text-xs text-amber-200/40 mt-2 leading-relaxed">
-              ब्राउज़र सेटिंग में जाकर नोटिफिकेशन की अनुमति दें।
-              In-app reminders will still appear while the app is open.
-            </p>
-          )}
-
-          {/* Unsupported */}
-          {!notificationsSupported && (
-            <p className="text-xs text-muted-foreground mt-2">
-              आपका ब्राउज़र नोटिफिकेशन को सपोर्ट नहीं करता।
-            </p>
-          )}
         </div>
 
-        {/* Vrat Mode Toggle */}
-        <VratModeToggle enabled={vratModeEnabled} onToggle={handleVratModeToggle} />
-
-        {/* Vrat Mode Dashboard */}
-        {vratModeEnabled && <VratModeDashboard />}
-
-        {/* Mantra Selection */}
-        <div className="bg-card rounded-2xl border border-border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Settings className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-foreground text-sm">मंत्र चुनें</h3>
-          </div>
-          <div className="space-y-2">
-            {Object.entries(MANTRA_LABELS).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => handleMantraChange(key as Mantra)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
-                  selectedMantra === key
-                    ? 'bg-primary/10 border border-primary/40 text-primary font-medium'
-                    : 'bg-muted/50 border border-transparent text-foreground hover:bg-muted'
-                }`}
+        {/* Daily Stats */}
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
+            <span>📊</span> आज के आंकड़े
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'आज का जाप', value: statsLoading ? null : (japStats ? Number(japStats.daily) : 0), emoji: '📅' },
+              { label: 'स्ट्रीक', value: statsLoading ? null : (japStats ? `${Number(japStats.streak)} दिन` : '0 दिन'), emoji: '🔥' },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-muted/50 rounded-xl p-3 text-center hover:scale-105 transition-all duration-200"
               >
-                <span>{label}</span>
-                {selectedMantra === key && (
-                  <span className="text-primary text-xs">✓ चयनित</span>
+                <p className="text-xl mb-1">{stat.emoji}</p>
+                {stat.value === null ? (
+                  <Skeleton className="h-6 w-12 mx-auto mb-1" />
+                ) : (
+                  <p className="text-lg font-bold text-gold-400">{stat.value}</p>
                 )}
-              </button>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
             ))}
           </div>
+          {!isAuthenticated && (
+            <p className="text-center text-muted-foreground text-xs mt-3 bg-muted/30 rounded-lg p-2">
+              🔐 जाप आंकड़े देखने के लिए Login करें
+            </p>
+          )}
+        </div>
+
+        {/* Vrat Mode */}
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
+            <span>🙏</span> व्रत मोड
+          </h2>
+          <VratModeToggle enabled={vratMode} onToggle={handleVratToggle} />
+          {vratMode && (
+            <Link
+              to="/vrat-dashboard"
+              className="mt-3 block w-full bg-gradient-to-r from-amber-700 to-amber-500 text-white py-2 rounded-xl text-sm font-medium text-center hover:scale-[1.02] transition-all duration-200"
+            >
+              📋 व्रत डैशबोर्ड देखें
+            </Link>
+          )}
+        </div>
+
+        {/* Quick Links */}
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
+            <span>🔗</span> त्वरित लिंक
+          </h2>
+          <div className="space-y-2">
+            {[
+              { path: '/jap', label: 'जाप करें', emoji: '📿' },
+              { path: '/aarti', label: 'आरती', emoji: '🪔' },
+              { path: '/kathayen', label: 'कथाएं', emoji: '📖' },
+              { path: '/community', label: 'समुदाय', emoji: '🤝' },
+              { path: '/mandir', label: 'मंदिर खोजें', emoji: '🛕' },
+              { path: '/ai-guru', label: 'AI गुरु', emoji: '🔮' },
+            ].map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-all duration-200 hover:scale-[1.01]"
+              >
+                <span className="text-xl">{link.emoji}</span>
+                <span className="text-foreground text-sm font-medium">{link.label}</span>
+                <span className="ml-auto text-muted-foreground">→</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Admin Panel Link — shown only when confirmed admin */}
+        {isAuthenticated && !adminLoading && isAdmin && (
+          <Link
+            to="/admin"
+            className="block bg-gradient-to-r from-gray-800 to-gray-700 border border-gold-500/30 rounded-2xl p-4 hover:scale-[1.02] transition-all duration-200"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚙️</span>
+              <div>
+                <p className="text-white font-bold">Admin Panel</p>
+                <p className="text-gray-300 text-xs">सामग्री और उपयोगकर्ता प्रबंधन</p>
+              </div>
+              <span className="ml-auto bg-gold-500/20 text-gold-400 text-xs px-2 py-1 rounded-full border border-gold-500/30">
+                👑 Admin
+              </span>
+            </div>
+          </Link>
+        )}
+
+        {/* App Info */}
+        <div className="bg-card border border-border rounded-2xl p-4 text-center">
+          <p className="text-muted-foreground text-xs">
+            © {new Date().getFullYear()} श्री मंदिर • Built with ❤️ using{' '}
+            <a
+              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gold-400 hover:text-gold-300"
+            >
+              caffeine.ai
+            </a>
+          </p>
         </div>
       </div>
     </div>
   );
+}
+
+function getMantraLabel(mantra: string): string {
+  const labels: Record<string, string> = {
+    omNamahShivaya: 'ॐ नमः शिवाय',
+    hareKrishna: 'हरे कृष्ण',
+    gayatriMantra: 'गायत्री मंत्र',
+    mahamrityunjayaMantra: 'महामृत्युंजय मंत्र',
+    saiRam: 'साईं राम',
+    sitaram: 'सीताराम',
+    omMantra: 'ॐ',
+    radhaNamJap: 'राधे राधे',
+    jaiShreeRamNamJap: 'जय श्री राम',
+  };
+  return labels[mantra] || mantra;
 }

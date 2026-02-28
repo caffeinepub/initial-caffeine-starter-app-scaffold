@@ -28,19 +28,41 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
+export const FileAttachment = IDL.Record({
+  'blob' : ExternalBlob,
+  'filename' : IDL.Text,
+});
+export const Bhajan = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'lyrics' : IDL.Text,
+  'language' : IDL.Variant({ 'hindi' : IDL.Null, 'english' : IDL.Null }),
+});
+export const Chalisa = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'meaning' : IDL.Text,
+  'fullText' : IDL.Text,
+});
+export const CommunityPostStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'approved' : IDL.Null,
+  'rejected' : IDL.Null,
+});
 export const CommunityPost = IDL.Record({
   'id' : IDL.Nat,
-  'status' : IDL.Variant({
-    'pending' : IDL.Null,
-    'approved' : IDL.Null,
-    'rejected' : IDL.Null,
-  }),
+  'status' : CommunityPostStatus,
   'content' : IDL.Text,
+  'video' : IDL.Opt(ExternalBlob),
   'author' : IDL.Principal,
   'likes' : IDL.Nat,
+  'fileAttachment' : IDL.Opt(FileAttachment),
   'timestamp' : IDL.Nat,
   'reports' : IDL.Nat,
+  'image' : IDL.Opt(ExternalBlob),
   'comments' : IDL.Nat,
+  'deityTag' : IDL.Opt(IDL.Text),
 });
 export const KathaApprovalStatus = IDL.Variant({
   'pending' : IDL.Null,
@@ -57,6 +79,12 @@ export const Katha = IDL.Record({
   'category' : KathaCategory,
   'hindiText' : IDL.Text,
   'deity' : IDL.Text,
+});
+export const Vrat = IDL.Record({
+  'id' : IDL.Nat,
+  'date' : IDL.Text,
+  'name' : IDL.Text,
+  'description' : IDL.Text,
 });
 export const Mantra = IDL.Variant({
   'saiRam' : IDL.Null,
@@ -135,7 +163,16 @@ export const idlService = IDL.Service({
     ),
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'addAarti' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, IDL.Text], [], []),
+  'addBhajan' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Variant({ 'hindi' : IDL.Null, 'english' : IDL.Null }),
+      ],
+      [IDL.Nat],
+      [],
+    ),
+  'addChalisa' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
   'addDharmaQuote' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, IDL.Text], [], []),
   'addKatha' : IDL.Func(
       [
@@ -149,19 +186,40 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'addVrat' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
   'approveCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'approveKatha' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'createCommunityPost' : IDL.Func([IDL.Text], [IDL.Nat], []),
+  'createCommunityPost' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Opt(IDL.Text),
+        IDL.Opt(ExternalBlob),
+        IDL.Opt(ExternalBlob),
+        IDL.Opt(FileAttachment),
+      ],
+      [IDL.Nat],
+      [],
+    ),
+  'deleteBhajan' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'deleteChalisa' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'deleteCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'deleteDharmaQuote' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'deleteVrat' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'getAllBhajans' : IDL.Func([], [IDL.Vec(Bhajan)], ['query']),
+  'getAllChalisa' : IDL.Func([], [IDL.Vec(Chalisa)], ['query']),
   'getAllCommunityPosts' : IDL.Func([], [IDL.Vec(CommunityPost)], ['query']),
   'getAllKathayen' : IDL.Func([], [IDL.Vec(Katha)], ['query']),
+  'getAllVrats' : IDL.Func([], [IDL.Vec(Vrat)], ['query']),
   'getApprovedCommunityPosts' : IDL.Func(
       [],
       [IDL.Vec(CommunityPost)],
       ['query'],
     ),
+  'getBhajan' : IDL.Func([IDL.Nat], [IDL.Opt(Bhajan)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getChalisa' : IDL.Func([IDL.Nat], [IDL.Opt(Chalisa)], ['query']),
   'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
   'getFestivals' : IDL.Func([], [IDL.Vec(Festival)], ['query']),
   'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapCounter)], ['query']),
@@ -188,11 +246,36 @@ export const idlService = IDL.Service({
   'reportCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'requestApproval' : IDL.Func([], [], []),
   'resetJapStats' : IDL.Func([], [], []),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveCallerUserProfile' : IDL.Func([UserProfile, IDL.Text], [], []),
   'searchKathayenByDeity' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
   'searchKathayenByTitle' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
-  'setUserProfile' : IDL.Func([UserProfile], [], []),
+  'setUserProfile' : IDL.Func([UserProfile, IDL.Text], [], []),
+  'updateBhajan' : IDL.Func(
+      [
+        IDL.Nat,
+        IDL.Text,
+        IDL.Text,
+        IDL.Variant({ 'hindi' : IDL.Null, 'english' : IDL.Null }),
+      ],
+      [IDL.Bool],
+      [],
+    ),
+  'updateChalisa' : IDL.Func(
+      [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
+  'updateDharmaQuote' : IDL.Func(
+      [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
+  'updateVrat' : IDL.Func(
+      [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -218,19 +301,41 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
+  const FileAttachment = IDL.Record({
+    'blob' : ExternalBlob,
+    'filename' : IDL.Text,
+  });
+  const Bhajan = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'lyrics' : IDL.Text,
+    'language' : IDL.Variant({ 'hindi' : IDL.Null, 'english' : IDL.Null }),
+  });
+  const Chalisa = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'meaning' : IDL.Text,
+    'fullText' : IDL.Text,
+  });
+  const CommunityPostStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
   const CommunityPost = IDL.Record({
     'id' : IDL.Nat,
-    'status' : IDL.Variant({
-      'pending' : IDL.Null,
-      'approved' : IDL.Null,
-      'rejected' : IDL.Null,
-    }),
+    'status' : CommunityPostStatus,
     'content' : IDL.Text,
+    'video' : IDL.Opt(ExternalBlob),
     'author' : IDL.Principal,
     'likes' : IDL.Nat,
+    'fileAttachment' : IDL.Opt(FileAttachment),
     'timestamp' : IDL.Nat,
     'reports' : IDL.Nat,
+    'image' : IDL.Opt(ExternalBlob),
     'comments' : IDL.Nat,
+    'deityTag' : IDL.Opt(IDL.Text),
   });
   const KathaApprovalStatus = IDL.Variant({
     'pending' : IDL.Null,
@@ -247,6 +352,12 @@ export const idlFactory = ({ IDL }) => {
     'category' : KathaCategory,
     'hindiText' : IDL.Text,
     'deity' : IDL.Text,
+  });
+  const Vrat = IDL.Record({
+    'id' : IDL.Nat,
+    'date' : IDL.Text,
+    'name' : IDL.Text,
+    'description' : IDL.Text,
   });
   const Mantra = IDL.Variant({
     'saiRam' : IDL.Null,
@@ -322,7 +433,16 @@ export const idlFactory = ({ IDL }) => {
       ),
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'addAarti' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, IDL.Text], [], []),
+    'addBhajan' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Variant({ 'hindi' : IDL.Null, 'english' : IDL.Null }),
+        ],
+        [IDL.Nat],
+        [],
+      ),
+    'addChalisa' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
     'addDharmaQuote' : IDL.Func(
         [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
         [],
@@ -340,19 +460,40 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'addVrat' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
     'approveCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'approveKatha' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'createCommunityPost' : IDL.Func([IDL.Text], [IDL.Nat], []),
+    'createCommunityPost' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Opt(ExternalBlob),
+          IDL.Opt(ExternalBlob),
+          IDL.Opt(FileAttachment),
+        ],
+        [IDL.Nat],
+        [],
+      ),
+    'deleteBhajan' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteChalisa' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteDharmaQuote' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteVrat' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'getAllBhajans' : IDL.Func([], [IDL.Vec(Bhajan)], ['query']),
+    'getAllChalisa' : IDL.Func([], [IDL.Vec(Chalisa)], ['query']),
     'getAllCommunityPosts' : IDL.Func([], [IDL.Vec(CommunityPost)], ['query']),
     'getAllKathayen' : IDL.Func([], [IDL.Vec(Katha)], ['query']),
+    'getAllVrats' : IDL.Func([], [IDL.Vec(Vrat)], ['query']),
     'getApprovedCommunityPosts' : IDL.Func(
         [],
         [IDL.Vec(CommunityPost)],
         ['query'],
       ),
+    'getBhajan' : IDL.Func([IDL.Nat], [IDL.Opt(Bhajan)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getChalisa' : IDL.Func([IDL.Nat], [IDL.Opt(Chalisa)], ['query']),
     'getDharmaQuoteOfDay' : IDL.Func([], [IDL.Opt(DharmaQuote)], ['query']),
     'getFestivals' : IDL.Func([], [IDL.Vec(Festival)], ['query']),
     'getJapLeaderboard' : IDL.Func([], [IDL.Vec(JapCounter)], ['query']),
@@ -379,11 +520,36 @@ export const idlFactory = ({ IDL }) => {
     'reportCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'requestApproval' : IDL.Func([], [], []),
     'resetJapStats' : IDL.Func([], [], []),
-    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveCallerUserProfile' : IDL.Func([UserProfile, IDL.Text], [], []),
     'searchKathayenByDeity' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
     'searchKathayenByTitle' : IDL.Func([IDL.Text], [IDL.Vec(Katha)], ['query']),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
-    'setUserProfile' : IDL.Func([UserProfile], [], []),
+    'setUserProfile' : IDL.Func([UserProfile, IDL.Text], [], []),
+    'updateBhajan' : IDL.Func(
+        [
+          IDL.Nat,
+          IDL.Text,
+          IDL.Text,
+          IDL.Variant({ 'hindi' : IDL.Null, 'english' : IDL.Null }),
+        ],
+        [IDL.Bool],
+        [],
+      ),
+    'updateChalisa' : IDL.Func(
+        [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
+    'updateDharmaQuote' : IDL.Func(
+        [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
+    'updateVrat' : IDL.Func(
+        [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
   });
 };
 

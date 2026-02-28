@@ -5,7 +5,7 @@ import { staticKathaData } from '../lib/kathaData';
 import { useSpeechNarration } from '../hooks/useSpeechNarration';
 
 export default function KathaDetail() {
-  const { id } = useParams({ from: '/kathayen/$id' });
+  const { id } = useParams({ from: '/katha/$id' });
   const navigate = useNavigate();
   const [showHindi, setShowHindi] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -66,16 +66,13 @@ export default function KathaDetail() {
 
   if (!katha) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF8E7' }}>
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-4xl mb-3">📖</div>
-          <p className="font-devanagari text-lg" style={{ color: '#8B3A00' }}>
-            कथा नहीं मिली
-          </p>
+          <p className="text-foreground text-lg">कथा नहीं मिली</p>
           <button
             onClick={() => navigate({ to: '/kathayen' })}
-            className="mt-4 px-4 py-2 rounded-full text-white text-sm"
-            style={{ background: 'linear-gradient(135deg, #FF6B00, #FFD700)' }}
+            className="mt-4 px-4 py-2 rounded-full text-white text-sm bg-gradient-to-r from-saffron-600 to-gold-500"
           >
             वापस जाएँ
           </button>
@@ -85,8 +82,7 @@ export default function KathaDetail() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FFF8E7 0%, #FFF3D4 100%)' }}>
-
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div
         className="sticky top-0 z-10 px-4 py-3 flex items-center gap-3"
@@ -104,7 +100,7 @@ export default function KathaDetail() {
         </button>
         <div className="flex-1 min-w-0">
           <h1
-            className="font-devanagari text-white font-bold text-base truncate"
+            className="text-white font-bold text-base truncate"
             style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
           >
             {katha.title}
@@ -124,7 +120,7 @@ export default function KathaDetail() {
       >
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, rgba(255,107,0,0.3), rgba(255,248,231,0.9))' }}
+          style={{ background: 'linear-gradient(to bottom, rgba(255,107,0,0.3), rgba(0,0,0,0.7))' }}
         />
         <div className="absolute bottom-3 left-4 right-4">
           <div className="flex items-center gap-2">
@@ -147,7 +143,7 @@ export default function KathaDetail() {
         >
           <button
             onClick={() => setShowHindi(true)}
-            className="px-3 py-1.5 text-xs font-medium font-devanagari transition-all"
+            className="px-3 py-1.5 text-xs font-medium transition-all"
             style={{
               background: showHindi ? 'linear-gradient(135deg, #FF6B00, #FFD700)' : 'transparent',
               color: showHindi ? 'white' : '#8B3A00',
@@ -220,12 +216,10 @@ export default function KathaDetail() {
             boxShadow: '0 4px 20px rgba(255,215,0,0.2)',
           }}
         >
-          {/* Corner decorations */}
           <div className="absolute top-2 left-2 text-lg opacity-30" style={{ color: '#FFD700' }}>✦</div>
           <div className="absolute top-2 right-2 text-lg opacity-30" style={{ color: '#FFD700' }}>✦</div>
-
           <p
-            className="font-devanagari text-base leading-loose whitespace-pre-line"
+            className="text-base leading-loose whitespace-pre-line"
             style={{ color: '#5D2E0C' }}
           >
             {textToDisplay}

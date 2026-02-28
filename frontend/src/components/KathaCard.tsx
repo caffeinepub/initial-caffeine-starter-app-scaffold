@@ -51,8 +51,8 @@ export default function KathaCard({ katha }: KathaCardProps) {
 
   return (
     <button
-      onClick={() => navigate({ to: '/kathayen/$id', params: { id: String(katha.id) } })}
-      className="w-full text-left rounded-2xl p-4 transition-all duration-200 active:scale-95 relative overflow-hidden"
+      onClick={() => navigate({ to: '/katha/$id', params: { id: String(katha.id) } })}
+      className="w-full text-left rounded-2xl p-4 transition-all duration-200 active:scale-95 relative overflow-hidden hover:scale-[1.02] hover:shadow-lg"
       style={{
         background: 'linear-gradient(135deg, #FFF8E7 0%, #FFF3D4 100%)',
         border: '2px solid #FFD700',

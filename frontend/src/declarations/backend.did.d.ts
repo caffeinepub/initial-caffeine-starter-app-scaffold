@@ -13,29 +13,49 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type ApprovalStatus = { 'pending' : null } |
   { 'approved' : null } |
   { 'rejected' : null };
+export interface Bhajan {
+  'id' : bigint,
+  'title' : string,
+  'lyrics' : string,
+  'language' : { 'hindi' : null } |
+    { 'english' : null },
+}
+export interface Chalisa {
+  'id' : bigint,
+  'title' : string,
+  'meaning' : string,
+  'fullText' : string,
+}
 export interface CommunityPost {
   'id' : bigint,
-  'status' : { 'pending' : null } |
-    { 'approved' : null } |
-    { 'rejected' : null },
+  'status' : CommunityPostStatus,
   'content' : string,
+  'video' : [] | [ExternalBlob],
   'author' : Principal,
   'likes' : bigint,
+  'fileAttachment' : [] | [FileAttachment],
   'timestamp' : bigint,
   'reports' : bigint,
+  'image' : [] | [ExternalBlob],
   'comments' : bigint,
+  'deityTag' : [] | [string],
 }
+export type CommunityPostStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export interface DharmaQuote {
   'id' : bigint,
   'author' : string,
   'englishText' : string,
   'hindiText' : string,
 }
+export type ExternalBlob = Uint8Array;
 export interface Festival {
   'date' : string,
   'name' : string,
   'description' : string,
 }
+export interface FileAttachment { 'blob' : ExternalBlob, 'filename' : string }
 export interface JapCounter {
   'streak' : bigint,
   'lastReset' : bigint,
@@ -79,6 +99,12 @@ export interface UserProfile { 'selectedMantra' : Mantra, 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface Vrat {
+  'id' : bigint,
+  'date' : string,
+  'name' : string,
+  'description' : string,
+}
 export interface _CaffeineStorageCreateCertificateResult {
   'method' : string,
   'blob_hash' : string,
@@ -107,21 +133,45 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addAarti' : ActorMethod<[bigint, string, string, string], undefined>,
+  'addBhajan' : ActorMethod<
+    [string, string, { 'hindi' : null } | { 'english' : null }],
+    bigint
+  >,
+  'addChalisa' : ActorMethod<[string, string, string], bigint>,
   'addDharmaQuote' : ActorMethod<[bigint, string, string, string], undefined>,
   'addKatha' : ActorMethod<
     [string, KathaCategory, string, string, string, Array<string>],
     bigint
   >,
+  'addVrat' : ActorMethod<[string, string, string], bigint>,
   'approveCommunityPost' : ActorMethod<[bigint], boolean>,
   'approveKatha' : ActorMethod<[bigint], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'createCommunityPost' : ActorMethod<[string], bigint>,
+  'createCommunityPost' : ActorMethod<
+    [
+      string,
+      [] | [string],
+      [] | [ExternalBlob],
+      [] | [ExternalBlob],
+      [] | [FileAttachment],
+    ],
+    bigint
+  >,
+  'deleteBhajan' : ActorMethod<[bigint], boolean>,
+  'deleteChalisa' : ActorMethod<[bigint], boolean>,
+  'deleteCommunityPost' : ActorMethod<[bigint], boolean>,
+  'deleteDharmaQuote' : ActorMethod<[bigint], boolean>,
+  'deleteVrat' : ActorMethod<[bigint], boolean>,
+  'getAllBhajans' : ActorMethod<[], Array<Bhajan>>,
+  'getAllChalisa' : ActorMethod<[], Array<Chalisa>>,
   'getAllCommunityPosts' : ActorMethod<[], Array<CommunityPost>>,
   'getAllKathayen' : ActorMethod<[], Array<Katha>>,
+  'getAllVrats' : ActorMethod<[], Array<Vrat>>,
   'getApprovedCommunityPosts' : ActorMethod<[], Array<CommunityPost>>,
+  'getBhajan' : ActorMethod<[bigint], [] | [Bhajan]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getChalisa' : ActorMethod<[bigint], [] | [Chalisa]>,
   'getDharmaQuoteOfDay' : ActorMethod<[], [] | [DharmaQuote]>,
   'getFestivals' : ActorMethod<[], Array<Festival>>,
   'getJapLeaderboard' : ActorMethod<[], Array<JapCounter>>,
@@ -140,11 +190,18 @@ export interface _SERVICE {
   'reportCommunityPost' : ActorMethod<[bigint], boolean>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetJapStats' : ActorMethod<[], undefined>,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile, string], undefined>,
   'searchKathayenByDeity' : ActorMethod<[string], Array<Katha>>,
   'searchKathayenByTitle' : ActorMethod<[string], Array<Katha>>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
-  'setUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setUserProfile' : ActorMethod<[UserProfile, string], undefined>,
+  'updateBhajan' : ActorMethod<
+    [bigint, string, string, { 'hindi' : null } | { 'english' : null }],
+    boolean
+  >,
+  'updateChalisa' : ActorMethod<[bigint, string, string, string], boolean>,
+  'updateDharmaQuote' : ActorMethod<[bigint, string, string, string], boolean>,
+  'updateVrat' : ActorMethod<[bigint, string, string, string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

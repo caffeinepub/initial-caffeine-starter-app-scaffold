@@ -1,18 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Redesign the entire frontend of the Divya Darshan devotional app to use a warm saffron/gold Hindu temple theme, replacing all dark styling with a light, devotional aesthetic.
+**Goal:** Fix admin bootstrap logic so the first registered user automatically becomes Admin, and add image/video/file media upload support to community posts.
 
 **Planned changes:**
-- Update global CSS (`index.css`) and `tailwind.config.js` to replace dark theme with saffron (`#FF6B00`), gold (`#FFD700`), red (`#C0392B`), warm yellow (`#FFA500`), and cream (`#FFF8E7`) palette as defaults
-- Redesign `AppLayout.tsx` header with saffron-to-gold gradient, gold Om logo, and devotional typography
-- Redesign `BottomNav.tsx` with warm cream/saffron background and gold active state with soft golden halo
-- Redesign `Home.tsx` with grand hero banner (Om symbol, Sanskrit greeting, Panchang tithi), category cards (Mantras, Aarti, Puja Vidhi, Bhajans), and ornate gold-bordered Shloka/Dharma Quote cards
-- Redesign all card components (`AartiCard`, `KathaCard`, `ShlokaCard`, `FestivalCountdownCard`, `DailyDharmaQuote`) with cream/gold backgrounds, gold/saffron borders, and dark maroon text
-- Redesign `Jap.tsx` with saffron/gold gradient background, gold/amber MalaRing beads, ornate golden count circle, and saffron LotusBloomOverlay
-- Redesign `Aarti.tsx` and `AartiDetail.tsx` with saffron hero banner, diya imagery, and gold-bordered aarti text cards on cream background
-- Redesign `Kathayen.tsx` and `KathaDetail.tsx` with saffron active tab filters, cream/gold story cards, and dark maroon text on cream for reading
-- Redesign `Panchang.tsx` with warm amber/cream card styling and gold borders
-- Redesign `Profile.tsx` with saffron accents for mantra selection and stats display
+- Fix backend admin bootstrap: when the very first user profile is created and no admin exists, automatically assign that user the Admin role; subsequent users remain regular users
+- Update the `CommunityPost` backend data type to include optional fields for image blob, video blob, and file attachment blob (with filename)
+- Update backend `createCommunityPost` function to accept and store optional media blobs
+- Update the Community page post submission form to include a media attachment button supporting image (JPG/PNG/GIF), video (MP4/WebM), and file uploads
+- Show an image preview thumbnail after selecting an image before submission
+- Display attached media inline in the community feed: images shown inline, videos shown as a playable player, files shown as a downloadable link
+- Add file type and size validation with user-friendly error messages
 
-**User-visible outcome:** The entire app displays a warm, light devotional Hindu temple aesthetic with saffron, gold, and cream colors throughout every page and component — no dark backgrounds remain anywhere.
+**User-visible outcome:** The first registered user gains admin access automatically without manual steps. Community members can attach images, videos, or files to their posts along with a text caption, and see media displayed inline in the feed.

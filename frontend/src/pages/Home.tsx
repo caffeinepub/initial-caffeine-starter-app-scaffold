@@ -1,299 +1,169 @@
-import React from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { Link } from '@tanstack/react-router';
 import { getTithi, getNakshatra, getVara } from '../lib/panchangEngine';
+import { SHLOKAS } from '../lib/staticData';
 import DailyDharmaQuote from '../components/DailyDharmaQuote';
-import ShlokaCard from '../components/ShlokaCard';
-import { SHLOKAS, AARTIS } from '../lib/staticData';
+import FloatingLotus from '../components/FloatingLotus';
+import EkadashiReminderBanner from '../components/EkadashiReminderBanner';
 
 const categories = [
-  {
-    title: 'मंत्र / श्लोक',
-    subtitle: 'Sacred Mantras',
-    emoji: '🕉️',
-    path: '/jap',
-    gradient: 'linear-gradient(135deg, #FF6B00, #FF8C00)',
-    border: '#FF6B00',
-  },
-  {
-    title: 'आरती',
-    subtitle: 'Divine Aarti',
-    emoji: '🪔',
-    path: '/aarti',
-    gradient: 'linear-gradient(135deg, #FFD700, #FFA500)',
-    border: '#FFD700',
-  },
-  {
-    title: 'पूजा विधि',
-    subtitle: 'Puja Vidhi',
-    emoji: '🙏',
-    path: '/panchang',
-    gradient: 'linear-gradient(135deg, #C0392B, #E74C3C)',
-    border: '#C0392B',
-  },
-  {
-    title: 'भजन / कथाएँ',
-    subtitle: 'Bhajans & Kathas',
-    emoji: '📖',
-    path: '/kathayen',
-    gradient: 'linear-gradient(135deg, #8B4513, #A0522D)',
-    border: '#8B4513',
-  },
+  { path: '/jap', label: 'जाप', emoji: '📿', desc: 'मंत्र जाप करें', color: 'from-orange-900/80 to-orange-700/60' },
+  { path: '/aarti', label: 'आरती', emoji: '🪔', desc: 'आरती पाठ करें', color: 'from-yellow-900/80 to-yellow-700/60' },
+  { path: '/mantras', label: 'मंत्र', emoji: '🕉️', desc: 'पवित्र मंत्र', color: 'from-purple-900/80 to-purple-700/60' },
+  { path: '/bhajans', label: 'भजन', emoji: '🎵', desc: 'भक्ति भजन', color: 'from-pink-900/80 to-pink-700/60' },
+  { path: '/chalisa', label: 'चालीसा', emoji: '📜', desc: 'हनुमान चालीसा', color: 'from-red-900/80 to-red-700/60' },
+  { path: '/kathayen', label: 'कथाएं', emoji: '📖', desc: 'पौराणिक कथाएं', color: 'from-green-900/80 to-green-700/60' },
+  { path: '/panchang', label: 'पंचांग', emoji: '📅', desc: 'आज का पंचांग', color: 'from-blue-900/80 to-blue-700/60' },
+  { path: '/mandir', label: 'मंदिर', emoji: '🛕', desc: 'मंदिर दर्शन', color: 'from-teal-900/80 to-teal-700/60' },
+  { path: '/community', label: 'समाज', emoji: '🤝', desc: 'भक्त समुदाय', color: 'from-indigo-900/80 to-indigo-700/60' },
+  { path: '/ai-guru', label: 'AI गुरु', emoji: '🔮', desc: 'आध्यात्मिक मार्गदर्शन', color: 'from-violet-900/80 to-violet-700/60' },
 ];
 
 export default function Home() {
-  const navigate = useNavigate();
+  const [vratMode, setVratMode] = useState(false);
   const today = new Date();
   const tithi = getTithi(today);
   const nakshatra = getNakshatra(today);
   const vara = getVara(today);
+  const shloka = SHLOKAS[0];
 
-  const todayShloka = SHLOKAS[0];
-  const featuredAarti = AARTIS[0];
+  useEffect(() => {
+    const stored = localStorage.getItem('vratMode');
+    setVratMode(stored === 'true');
+  }, []);
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FFF8E7 0%, #FFF3D4 100%)' }}>
-      
-      {/* Hero Banner */}
-      <section className="relative overflow-hidden" style={{ minHeight: '220px' }}>
-        {/* Background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 40%, #FFD700 100%)',
-          }}
-        />
-        {/* Mandala background */}
-        <div
-          className="absolute inset-0 opacity-10 animate-sacred-spin"
-          style={{
-            backgroundImage: 'url(/assets/generated/mandala-bg.dim_512x512.png)',
-            backgroundSize: '400px',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        />
-        {/* Lotus decoration */}
-        <div
-          className="absolute right-0 top-0 w-40 h-40 opacity-20"
-          style={{
-            backgroundImage: 'url(/assets/generated/lotus-hero.dim_1200x400.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'right center',
-          }}
-        />
+    <div className="animate-fade-in relative">
+      <FloatingLotus />
 
-        <div className="relative z-10 px-5 py-8 text-center">
-          {/* Om Symbol */}
-          <div className="flex justify-center mb-3">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center animate-divine-pulse"
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: '3px solid rgba(255,255,255,0.7)',
-                boxShadow: '0 0 20px rgba(255,215,0,0.5)',
-              }}
-            >
-              <img
-                src="/assets/generated/om-symbol.dim_256x256.png"
-                alt="OM"
-                className="w-10 h-10 object-contain"
-                style={{ filter: 'brightness(0) invert(1)' }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement!.innerHTML =
-                    '<span style="color:white;font-size:32px;font-family:serif">ॐ</span>';
-                }}
-              />
+      {/* Vrat Mode Banner */}
+      {vratMode && (
+        <Link to="/vrat-dashboard" className="block">
+          <div className="bg-gradient-to-r from-amber-600 to-orange-500 text-white px-4 py-3 flex items-center justify-between animate-slide-down">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🙏</span>
+              <div>
+                <p className="font-bold text-sm">व्रत मोड सक्रिय है</p>
+                <p className="text-xs text-amber-100">आज का व्रत विवरण देखें</p>
+              </div>
+            </div>
+            <span className="text-amber-100 text-sm">→</span>
+          </div>
+        </Link>
+      )}
+
+      <EkadashiReminderBanner />
+
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div
+          className="h-52 bg-cover bg-center relative"
+          style={{ backgroundImage: 'url(/assets/generated/mandala-hero.dim_1200x400.png)' }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/70" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+            <div className="animate-shimmer-text">
+              <h2 className="text-white text-3xl font-bold drop-shadow-lg mb-1">🕉️ जय श्री राम</h2>
+              <p className="text-amber-200 text-sm font-medium drop-shadow">हर हर महादेव • राधे राधे</p>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Greeting */}
-          <h2
-            className="font-devanagari text-white text-2xl font-bold mb-1"
-            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
-          >
-            ॐ श्री गणेशाय नमः
-          </h2>
-          <p className="text-white/90 text-sm font-poppins mb-4">
-            🙏 जय श्री राम • हर हर महादेव • राधे राधे 🙏
-          </p>
-
-          {/* Panchang Strip */}
-          <div
-            className="inline-flex items-center gap-3 px-4 py-2 rounded-full text-xs font-medium"
-            style={{
-              background: 'rgba(255,255,255,0.25)',
-              border: '1px solid rgba(255,255,255,0.5)',
-              backdropFilter: 'blur(8px)',
-              color: 'white',
-            }}
-          >
-            <span>📅 {vara}</span>
-            <span className="opacity-50">|</span>
-            <span>🌙 {tithi}</span>
-            <span className="opacity-50">|</span>
-            <span>⭐ {nakshatra}</span>
+      {/* Panchang Strip */}
+      <div className="bg-gradient-to-r from-saffron-800 to-saffron-700 px-4 py-2">
+        <div className="flex items-center justify-around text-center">
+          <div>
+            <p className="text-amber-200 text-xs">तिथि</p>
+            <p className="text-white text-xs font-semibold">{tithi}</p>
           </div>
+          <div className="w-px h-8 bg-amber-400/30" />
+          <div>
+            <p className="text-amber-200 text-xs">नक्षत्र</p>
+            <p className="text-white text-xs font-semibold">{nakshatra}</p>
+          </div>
+          <div className="w-px h-8 bg-amber-400/30" />
+          <div>
+            <p className="text-amber-200 text-xs">वार</p>
+            <p className="text-white text-xs font-semibold">{vara}</p>
+          </div>
+          <div className="w-px h-8 bg-amber-400/30" />
+          <Link to="/panchang" className="text-amber-300 text-xs font-medium hover:text-amber-100 transition-colors">
+            पूरा पंचांग →
+          </Link>
         </div>
-      </section>
+      </div>
 
-      {/* Category Cards */}
-      <section className="px-4 py-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-1 h-6 rounded-full" style={{ background: '#FF6B00' }} />
-          <h3 className="font-devanagari text-lg font-bold" style={{ color: '#8B3A00' }}>
-            भक्ति के द्वार
-          </h3>
-          <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #FFD700, transparent)' }} />
+      {/* Daily Shloka */}
+      {shloka && (
+        <div className="mx-4 mt-4 p-4 bg-card border border-gold-500/30 rounded-2xl shadow-lg animate-slide-up">
+          <p className="text-gold-400 text-xs font-semibold mb-1 uppercase tracking-wider">आज का श्लोक</p>
+          <p className="text-foreground text-sm font-medium leading-relaxed">{shloka.sanskrit}</p>
+          <p className="text-muted-foreground text-xs mt-1">{shloka.hindiMeaning}</p>
         </div>
+      )}
 
+      {/* Category Grid */}
+      <div className="px-4 mt-4">
+        <h3 className="text-foreground font-bold text-base mb-3">🙏 भक्ति सेवाएं</h3>
         <div className="grid grid-cols-2 gap-3">
           {categories.map((cat) => (
-            <button
+            <Link
               key={cat.path}
-              onClick={() => navigate({ to: cat.path })}
-              className="relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-200 active:scale-95"
-              style={{
-                background: cat.gradient,
-                border: `2px solid ${cat.border}`,
-                boxShadow: `0 4px 15px ${cat.border}40`,
-              }}
+              to={cat.path}
+              className={`relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br ${cat.color} border border-white/10 hover:scale-105 hover:shadow-xl transition-all duration-300 group`}
             >
-              {/* Decorative circle */}
-              <div
-                className="absolute -top-4 -right-4 w-16 h-16 rounded-full opacity-20"
-                style={{ background: 'rgba(255,255,255,0.4)' }}
-              />
-              <div className="text-3xl mb-2">{cat.emoji}</div>
-              <div className="font-devanagari text-white font-bold text-sm leading-tight">
-                {cat.title}
+              <div className="flex flex-col gap-1">
+                <span className="text-3xl group-hover:scale-110 transition-transform duration-200">{cat.emoji}</span>
+                <p className="text-white font-bold text-sm">{cat.label}</p>
+                <p className="text-white/70 text-xs">{cat.desc}</p>
               </div>
-              <div className="text-white/80 text-xs mt-0.5 font-poppins">
-                {cat.subtitle}
-              </div>
-            </button>
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300 rounded-2xl" />
+            </Link>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Daily Dharma Quote */}
-      <section className="px-4 pb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-1 h-6 rounded-full" style={{ background: '#FFD700' }} />
-          <h3 className="font-devanagari text-lg font-bold" style={{ color: '#8B3A00' }}>
-            आज का सुविचार
-          </h3>
-          <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #FFD700, transparent)' }} />
-        </div>
+      {/* Dharma Quote */}
+      <div className="px-4 mt-4">
         <DailyDharmaQuote />
-      </section>
-
-      {/* Featured Shloka */}
-      {todayShloka && (
-        <section className="px-4 pb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-6 rounded-full" style={{ background: '#C0392B' }} />
-            <h3 className="font-devanagari text-lg font-bold" style={{ color: '#8B3A00' }}>
-              आज का श्लोक
-            </h3>
-            <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #FFD700, transparent)' }} />
-          </div>
-          <ShlokaCard shloka={todayShloka} />
-        </section>
-      )}
-
-      {/* Featured Aarti */}
-      {featuredAarti && (
-        <section className="px-4 pb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-6 rounded-full" style={{ background: '#FF6B00' }} />
-            <h3 className="font-devanagari text-lg font-bold" style={{ color: '#8B3A00' }}>
-              आरती
-            </h3>
-            <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #FFD700, transparent)' }} />
-          </div>
-          <button
-            onClick={() => navigate({ to: '/aarti' })}
-            className="w-full rounded-2xl p-4 text-left transition-all duration-200 active:scale-95"
-            style={{
-              background: 'linear-gradient(135deg, #FFF8E7, #FFF3D4)',
-              border: '2px solid #FFD700',
-              boxShadow: '0 4px 15px rgba(255,215,0,0.2)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #FF6B00, #FFD700)' }}
-              >
-                🪔
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-devanagari font-bold text-base" style={{ color: '#8B3A00' }}>
-                  {featuredAarti.name}
-                </div>
-                <div className="text-xs mt-0.5 font-poppins line-clamp-2" style={{ color: '#A0522D' }}>
-                  {featuredAarti.hindiText.substring(0, 80)}...
-                </div>
-              </div>
-              <div className="text-saffron-600 text-lg">›</div>
-            </div>
-          </button>
-        </section>
-      )}
+      </div>
 
       {/* Quick Actions */}
-      <section className="px-4 pb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-1 h-6 rounded-full" style={{ background: '#8B4513' }} />
-          <h3 className="font-devanagari text-lg font-bold" style={{ color: '#8B3A00' }}>
-            त्वरित क्रियाएँ
-          </h3>
-          <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #FFD700, transparent)' }} />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="px-4 mt-4 mb-4">
+        <h3 className="text-foreground font-bold text-base mb-3">⚡ त्वरित क्रियाएं</h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {[
-            { emoji: '📿', label: 'जप करें', path: '/jap' },
-            { emoji: '🛕', label: 'मंदिर', path: '/mandir' },
-            { emoji: '🤖', label: 'AI गुरु', path: '/ai-guru' },
+            { path: '/jap', label: 'जाप शुरू करें', emoji: '📿', bg: 'bg-orange-900/50' },
+            { path: '/aarti', label: 'आरती करें', emoji: '🪔', bg: 'bg-yellow-900/50' },
+            { path: '/vrat-dashboard', label: 'व्रत देखें', emoji: '🙏', bg: 'bg-amber-900/50' },
+            { path: '/community', label: 'समुदाय', emoji: '🤝', bg: 'bg-blue-900/50' },
           ].map((action) => (
-            <button
+            <Link
               key={action.path}
-              onClick={() => navigate({ to: action.path })}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200 active:scale-95"
-              style={{
-                background: 'linear-gradient(135deg, #FFF8E7, #FFF3D4)',
-                border: '1.5px solid #FFD700',
-                boxShadow: '0 2px 8px rgba(255,215,0,0.2)',
-              }}
+              to={action.path}
+              className={`flex-shrink-0 ${action.bg} border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2 hover:scale-105 transition-all duration-200 hover:shadow-lg`}
             >
-              <span className="text-2xl">{action.emoji}</span>
-              <span className="font-devanagari text-xs font-semibold" style={{ color: '#8B3A00' }}>
-                {action.label}
-              </span>
-            </button>
+              <span className="text-xl">{action.emoji}</span>
+              <span className="text-white text-sm font-medium whitespace-nowrap">{action.label}</span>
+            </Link>
           ))}
         </div>
-      </section>
+      </div>
 
       {/* Footer */}
-      <footer className="px-4 py-6 text-center" style={{ borderTop: '1px solid #FFD700' }}>
-        <p className="text-xs font-poppins" style={{ color: '#A0522D' }}>
-          🙏 हरे कृष्ण हरे राम 🙏
-        </p>
-        <p className="text-xs mt-2" style={{ color: '#C0A060' }}>
-          Built with{' '}
-          <span style={{ color: '#FF6B00' }}>❤️</span>
-          {' '}using{' '}
+      <footer className="px-4 py-6 text-center border-t border-border mt-4">
+        <p className="text-muted-foreground text-xs">
+          © {new Date().getFullYear()} श्री मंदिर • Built with{' '}
+          <span className="text-red-400">❤️</span> using{' '}
           <a
             href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#FF6B00', textDecoration: 'underline' }}
+            className="text-gold-400 hover:text-gold-300 transition-colors"
           >
             caffeine.ai
           </a>
-          {' '}© {new Date().getFullYear()}
         </p>
       </footer>
     </div>
