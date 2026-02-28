@@ -1,40 +1,113 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Admin Access & Add Media Upload to Community Posts",
+  "title": "Admin Katha Direct Publish with TTS, Instant Community Photos, and Performance Improvements",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Add media attachment support (image, video, file) to Community post submission form with preview and display capabilities",
+      "id": "REQ-1",
+      "summary": "Enable direct publish of admin-added Kathas to the Kathayen section without approval step",
       "acceptanceCriteria": [
-        "Community post form has a media attachment button with options for image, video, or file upload.",
-        "After selecting an image, a preview thumbnail is shown before submission.",
-        "Text/caption field is present and required alongside any media.",
-        "Submitted posts containing images display the image inline in the community feed.",
-        "Submitted posts containing videos display a playable video player in the feed.",
-        "Submitted posts containing files display a downloadable file link in the feed.",
-        "File type and size validation provides user-friendly error messages for unsupported types."
+        "Admin submits a new Katha via the Admin Panel form.",
+        "The Katha is stored in the backend with an approved/published status by default.",
+        "The Katha immediately appears in the Kathayen listing page without requiring any additional approval toggle.",
+        "The newly added Katha card is visible to all users on the Kathayen page."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add a 'Kathayen' tab to the AdminPanel with a form for adding new kathas. The form should include fields for title, category (puranik/vrat), deity, hindiText, englishText, and tags. On submission, call the backend addKatha method and invalidate the 'kathayen' query to trigger immediate refresh of the Kathayen listing page."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a useAddKatha mutation hook that calls actor.addKatha with the provided katha data. On success, invalidate the 'kathayen' query key to ensure the Kathayen page shows the newly added katha immediately. Ensure staleTime is set appropriately (e.g., 30 seconds) to balance performance with data freshness."
+        },
+        {
+          "path": "frontend/src/pages/Kathayen.tsx",
+          "operation": "modify",
+          "description": "Ensure the useGetAllKathayen query is configured to refetch on window focus and when the 'kathayen' query is invalidated. Verify that backend kathas are merged correctly with static kathaData and displayed without requiring page reload when a new katha is added via the Admin Panel."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add automatic TTS narration controls to every Katha detail page",
+      "acceptanceCriteria": [
+        "KathaDetail page renders TTS play/pause/stop controls for every katha, including those added dynamically from the backend.",
+        "TTS uses Hindi voice when available (matching existing useSpeechNarration hook behavior).",
+        "TTS controls are visible without any manual toggle or extra admin step.",
+        "Static kathas from kathaData.ts also have TTS controls if not already present."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/KathaDetail.tsx",
+          "operation": "modify",
+          "description": "Ensure the KathaDetail page includes TTS controls (play, pause, stop) using the useSpeechNarration hook for both the Hindi and English text sections. If TTS controls are missing or incomplete, add them below the text display area with clear button labels in Hindi. The controls should automatically detect the language (Hindi/English) and select the appropriate voice."
+        },
+        {
+          "path": "frontend/src/hooks/useSpeechNarration.ts",
+          "operation": "modify",
+          "description": "Review and enhance the useSpeechNarration hook to ensure it correctly handles Devanagari (Hindi) text and selects Hindi voices when available. Ensure the hook exposes play, pause, resume, and stop functions, along with a speaking state boolean. Verify that the hook can handle long katha texts without interruption."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Make community posts with images visible instantly after upload without approval delay",
+      "acceptanceCriteria": [
+        "A community post with an image attachment is visible in the Community feed immediately after submission.",
+        "No approval step is required for community posts with image/video attachments.",
+        "The post appears in the feed within seconds of submission, not minutes or hours.",
+        "Existing approved posts remain unaffected."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/Community.tsx",
           "operation": "modify",
-          "description": "Update the community post submission form to include media attachment controls. Add a file input button with type selector (image/video/file) and display preview for selected images. Add validation for file types (JPG/PNG/GIF for images, MP4/WebM for videos) and file sizes. Convert selected files to ExternalBlob using ExternalBlob.fromBytes() before submission. Update the createCommunityPost mutation call to include the new optional parameters: image, video, and fileAttachment (with filename). Verify the blob-storage component's usage instructions before implementing. Update the post feed rendering to display image blobs inline using ExternalBlob.getDirectURL(), render video players for video blobs, and show downloadable file links with filenames for file attachments. Ensure the text/caption field remains required."
+          "description": "Update the Community page to use getAllCommunityPosts instead of getApprovedCommunityPosts for the feed query. This ensures newly created posts are visible immediately. Update the useCreateCommunityPost mutation to invalidate the 'allCommunityPosts' query key on success, triggering an immediate refresh of the feed without delay."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update the useCreateCommunityPost mutation hook to accept optional image, video, and fileAttachment parameters matching the backend interface signature. Pass these parameters to actor.createCommunityPost() alongside content and deityTag. Ensure proper type safety using the ExternalBlob and FileAttachment types from backend.d.ts."
+          "description": "Add a useGetAllCommunityPosts query hook that calls actor.getAllCommunityPosts. Configure staleTime (e.g., 30 seconds) to minimize redundant fetches. Ensure the useCreateCommunityPost mutation invalidates the 'allCommunityPosts' query key on success so the feed updates immediately after post creation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Improve overall app performance and smoothness with React Query optimizations",
+      "acceptanceCriteria": [
+        "React Query staleTime is set to a reasonable value (e.g., 30 seconds) to avoid redundant refetches on navigation.",
+        "Kathayen and Community pages do not flicker or show empty states during data load when data is already cached.",
+        "Community post submission does not freeze or lag the UI.",
+        "No obvious janky scroll or animation issues on Home, Kathayen, and Community pages."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/main.tsx",
+          "operation": "modify",
+          "description": "Review and configure the QueryClient default options to set staleTime to 30000 (30 seconds) and cacheTime to 300000 (5 minutes) for all queries. This reduces unnecessary refetches and improves perceived performance when navigating between pages."
         },
         {
-          "path": "frontend/src/components/CommunityPostCard.tsx",
-          "operation": "create",
-          "description": "Create a new CommunityPostCard component to encapsulate the display logic for a single community post. Accept a CommunityPost prop and render the author info, content text, and conditionally render media: if post.image exists, display it using post.image.getDirectURL() in an <img> tag; if post.video exists, render a <video> element with controls using post.video.getDirectURL(); if post.fileAttachment exists, render a download link with post.fileAttachment.filename and post.fileAttachment.blob.getDirectURL(). Include like and report action buttons. Use Tailwind styling consistent with the devotional theme (saffron/gold accents)."
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Review all query hooks (useGetAllKathayen, useGetApprovedCommunityPosts, useGetAllCommunityPosts, useGetDailyDharmaQuote, etc.) and ensure they have appropriate staleTime and cacheTime settings. Set staleTime to at least 30 seconds for relatively static data (kathayen, festivals) and shorter for dynamic data (community posts). Ensure mutations properly invalidate only the relevant query keys to avoid over-fetching."
+        },
+        {
+          "path": "frontend/src/pages/Kathayen.tsx",
+          "operation": "modify",
+          "description": "Optimize the Kathayen page by ensuring the useGetAllKathayen query does not trigger unnecessary re-renders. Use React.memo or useMemo for the filtered and merged katha list to prevent recalculation on every render. Ensure the search and filter UI does not cause layout shift or flicker."
         },
         {
           "path": "frontend/src/pages/Community.tsx",
           "operation": "modify",
-          "description": "Refactor the post feed rendering to use the new CommunityPostCard component for each post in the list. Replace inline post rendering logic with <CommunityPostCard key={post.id} post={post} /> to improve code organization and reusability."
+          "description": "Optimize the Community page to prevent UI freezes during post submission. Ensure the create post mutation uses optimistic updates or shows a loading state without blocking the UI. Use React.memo for CommunityPostCard components to prevent unnecessary re-renders when the feed updates."
+        },
+        {
+          "path": "frontend/src/pages/Home.tsx",
+          "operation": "modify",
+          "description": "Review the Home page for any unnecessary queries or heavy components that may cause janky scroll. Ensure the panchang strip, daily dharma quote, and category navigation grid are optimized with appropriate staleTime settings and lazy loading if needed."
         }
       ]
     }

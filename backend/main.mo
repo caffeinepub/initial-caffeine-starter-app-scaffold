@@ -72,7 +72,6 @@ actor {
   };
 
   public type CommunityPostStatus = {
-    #pending;
     #approved;
     #rejected;
   };
@@ -117,12 +116,6 @@ actor {
     #vrat;
   };
 
-  public type KathaApprovalStatus = {
-    #pending;
-    #approved;
-    #rejected;
-  };
-
   public type Katha = {
     id : Nat;
     title : Text;
@@ -132,7 +125,6 @@ actor {
     englishText : Text;
     tags : [Text];
     createdAt : Int;
-    status : KathaApprovalStatus;
   };
 
   public type KrishnaLeela = {
@@ -399,13 +391,7 @@ actor {
   };
 
   public query func getApprovedCommunityPosts() : async [CommunityPost] {
-    let results = List.empty<CommunityPost>();
-    for ((_, post) in communityPosts.entries()) {
-      if (post.status == #approved) {
-        results.add(post);
-      };
-    };
-    results.toArray();
+    communityPosts.values().toArray();
   };
 
   public query ({ caller }) func getAllCommunityPosts() : async [CommunityPost] {
@@ -435,7 +421,7 @@ actor {
       timestamp = now;
       likes = 0;
       comments = 0;
-      status = #pending;
+      status = #approved;
       reports = 0;
       deityTag;
       image;
@@ -447,6 +433,9 @@ actor {
   };
 
   public shared ({ caller }) func likeCommunityPost(postId : Nat) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can like posts");
+    };
     switch (communityPosts.get(postId)) {
       case (?post) {
         if (post.status != #approved) {
@@ -461,36 +450,15 @@ actor {
   };
 
   public shared ({ caller }) func reportCommunityPost(postId : Nat) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can report posts");
+    };
     switch (communityPosts.get(postId)) {
       case (?post) {
         if (post.status != #approved) {
           Runtime.trap("Cannot report a post that is not approved");
         };
         let updated = { post with reports = post.reports + 1 };
-        communityPosts.add(postId, updated);
-        true;
-      };
-      case (null) { false };
-    };
-  };
-
-  public shared ({ caller }) func approveCommunityPost(postId : Nat) : async Bool {
-    requireAdmin(caller);
-    switch (communityPosts.get(postId)) {
-      case (?post) {
-        let updated = { post with status = #approved };
-        communityPosts.add(postId, updated);
-        true;
-      };
-      case (null) { false };
-    };
-  };
-
-  public shared ({ caller }) func rejectCommunityPost(postId : Nat) : async Bool {
-    requireAdmin(caller);
-    switch (communityPosts.get(postId)) {
-      case (?post) {
-        let updated = { post with status = #rejected };
         communityPosts.add(postId, updated);
         true;
       };
@@ -521,26 +489,11 @@ actor {
       englishText;
       tags;
       createdAt = Time.now();
-      status = #pending;
     };
 
     kathayen.add(kathaCounter, katha);
     kathaCounter += 1;
     katha.id;
-  };
-
-  public shared ({ caller }) func approveKatha(kathaId : Nat) : async Bool {
-    requireAdmin(caller);
-    switch (kathayen.get(kathaId)) {
-      case (?katha) {
-        let updatedKatha = { katha with status = #approved };
-        kathayen.add(kathaId, updatedKatha);
-        true;
-      };
-      case (null) {
-        false;
-      };
-    };
   };
 
   public query func getKatha(id : Nat) : async ?Katha {
@@ -551,7 +504,7 @@ actor {
     let kathas = List.empty<Katha>();
 
     for ((_, katha) in kathayen.entries()) {
-      if (katha.category == category and katha.status == #approved) {
+      if (katha.category == category) {
         kathas.add(katha);
       };
     };
@@ -563,7 +516,7 @@ actor {
     let results = List.empty<Katha>();
 
     for ((_, katha) in kathayen.entries()) {
-      if (katha.title.contains(#text search) and katha.status == #approved) {
+      if (katha.title.contains(#text search)) {
         results.add(katha);
       };
     };
@@ -575,7 +528,7 @@ actor {
     let results = List.empty<Katha>();
 
     for ((_, katha) in kathayen.entries()) {
-      if (katha.deity.contains(#text deity) and katha.status == #approved) {
+      if (katha.deity.contains(#text deity)) {
         results.add(katha);
       };
     };
@@ -585,11 +538,7 @@ actor {
 
   public query func getAllKathayen() : async [Katha] {
     let allKathaValues = kathayen.values().toArray();
-    allKathaValues.filter(
-      func(katha) {
-        katha.status == #approved;
-      }
-    );
+    allKathaValues;
   };
 
   public query func getKrishnaLeelaStory() : async KrishnaLeela {

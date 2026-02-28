@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useGetJapStats, useIsCallerAdmin, useGetCallerUserProfile } from '../hooks/useQueries';
+import { useGetJapStats, useIsAdmin, useGetCallerUserProfile } from '../hooks/useQueries';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import VratModeToggle from '../components/VratModeToggle';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Profile() {
   const { data: japStats, isLoading: statsLoading } = useGetJapStats();
-  const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
+  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
   const { identity } = useInternetIdentity();
   const [vratMode, setVratMode] = useState(false);
@@ -44,7 +44,7 @@ export default function Profile() {
         {isAuthenticated && userProfile?.selectedMantra && (
           <div className="mt-2 inline-block bg-white/10 border border-white/20 rounded-full px-3 py-1">
             <p className="text-amber-100 text-xs">
-              🕉️ {getMantraLabel(userProfile.selectedMantra)}
+              🕉️ {getMantraLabel(String(userProfile.selectedMantra))}
             </p>
           </div>
         )}

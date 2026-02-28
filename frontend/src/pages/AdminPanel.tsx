@@ -1,471 +1,581 @@
-import { useState } from 'react';
-import {
-  useIsCallerAdmin,
-  useClaimAdmin,
-  useListApprovals,
-  useSetApproval,
-  useAssignUserRole,
-  useGetAllCommunityPosts,
-  useApproveCommunityPost,
-  useRejectCommunityPost,
-  useDeleteCommunityPost,
-  useAddDharmaQuote,
-  useAddVrat,
-  useGetAllVrats,
-  useDeleteVrat,
-  useAddBhajan,
-  useGetAllBhajans,
-  useDeleteBhajan,
-} from '../hooks/useQueries';
+import React, { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { UserRole, Variant_hindi_english } from '../backend';
+import { useIsAdmin, useClaimAdmin, useListApprovals, useSetApproval, useGetApprovedCommunityPosts, useDeleteCommunityPost, useGetAllVrats, useAddVrat, useDeleteVrat, useGetDharmaQuote, useAddDharmaQuote, useDeleteDharmaQuote, useAddKatha } from '../hooks/useQueries';
+import { ApprovalStatus, KathaCategory } from '../backend';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Shield, Users, MessageSquare, BookOpen, Calendar, Quote, Plus, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AdminPanel() {
   const { identity } = useInternetIdentity();
-  const { data: isAdmin, isLoading: adminLoading, isFetched: adminFetched } = useIsCallerAdmin();
-  const { data: approvals } = useListApprovals();
-  const { data: allPosts } = useGetAllCommunityPosts();
-  const { data: allVrats } = useGetAllVrats();
-  const { data: allBhajans } = useGetAllBhajans();
-
-  const setApproval = useSetApproval();
-  const assignRole = useAssignUserRole();
-  const approveCommunityPost = useApproveCommunityPost();
-  const rejectCommunityPost = useRejectCommunityPost();
-  const deleteCommunityPost = useDeleteCommunityPost();
-  const addDharmaQuote = useAddDharmaQuote();
-  const addVrat = useAddVrat();
-  const deleteVrat = useDeleteVrat();
-  const addBhajan = useAddBhajan();
-  const deleteBhajan = useDeleteBhajan();
-  const claimAdmin = useClaimAdmin();
-
-  // Dharma Quote form
-  const [quoteHindi, setQuoteHindi] = useState('');
-  const [quoteEnglish, setQuoteEnglish] = useState('');
-  const [quoteAuthor, setQuoteAuthor] = useState('');
-
-  // Vrat form
-  const [vratName, setVratName] = useState('');
-  const [vratDate, setVratDate] = useState('');
-  const [vratDesc, setVratDesc] = useState('');
-
-  // Bhajan form
-  const [bhajanTitle, setBhajanTitle] = useState('');
-  const [bhajanLyrics, setBhajanLyrics] = useState('');
-
-  // Claim admin form
-  const [adminToken, setAdminToken] = useState('');
-  const [claimError, setClaimError] = useState('');
-  const [claimSuccess, setClaimSuccess] = useState(false);
-
+  const navigate = useNavigate();
   const isAuthenticated = !!identity;
 
-  // Show loading while actor/identity is initializing
-  if (adminLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-spin">🕉️</div>
-          <p className="text-muted-foreground">Admin status जाँच रहे हैं...</p>
-        </div>
-      </div>
-    );
-  }
+  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+  const claimAdmin = useClaimAdmin();
 
-  // Not logged in
+  const [claimName, setClaimName] = useState('');
+  const [claimToken, setClaimToken] = useState('');
+  const [claimError, setClaimError] = useState('');
+
+  const handleClaimAdmin = async () => {
+    if (!claimName.trim() || !claimToken.trim()) {
+      setClaimError('नाम और token दोनों जरूरी हैं');
+      return;
+    }
+    setClaimError('');
+    try {
+      await claimAdmin.mutateAsync({ name: claimName, token: claimToken });
+      toast.success('Admin access मिल गया! 🙏');
+    } catch (e: any) {
+      setClaimError(e?.message || 'Invalid token');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="text-center bg-card border border-border rounded-2xl p-8 max-w-sm">
-          <p className="text-5xl mb-4">🔐</p>
-          <h2 className="text-foreground font-bold text-xl mb-2">Login आवश्यक है</h2>
-          <p className="text-muted-foreground text-sm">Admin Panel देखने के लिए पहले Login करें।</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <Shield className="w-16 h-16 text-primary mx-auto" />
+          <h2 className="text-2xl font-bold text-foreground">Admin Panel</h2>
+          <p className="text-muted-foreground">Login करें Admin Panel access करने के लिए</p>
+          <Button onClick={() => navigate({ to: '/' })}>Home पर जाएं</Button>
         </div>
       </div>
     );
   }
 
-  // Logged in but not admin — show claim admin form
-  if (adminFetched && !isAdmin) {
-    const handleClaimAdmin = async () => {
-      if (!adminToken.trim()) {
-        setClaimError('कृपया Admin Token दर्ज करें।');
-        return;
-      }
-      setClaimError('');
-      try {
-        await claimAdmin.mutateAsync(adminToken.trim());
-        setClaimSuccess(true);
-        setAdminToken('');
-      } catch (err: any) {
-        const msg = err?.message || String(err);
-        if (msg.includes('already been initialized')) {
-          setClaimError('Admin पहले से set हो चुका है। आप Admin नहीं बन सकते।');
-        } else if (msg.includes('Invalid token') || msg.includes('Unauthorized')) {
-          setClaimError('गलत Token! सही Admin Token दर्ज करें।');
-        } else {
-          setClaimError('कुछ गलत हुआ: ' + msg);
-        }
-      }
-    };
-
-    if (claimSuccess) {
-      return (
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="text-center bg-card border border-green-500/30 rounded-2xl p-8 max-w-sm">
-            <p className="text-5xl mb-4">✅</p>
-            <h2 className="text-foreground font-bold text-xl mb-2">Admin बन गए!</h2>
-            <p className="text-muted-foreground text-sm mb-4">आप अब Admin हैं। Page refresh करें।</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-gradient-to-r from-saffron-600 to-gold-500 text-white py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200"
-            >
-              🔄 Page Refresh करें
-            </button>
-          </div>
-        </div>
-      );
-    }
-
+  if (adminLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full">
-          <div className="text-center mb-6">
-            <p className="text-5xl mb-3">👑</p>
-            <h2 className="text-foreground font-bold text-xl mb-1">Admin Access</h2>
-            <p className="text-muted-foreground text-sm">
-              Admin बनने के लिए Secret Token दर्ज करें।
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-foreground text-sm font-medium mb-1 block">
-                Admin Token
-              </label>
-              <input
-                type="password"
-                value={adminToken}
-                onChange={(e) => {
-                  setAdminToken(e.target.value);
-                  setClaimError('');
-                }}
-                placeholder="Secret token यहाँ दर्ज करें..."
-                className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
-                onKeyDown={(e) => e.key === 'Enter' && handleClaimAdmin()}
-              />
-            </div>
-
-            {claimError && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
-                <p className="text-red-400 text-xs">{claimError}</p>
-              </div>
-            )}
-
-            <button
-              onClick={handleClaimAdmin}
-              disabled={claimAdmin.isPending}
-              className="w-full bg-gradient-to-r from-saffron-600 to-gold-500 text-white py-2.5 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {claimAdmin.isPending ? (
-                <>
-                  <span className="animate-spin text-base">🕉️</span>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                '👑 Admin बनें'
-              )}
-            </button>
-          </div>
-
-          <div className="mt-4 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-            <p className="text-amber-400 text-xs text-center">
-              ⚠️ यह केवल पहली बार काम करता है। Token गलत होने पर access नहीं मिलेगा।
-            </p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Not yet fetched (edge case)
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-spin">🕉️</div>
-          <p className="text-muted-foreground">लोड हो रहा है...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full space-y-6">
+          <div className="text-center">
+            <Shield className="w-12 h-12 text-primary mx-auto mb-3" />
+            <h2 className="text-xl font-bold text-foreground">Admin Access Claim करें</h2>
+            <p className="text-muted-foreground text-sm mt-1">Admin token enter करें</p>
+          </div>
+          <div className="space-y-3">
+            <Input
+              placeholder="आपका नाम"
+              value={claimName}
+              onChange={e => setClaimName(e.target.value)}
+              className="bg-background"
+            />
+            <Input
+              type="password"
+              placeholder="Admin Token"
+              value={claimToken}
+              onChange={e => setClaimToken(e.target.value)}
+              className="bg-background"
+            />
+            {claimError && <p className="text-destructive text-sm">{claimError}</p>}
+            <Button
+              className="w-full"
+              onClick={handleClaimAdmin}
+              disabled={claimAdmin.isPending}
+            >
+              {claimAdmin.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Admin बनें
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleAddQuote = async () => {
-    if (!quoteHindi || !quoteEnglish) return;
-    const id = BigInt(Date.now());
-    await addDharmaQuote.mutateAsync({ id, hindiText: quoteHindi, englishText: quoteEnglish, author: quoteAuthor });
-    setQuoteHindi(''); setQuoteEnglish(''); setQuoteAuthor('');
-  };
-
-  const handleAddVrat = async () => {
-    if (!vratName || !vratDate) return;
-    await addVrat.mutateAsync({ name: vratName, date: vratDate, description: vratDesc });
-    setVratName(''); setVratDate(''); setVratDesc('');
-  };
-
-  const handleAddBhajan = async () => {
-    if (!bhajanTitle || !bhajanLyrics) return;
-    await addBhajan.mutateAsync({ title: bhajanTitle, lyrics: bhajanLyrics, language: Variant_hindi_english.hindi });
-    setBhajanTitle(''); setBhajanLyrics('');
-  };
-
   return (
-    <div className="animate-slide-up">
-      <div className="bg-gradient-to-b from-gray-900 to-background px-4 pt-6 pb-4 text-center">
-        <h1 className="text-2xl font-bold text-white mb-1">⚙️ Admin Panel</h1>
-        <p className="text-gray-300 text-sm">सामग्री और उपयोगकर्ता प्रबंधन</p>
-        <div className="mt-2 inline-block bg-gold-500/20 border border-gold-500/30 rounded-full px-3 py-1">
-          <p className="text-gold-400 text-xs">👑 Admin Access</p>
+    <div className="min-h-screen bg-background pb-24">
+      <div className="bg-gradient-to-r from-amber-700 to-orange-600 p-6 text-white">
+        <div className="flex items-center gap-3">
+          <Shield className="w-8 h-8" />
+          <div>
+            <h1 className="text-2xl font-bold">Admin Panel</h1>
+            <p className="text-amber-100 text-sm">Manage your devotional app</p>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 pb-8">
-        <Tabs defaultValue="users">
-          <TabsList className="w-full grid grid-cols-4 mb-4 bg-muted rounded-xl">
-            <TabsTrigger value="users" className="text-xs rounded-lg">👥 Users</TabsTrigger>
-            <TabsTrigger value="posts" className="text-xs rounded-lg">📝 Posts</TabsTrigger>
-            <TabsTrigger value="content" className="text-xs rounded-lg">📚 Content</TabsTrigger>
-            <TabsTrigger value="vrats" className="text-xs rounded-lg">🙏 Vrats</TabsTrigger>
+      <div className="p-4">
+        <Tabs defaultValue="kathayen">
+          <TabsList className="grid grid-cols-5 w-full mb-6 bg-muted">
+            <TabsTrigger value="kathayen" className="text-xs">
+              <BookOpen className="w-3 h-3 mr-1" />कथाएं
+            </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs">
+              <Users className="w-3 h-3 mr-1" />Users
+            </TabsTrigger>
+            <TabsTrigger value="posts" className="text-xs">
+              <MessageSquare className="w-3 h-3 mr-1" />Posts
+            </TabsTrigger>
+            <TabsTrigger value="vrats" className="text-xs">
+              <Calendar className="w-3 h-3 mr-1" />Vrats
+            </TabsTrigger>
+            <TabsTrigger value="quotes" className="text-xs">
+              <Quote className="w-3 h-3 mr-1" />Quotes
+            </TabsTrigger>
           </TabsList>
 
-          {/* Users Tab */}
+          <TabsContent value="kathayen">
+            <KathayenTab />
+          </TabsContent>
+
           <TabsContent value="users">
-            <div className="space-y-3">
-              <h2 className="text-foreground font-bold">उपयोगकर्ता अनुमोदन</h2>
-              {approvals && approvals.length > 0 ? (
-                approvals.map((approval) => (
-                  <div key={approval.principal.toString()} className="bg-card border border-border rounded-2xl p-4">
-                    <p className="text-foreground text-xs font-mono mb-2 truncate">{approval.principal.toString()}</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => setApproval.mutate({ principal: approval.principal as any, status: 'approved' })}
-                        disabled={setApproval.isPending}
-                        className="px-3 py-1 bg-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-xs hover:bg-green-600/30 transition-all hover:scale-105"
-                      >
-                        ✅ Approve
-                      </button>
-                      <button
-                        onClick={() => setApproval.mutate({ principal: approval.principal as any, status: 'rejected' })}
-                        disabled={setApproval.isPending}
-                        className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg text-xs hover:bg-red-600/30 transition-all hover:scale-105"
-                      >
-                        ❌ Reject
-                      </button>
-                      <button
-                        onClick={() => assignRole.mutate({ principal: approval.principal as any, role: UserRole.admin })}
-                        disabled={assignRole.isPending}
-                        className="px-3 py-1 bg-gold-500/20 text-gold-400 border border-gold-500/30 rounded-lg text-xs hover:bg-gold-500/30 transition-all hover:scale-105"
-                      >
-                        👑 Make Admin
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-8">कोई अनुरोध नहीं है</p>
-              )}
-            </div>
+            <UsersTab />
           </TabsContent>
 
-          {/* Posts Tab */}
           <TabsContent value="posts">
-            <div className="space-y-3">
-              <h2 className="text-foreground font-bold">Community Posts</h2>
-              {allPosts && allPosts.length > 0 ? (
-                allPosts.map((post) => (
-                  <div key={Number(post.id)} className="bg-card border border-border rounded-2xl p-4">
-                    <p className="text-foreground text-sm mb-2 line-clamp-3">{post.content}</p>
-                    <p className="text-muted-foreground text-xs mb-3">
-                      स्थिति: <span className={`font-medium ${
-                        post.status === 'approved' ? 'text-green-400' :
-                        post.status === 'rejected' ? 'text-red-400' : 'text-amber-400'
-                      }`}>{String(post.status)}</span>
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => approveCommunityPost.mutate(post.id)}
-                        disabled={approveCommunityPost.isPending}
-                        className="px-3 py-1 bg-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-xs hover:bg-green-600/30 transition-all hover:scale-105"
-                      >
-                        ✅ Approve
-                      </button>
-                      <button
-                        onClick={() => rejectCommunityPost.mutate(post.id)}
-                        disabled={rejectCommunityPost.isPending}
-                        className="px-3 py-1 bg-amber-600/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs hover:bg-amber-600/30 transition-all hover:scale-105"
-                      >
-                        ⚠️ Reject
-                      </button>
-                      <button
-                        onClick={() => deleteCommunityPost.mutate(post.id)}
-                        disabled={deleteCommunityPost.isPending}
-                        className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg text-xs hover:bg-red-600/30 transition-all hover:scale-105"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-8">कोई पोस्ट नहीं है</p>
-              )}
-            </div>
+            <PostsTab />
           </TabsContent>
 
-          {/* Content Tab */}
-          <TabsContent value="content">
-            <div className="space-y-6">
-              {/* Add Dharma Quote */}
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <h3 className="text-foreground font-bold mb-3">📜 धर्म उद्धरण जोड़ें</h3>
-                <div className="space-y-2">
-                  <textarea
-                    value={quoteHindi}
-                    onChange={(e) => setQuoteHindi(e.target.value)}
-                    placeholder="हिंदी उद्धरण..."
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <textarea
-                    value={quoteEnglish}
-                    onChange={(e) => setQuoteEnglish(e.target.value)}
-                    placeholder="English quote..."
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <input
-                    value={quoteAuthor}
-                    onChange={(e) => setQuoteAuthor(e.target.value)}
-                    placeholder="लेखक / Author"
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <button
-                    onClick={handleAddQuote}
-                    disabled={addDharmaQuote.isPending}
-                    className="w-full bg-gradient-to-r from-saffron-600 to-gold-500 text-white py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 disabled:opacity-50"
-                  >
-                    {addDharmaQuote.isPending ? '...' : '+ उद्धरण जोड़ें'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Add Bhajan */}
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <h3 className="text-foreground font-bold mb-3">🎵 भजन जोड़ें</h3>
-                <div className="space-y-2">
-                  <input
-                    value={bhajanTitle}
-                    onChange={(e) => setBhajanTitle(e.target.value)}
-                    placeholder="भजन का नाम"
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <textarea
-                    value={bhajanLyrics}
-                    onChange={(e) => setBhajanLyrics(e.target.value)}
-                    placeholder="भजन के बोल..."
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <button
-                    onClick={handleAddBhajan}
-                    disabled={addBhajan.isPending}
-                    className="w-full bg-gradient-to-r from-pink-700 to-pink-500 text-white py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 disabled:opacity-50"
-                  >
-                    {addBhajan.isPending ? '...' : '+ भजन जोड़ें'}
-                  </button>
-                </div>
-
-                {/* Bhajan List */}
-                {allBhajans && allBhajans.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-muted-foreground text-xs">Backend भजन:</p>
-                    {allBhajans.map((b) => (
-                      <div key={Number(b.id)} className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2">
-                        <p className="text-foreground text-sm">{b.title}</p>
-                        <button
-                          onClick={() => deleteBhajan.mutate(b.id)}
-                          disabled={deleteBhajan.isPending}
-                          className="text-red-400 text-xs hover:text-red-300 transition-colors"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Vrats Tab */}
           <TabsContent value="vrats">
-            <div className="space-y-4">
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <h3 className="text-foreground font-bold mb-3">🙏 व्रत जोड़ें</h3>
-                <div className="space-y-2">
-                  <input
-                    value={vratName}
-                    onChange={(e) => setVratName(e.target.value)}
-                    placeholder="व्रत का नाम"
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <input
-                    type="date"
-                    value={vratDate}
-                    onChange={(e) => setVratDate(e.target.value)}
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <textarea
-                    value={vratDesc}
-                    onChange={(e) => setVratDesc(e.target.value)}
-                    placeholder="व्रत का विवरण..."
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-foreground text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  />
-                  <button
-                    onClick={handleAddVrat}
-                    disabled={addVrat.isPending}
-                    className="w-full bg-gradient-to-r from-amber-700 to-amber-500 text-white py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 disabled:opacity-50"
-                  >
-                    {addVrat.isPending ? '...' : '+ व्रत जोड़ें'}
-                  </button>
-                </div>
-              </div>
+            <VratsTab />
+          </TabsContent>
 
-              {/* Vrat List */}
-              {allVrats && allVrats.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-foreground font-bold">Backend व्रत सूची</h3>
-                  {allVrats.map((vrat) => (
-                    <div key={Number(vrat.id)} className="bg-card border border-border rounded-2xl p-4 flex items-start justify-between">
-                      <div>
-                        <p className="text-foreground font-medium text-sm">{vrat.name}</p>
-                        <p className="text-muted-foreground text-xs">{vrat.date}</p>
-                        <p className="text-muted-foreground text-xs mt-1">{vrat.description}</p>
-                      </div>
-                      <button
-                        onClick={() => deleteVrat.mutate(vrat.id)}
-                        disabled={deleteVrat.isPending}
-                        className="text-red-400 text-sm hover:text-red-300 transition-colors ml-2"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <TabsContent value="quotes">
+            <QuotesTab />
           </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+// ─── Kathayen Tab ─────────────────────────────────────────────────────────────
+
+function KathayenTab() {
+  const addKatha = useAddKatha();
+  const [form, setForm] = useState({
+    title: '',
+    category: 'puranik' as 'puranik' | 'vrat',
+    deity: '',
+    hindiText: '',
+    englishText: '',
+    tags: '',
+  });
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.deity.trim() || !form.hindiText.trim()) {
+      toast.error('Title, Deity और Hindi Text जरूरी हैं');
+      return;
+    }
+    try {
+      const tags = form.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const category = form.category === 'puranik' ? KathaCategory.puranik : KathaCategory.vrat;
+      await addKatha.mutateAsync({
+        title: form.title,
+        category,
+        deity: form.deity,
+        hindiText: form.hindiText,
+        englishText: form.englishText,
+        tags,
+      });
+      setSuccess(true);
+      setForm({ title: '', category: 'puranik', deity: '', hindiText: '', englishText: '', tags: '' });
+      toast.success('कथा सफलतापूर्वक add हो गई! 🙏');
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (e: any) {
+      toast.error(e?.message || 'कथा add करने में error आई');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Plus className="w-5 h-5 text-primary" />
+          <h3 className="font-bold text-foreground text-lg">नई कथा Add करें</h3>
+        </div>
+        <p className="text-muted-foreground text-sm mb-4">
+          यहाँ add की गई कथा सीधे Kathayen section में दिखेगी और TTS narration automatically available होगा।
+        </p>
+
+        {success && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span className="text-green-600 text-sm font-medium">कथा Kathayen section में add हो गई!</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">कथा का शीर्षक *</label>
+            <Input
+              placeholder="जैसे: श्री राम कथा, सत्यनारायण व्रत कथा..."
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              className="bg-background"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Category *</label>
+              <select
+                value={form.category}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value as 'puranik' | 'vrat' }))}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              >
+                <option value="puranik">पौराणिक</option>
+                <option value="vrat">व्रत कथा</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">देवता *</label>
+              <Input
+                placeholder="जैसे: Shiva, Vishnu, Durga..."
+                value={form.deity}
+                onChange={e => setForm(f => ({ ...f, deity: e.target.value }))}
+                className="bg-background"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">हिंदी पाठ * (TTS इसी से बोलेगा)</label>
+            <Textarea
+              placeholder="यहाँ कथा का हिंदी पाठ लिखें..."
+              value={form.hindiText}
+              onChange={e => setForm(f => ({ ...f, hindiText: e.target.value }))}
+              className="bg-background min-h-[150px]"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">English Text (वैकल्पिक)</label>
+            <Textarea
+              placeholder="English translation (optional)..."
+              value={form.englishText}
+              onChange={e => setForm(f => ({ ...f, englishText: e.target.value }))}
+              className="bg-background min-h-[100px]"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">Tags (comma separated)</label>
+            <Input
+              placeholder="जैसे: shiva, parvati, kailash"
+              value={form.tags}
+              onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
+              className="bg-background"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full bg-gradient-to-r from-amber-600 to-orange-500 text-white"
+            disabled={addKatha.isPending}
+          >
+            {addKatha.isPending ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" />कथा add हो रही है...</>
+            ) : (
+              <><Plus className="w-4 h-4 mr-2" />कथा Add करें (Kathayen में सीधे दिखेगी)</>
+            )}
+          </Button>
+        </form>
+      </div>
+
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+        <h4 className="font-semibold text-amber-700 dark:text-amber-400 mb-2">ℹ️ TTS के बारे में</h4>
+        <p className="text-sm text-muted-foreground">
+          हर कथा में automatically Text-to-Speech (TTS) narration available होता है। 
+          Users कथा detail page पर जाकर ▶️ बटन दबाकर कथा सुन सकते हैं। 
+          Hindi text के लिए Hindi voice automatically select होती है।
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+
+function UsersTab() {
+  const { data: approvals, isLoading } = useListApprovals();
+  const setApproval = useSetApproval();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-bold text-foreground text-lg">User Management</h3>
+      {!approvals || approvals.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <Users className="w-12 h-12 mx-auto mb-3 opacity-40" />
+          <p>कोई user नहीं मिला</p>
+        </div>
+      ) : (
+        approvals.map((approval) => (
+          <div key={approval.principal.toString()} className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-mono text-muted-foreground truncate max-w-[180px]">
+                  {approval.principal.toString().slice(0, 20)}...
+                </p>
+                <Badge
+                  variant={approval.status === ApprovalStatus.approved ? 'default' : 'secondary'}
+                  className="mt-1"
+                >
+                  {approval.status}
+                </Badge>
+              </div>
+              <div className="flex gap-2">
+                {approval.status !== ApprovalStatus.approved && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-green-600 border-green-600"
+                    onClick={() => setApproval.mutate({ user: approval.principal, status: ApprovalStatus.approved })}
+                    disabled={setApproval.isPending}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                  </Button>
+                )}
+                {approval.status !== ApprovalStatus.rejected && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive border-destructive"
+                    onClick={() => setApproval.mutate({ user: approval.principal, status: ApprovalStatus.rejected })}
+                    disabled={setApproval.isPending}
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ─── Posts Tab ────────────────────────────────────────────────────────────────
+
+function PostsTab() {
+  const { data: posts, isLoading } = useGetApprovedCommunityPosts();
+  const deletePost = useDeleteCommunityPost();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-bold text-foreground text-lg">Community Posts ({posts?.length ?? 0})</h3>
+      {!posts || posts.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-40" />
+          <p>कोई post नहीं मिली</p>
+        </div>
+      ) : (
+        posts.map((post) => (
+          <div key={post.id.toString()} className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-foreground line-clamp-2">{post.content}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  👍 {post.likes.toString()} • 🚩 {post.reports.toString()}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive border-destructive shrink-0"
+                onClick={() => deletePost.mutate(post.id)}
+                disabled={deletePost.isPending}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ─── Vrats Tab ────────────────────────────────────────────────────────────────
+
+function VratsTab() {
+  const { data: vrats, isLoading } = useGetAllVrats();
+  const addVrat = useAddVrat();
+  const deleteVrat = useDeleteVrat();
+  const [form, setForm] = useState({ name: '', date: '', description: '' });
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.date.trim()) {
+      toast.error('नाम और तारीख जरूरी हैं');
+      return;
+    }
+    try {
+      await addVrat.mutateAsync(form);
+      setForm({ name: '', date: '', description: '' });
+      toast.success('Vrat add हो गया!');
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-4">
+        <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
+          <Plus className="w-4 h-4" />नया Vrat Add करें
+        </h3>
+        <form onSubmit={handleAdd} className="space-y-3">
+          <Input
+            placeholder="Vrat का नाम"
+            value={form.name}
+            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+            className="bg-background"
+          />
+          <Input
+            type="date"
+            value={form.date}
+            onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+            className="bg-background"
+          />
+          <Textarea
+            placeholder="विवरण (वैकल्पिक)"
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            className="bg-background"
+          />
+          <Button type="submit" className="w-full" disabled={addVrat.isPending}>
+            {addVrat.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Add Vrat
+          </Button>
+        </form>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-bold text-foreground">Vrats ({vrats?.length ?? 0})</h3>
+        {isLoading ? (
+          <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+        ) : vrats?.length === 0 ? (
+          <p className="text-muted-foreground text-center py-4">कोई vrat नहीं मिला</p>
+        ) : (
+          vrats?.map(vrat => (
+            <div key={vrat.id.toString()} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground text-sm">{vrat.name}</p>
+                <p className="text-xs text-muted-foreground">{vrat.date}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive border-destructive"
+                onClick={() => deleteVrat.mutate(vrat.id)}
+                disabled={deleteVrat.isPending}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Quotes Tab ───────────────────────────────────────────────────────────────
+
+function QuotesTab() {
+  const { data: quote } = useGetDharmaQuote();
+  const addQuote = useAddDharmaQuote();
+  const deleteQuote = useDeleteDharmaQuote();
+  const [form, setForm] = useState({ englishText: '', hindiText: '', author: '' });
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.englishText.trim() && !form.hindiText.trim()) {
+      toast.error('कम से कम एक text जरूरी है');
+      return;
+    }
+    try {
+      const id = BigInt(Date.now());
+      await addQuote.mutateAsync({ id, ...form });
+      setForm({ englishText: '', hindiText: '', author: '' });
+      toast.success('Quote add हो गया!');
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-4">
+        <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
+          <Plus className="w-4 h-4" />नया Dharma Quote Add करें
+        </h3>
+        <form onSubmit={handleAdd} className="space-y-3">
+          <Textarea
+            placeholder="Hindi quote..."
+            value={form.hindiText}
+            onChange={e => setForm(f => ({ ...f, hindiText: e.target.value }))}
+            className="bg-background"
+          />
+          <Textarea
+            placeholder="English quote..."
+            value={form.englishText}
+            onChange={e => setForm(f => ({ ...f, englishText: e.target.value }))}
+            className="bg-background"
+          />
+          <Input
+            placeholder="Author (जैसे: Bhagavad Gita)"
+            value={form.author}
+            onChange={e => setForm(f => ({ ...f, author: e.target.value }))}
+            className="bg-background"
+          />
+          <Button type="submit" className="w-full" disabled={addQuote.isPending}>
+            {addQuote.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Add Quote
+          </Button>
+        </form>
+      </div>
+
+      {quote && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-sm font-medium text-foreground mb-1">आज का Quote:</p>
+          <p className="text-sm text-muted-foreground italic">"{quote.hindiText || quote.englishText}"</p>
+          <p className="text-xs text-muted-foreground mt-1">— {quote.author}</p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive border-destructive mt-2"
+            onClick={() => deleteQuote.mutate(quote.id)}
+            disabled={deleteQuote.isPending}
+          >
+            <Trash2 className="w-4 h-4 mr-1" />Delete
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

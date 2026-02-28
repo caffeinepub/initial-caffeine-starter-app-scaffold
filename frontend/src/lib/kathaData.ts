@@ -1,9 +1,9 @@
 import { Katha, KathaCategory } from '../backend';
 
-// KathaApprovalStatus is not exported from the backend module, so we use the string value directly
-const APPROVED_STATUS = 'approved' as Katha['status'];
+// Static katha data — the backend Katha type has no 'status' field (removed in migration)
+type StaticKatha = Omit<Katha, 'status'>;
 
-export const staticKathaData: Katha[] = [
+export const staticKathaData: StaticKatha[] = [
   // ── Puranik ──────────────────────────────────────────────────────────────────
   {
     id: 1001n,
@@ -50,7 +50,6 @@ export const staticKathaData: Katha[] = [
     englishText: "The complete epic of Ramayan containing all major chapters and divine stories of Lord Ram's life.",
     tags: ["Ramayan", "Ram", "Hindu", "Puranik", "Story"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 1002n,
@@ -91,7 +90,6 @@ export const staticKathaData: Katha[] = [
     englishText: "The epic saga of Mahabharat including all major parvas, divine stories, Dharma teachings and the great Kurukshetra war.",
     tags: ["Mahabharat", "Krishna", "Hindu", "Puranik", "Epic"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
 
   // ── Vrat Kathayen ──────────────────────────────────────────────────────────────
@@ -125,7 +123,6 @@ export const staticKathaData: Katha[] = [
     englishText: "The complete story and procedure for observing Ekadashi fast dedicated to Lord Vishnu.",
     tags: ["Ekadashi", "Vishnu", "Vrat", "Fast", "Hindu"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 2002n,
@@ -151,7 +148,6 @@ export const staticKathaData: Katha[] = [
     englishText: "Complete story and rituals of observing Solah Somvar (16 Mondays) fast dedicated to Lord Shiva.",
     tags: ["Somvar", "Shiva", "Vrat", "Fast", "Hindu", "SolahSomvar"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 2003n,
@@ -179,7 +175,6 @@ export const staticKathaData: Katha[] = [
     englishText: "Complete story and rituals of Mangalwar (Tuesday) fast dedicated to Lord Hanuman for removing obstacles and granting strength.",
     tags: ["Mangalwar", "Hanuman", "Vrat", "Fast", "Hindu", "Tuesday"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 2004n,
@@ -207,7 +202,6 @@ export const staticKathaData: Katha[] = [
     englishText: "Complete story and rituals of Shukravar (Friday) fast dedicated to Santoshi Mata for happiness and prosperity.",
     tags: ["Shukravar", "SantoshiMata", "Vrat", "Fast", "Hindu", "Friday"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 2005n,
@@ -237,7 +231,6 @@ export const staticKathaData: Katha[] = [
     englishText: "The complete Satyanarayan Vrat Katha with all five chapters, dedicated to Lord Vishnu for blessings and prosperity.",
     tags: ["Satyanarayan", "Vishnu", "Vrat", "Puja", "Hindu"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 2006n,
@@ -253,130 +246,112 @@ export const staticKathaData: Katha[] = [
 
 ॥ व्याध की कथा ॥
 
-एक बार एक व्याध (शिकारी) जंगल में शिकार करने गया। दिनभर भटकने पर भी कोई शिकार नहीं मिला। रात होने पर वह एक बेल के पेड़ पर चढ़ गया। उस पेड़ के नीचे एक शिवलिंग था। रात भर जागते हुए उसने बेल के पत्ते तोड़े जो शिवलिंग पर गिरते रहे। अनजाने में ही उसने शिवरात्रि का व्रत और पूजन कर लिया।
-
-प्रातःकाल यमदूत उसे लेने आए। शिव के गणों ने उन्हें रोका। भगवान शिव ने कहा — "इस व्याध ने अनजाने में ही मेरी पूजा की है। यह मेरा भक्त है।" व्याध को मोक्ष की प्राप्ति हुई।
+एक बार एक व्याध (शिकारी) जंगल में शिकार करने गया। दिनभर भटकने पर भी कोई शिकार नहीं मिला। रात होने पर वह एक बेल के पेड़ पर चढ़ गया। रात भर जागते हुए उसने बेलपत्र तोड़-तोड़कर नीचे फेंके। संयोग से नीचे एक शिवलिंग था। अनजाने में उसका शिवरात्रि व्रत और बेलपत्र अर्पण हो गया। मृत्यु के बाद यमदूत उसे लेने आए तो शिवदूतों ने उसे बचाया।
 
 ॥ व्रत विधि ॥
 
-महाशिवरात्रि के दिन प्रातःकाल स्नान करके व्रत का संकल्प लें। चारों प्रहर में शिवलिंग का अभिषेक करें। बेलपत्र, धतूरा, भाँग, आक के फूल अर्पित करें। रात्रि जागरण करें। "ॐ नमः शिवाय" का जाप करें। प्रातःकाल व्रत खोलें।
+महाशिवरात्रि के दिन उपवास रखें। चार प्रहर में शिवलिंग का अभिषेक करें। प्रथम प्रहर — दूध से, द्वितीय प्रहर — दही से, तृतीय प्रहर — घी से, चतुर्थ प्रहर — शहद से। बेलपत्र, धतूरा, भाँग अर्पित करें। "ॐ नमः शिवाय" का जाप करें। रात्रि जागरण करें।
 
 ॥ ॐ नमः शिवाय ॥`,
-    englishText: "The complete Mahashivratri Vrat Katha explaining the significance of the night and the hunter's story.",
-    tags: ["Mahashivratri", "Shiva", "Vrat", "Fast", "Hindu"],
+    englishText: "Complete story and rituals of Mahashivratri fast dedicated to Lord Shiva, including the hunter's story and four-prahar worship.",
+    tags: ["Shivratri", "Shiva", "Vrat", "Fast", "Hindu", "Mahashivratri"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
 
   // ── Krishna Leela ──────────────────────────────────────────────────────────────
   {
     id: 3001n,
-    title: "माखन चोर लीला",
+    title: "कृष्ण जन्म लीला",
     category: KathaCategory.puranik,
     deity: "Krishna",
-    hindiText: `माखन चोर लीला
+    hindiText: `कृष्ण जन्म लीला
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-बृंदावन में यशोदा माँ के लाल कान्हा की माखन चोरी की लीला अत्यंत प्रसिद्ध है। छोटे से कृष्ण अपने सखाओं के साथ मिलकर गोपियों के घरों से माखन चुराते थे। गोपियाँ यशोदा माँ के पास शिकायत लेकर आती थीं।
+मथुरा नगरी में कंस नामक अत्याचारी राजा राज्य करता था। आकाशवाणी हुई — "कंस! तेरी बहन देवकी का आठवाँ पुत्र तेरा वध करेगा।" कंस ने देवकी और वासुदेव को कारागार में डाल दिया।
 
-यशोदा माँ कान्हा को पकड़ने की कोशिश करतीं। कान्हा कहते — "माँ! मैंने माखन नहीं चुराया।" यशोदा माँ पूछतीं — "तो फिर तेरे मुँह पर माखन कैसे लगा है?" कान्हा मुस्कुराते और कहते — "माँ! यह सब मेरे सखाओं ने लगाया है।"
-
-एक बार यशोदा माँ ने कान्हा को रस्सी से बाँधने की कोशिश की। जितनी रस्सी लाती, दो अंगुल कम पड़ती। अंत में कान्हा ने स्वयं बँधना स्वीकार किया — क्योंकि माँ की भक्ति और प्रेम ने उन्हें बाँध लिया था।
-
-यह लीला हमें सिखाती है कि भगवान को धन, वैभव या शक्ति से नहीं, बल्कि निश्छल प्रेम और भक्ति से पाया जा सकता है।
+एक-एक करके देवकी के सात पुत्रों को कंस ने मार डाला। भाद्रपद मास की कृष्ण पक्ष की अष्टमी को मध्यरात्रि में देवकी के गर्भ से श्रीकृष्ण का जन्म हुआ। उस समय सारी सृष्टि आनंदित हो उठी। कारागार के द्वार स्वयं खुल गए। वासुदेव ने नवजात कृष्ण को टोकरी में रखकर यमुना पार किया। यमुना ने मार्ग दिया। नंद बाबा के घर यशोदा माता के पास कृष्ण को रखकर वासुदेव वापस आ गए।
 
 ॥ जय श्री कृष्ण ॥`,
-    englishText: "The divine story of Krishna stealing butter (Makhan) and the love between Krishna and Mother Yashoda.",
-    tags: ["Krishna", "Makhan", "Leela", "Yashoda", "Brindavan"],
+    englishText: "The divine birth story of Lord Krishna in Mathura prison and his journey to Gokul.",
+    tags: ["Krishna", "Janmashtami", "Birth", "Mathura", "Puranik"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 3002n,
-    title: "कालिया नाग मर्दन लीला",
-    category: KathaCategory.puranik,
-    deity: "Krishna",
-    hindiText: `कालिया नाग मर्दन लीला
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-यमुना नदी में कालिया नाग रहता था। उसके विष से यमुना का जल काला और विषैला हो गया था। पशु-पक्षी और मनुष्य उस जल को पीकर मर जाते थे।
-
-एक दिन कृष्ण और उनके सखा यमुना के किनारे खेल रहे थे। उनकी गेंद यमुना में जा गिरी। कृष्ण गेंद लेने के लिए यमुना में कूद गए। कालिया नाग ने कृष्ण को अपनी कुंडलियों में जकड़ लिया।
-
-सखाओं ने यशोदा माँ और नंद बाबा को बताया। सभी व्याकुल हो गए। तभी कृष्ण ने अपना विराट रूप धारण किया और कालिया के फनों पर नृत्य करने लगे। कालिया की पत्नियों ने कृष्ण से क्षमा माँगी। कृष्ण ने कालिया को यमुना छोड़कर समुद्र में जाने का आदेश दिया।
-
-कालिया ने क्षमा माँगी और यमुना छोड़ दी। यमुना का जल फिर से शुद्ध हो गया। यह लीला हमें सिखाती है कि भगवान सदा अपने भक्तों की रक्षा करते हैं।
-
-॥ जय श्री कृष्ण ॥`,
-    englishText: "The story of Krishna subduing the serpent Kaliya and purifying the Yamuna river.",
-    tags: ["Krishna", "Kaliya", "Yamuna", "Leela", "Serpent"],
-    createdAt: 0n,
-    status: APPROVED_STATUS,
-  },
-  {
-    id: 3003n,
     title: "गोवर्धन पूजा कथा",
     category: KathaCategory.puranik,
     deity: "Krishna",
     hindiText: `गोवर्धन पूजा कथा
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-बृंदावन में प्रतिवर्ष इंद्र देव की पूजा होती थी। एक बार कृष्ण ने नंद बाबा से पूछा — "बाबा! इंद्र की पूजा क्यों करते हैं?" नंद बाबा ने कहा — "पुत्र! इंद्र वर्षा देते हैं, इसलिए।"
+एक बार गोकुल में इंद्र की पूजा की तैयारी हो रही थी। बालक कृष्ण ने नंद बाबा से पूछा — "बाबा! यह पूजा किसलिए?" नंद बाबा ने बताया — "इंद्र देव वर्षा करते हैं, इसलिए उनकी पूजा करते हैं।"
 
-कृष्ण ने कहा — "बाबा! हम गोपालक हैं। हमें गोवर्धन पर्वत की पूजा करनी चाहिए जो हमारी गायों को चारा देता है।" सभी ग्रामवासियों ने कृष्ण की बात मानी और गोवर्धन पूजा की।
+कृष्ण ने कहा — "बाबा! हम गोपालक हैं। हमारी रक्षा गोवर्धन पर्वत करता है। हमें इंद्र की नहीं, गोवर्धन की पूजा करनी चाहिए।" सभी ने कृष्ण की बात मानी और गोवर्धन पूजा की।
 
-इंद्र को क्रोध आया। उन्होंने मूसलाधार वर्षा शुरू कर दी। बृंदावन में बाढ़ आने लगी। तब कृष्ण ने गोवर्धन पर्वत को अपनी छोटी उँगली पर उठा लिया। सात दिन तक सभी ग्रामवासी उसके नीचे सुरक्षित रहे।
+इंद्र को क्रोध आया। उन्होंने मूसलाधार वर्षा शुरू कर दी। गोकुल डूबने लगा। तब कृष्ण ने अपनी छोटी उँगली पर गोवर्धन पर्वत उठा लिया। सात दिन तक सभी गोकुलवासी उसके नीचे सुरक्षित रहे। इंद्र को अपनी गलती का एहसास हुआ। उन्होंने क्षमा माँगी।
 
-इंद्र को अपनी गलती का एहसास हुआ। उन्होंने कृष्ण से क्षमा माँगी। कृष्ण ने पर्वत नीचे रखा। तब से गोवर्धन पूजा की परंपरा चली आ रही है।
-
-॥ जय श्री कृष्ण ॥`,
-    englishText: "The story of Krishna lifting Govardhan mountain to protect Brindavan from Indra's wrath.",
-    tags: ["Krishna", "Govardhan", "Indra", "Leela", "Brindavan"],
+॥ जय गोवर्धन धारी ॥`,
+    englishText: "The story of Krishna lifting Govardhan mountain to protect Gokul from Indra's wrath.",
+    tags: ["Krishna", "Govardhan", "Indra", "Gokul", "Puranik"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
+  },
+  {
+    id: 3003n,
+    title: "कालिय नाग मर्दन",
+    category: KathaCategory.puranik,
+    deity: "Krishna",
+    hindiText: `कालिय नाग मर्दन
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+यमुना नदी में कालिय नामक एक विशाल और विषैला नाग रहता था। उसके विष से यमुना का जल काला और जहरीला हो गया था। गोकुल के पशु-पक्षी और मनुष्य उस जल को पीकर मर जाते थे।
+
+एक दिन बालक कृष्ण अपने साथियों के साथ यमुना किनारे खेल रहे थे। गेंद यमुना में गिर गई। कृष्ण गेंद लेने के लिए यमुना में कूद गए। कालिय नाग ने कृष्ण को अपनी कुंडलियों में जकड़ लिया।
+
+कृष्ण ने अपना शरीर इतना विशाल कर लिया कि कालिय की पकड़ ढीली पड़ गई। फिर कृष्ण कालिय के फन पर चढ़ गए और नृत्य करने लगे। कालिय की पत्नियों ने कृष्ण से क्षमा माँगी। कृष्ण ने कालिय को यमुना छोड़कर रमणक द्वीप जाने का आदेश दिया।
+
+॥ जय यमुना बिहारी ॥`,
+    englishText: "The story of Krishna subduing the poisonous serpent Kaliya in the Yamuna river.",
+    tags: ["Krishna", "Kaliya", "Yamuna", "Serpent", "Puranik"],
+    createdAt: 0n,
   },
   {
     id: 3004n,
-    title: "जन्माष्टमी — श्री कृष्ण जन्म कथा",
+    title: "राधा-कृष्ण प्रेम लीला",
     category: KathaCategory.puranik,
     deity: "Krishna",
-    hindiText: `जन्माष्टमी — श्री कृष्ण जन्म कथा
+    hindiText: `राधा-कृष्ण प्रेम लीला
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-मथुरा में कंस नामक अत्याचारी राजा राज्य करता था। आकाशवाणी हुई — "कंस! तेरी बहन देवकी का आठवाँ पुत्र तेरा वध करेगा।" कंस ने देवकी और वासुदेव को कारागार में डाल दिया।
+वृंदावन की कुंज गलियों में राधा और कृष्ण की दिव्य प्रेम लीला होती थी। राधा रानी बरसाने की थीं और कृष्ण नंदगाँव के। दोनों का प्रेम अलौकिक और दिव्य था।
 
-एक-एक करके देवकी के सात पुत्रों को कंस ने मार डाला। भाद्रपद मास की कृष्ण पक्ष की अष्टमी की रात्रि को देवकी के गर्भ से श्री कृष्ण का जन्म हुआ। उस रात सभी पहरेदार सो गए। कारागार के द्वार स्वयं खुल गए।
+कृष्ण अपनी बाँसुरी बजाते और राधा सहित सभी गोपियाँ खिंची चली आतीं। यमुना के तट पर, कदंब के पेड़ों के नीचे, रास लीला होती। यह रास केवल शारीरिक नहीं, बल्कि आत्मा का परमात्मा से मिलन था।
 
-वासुदेव जी कृष्ण को टोकरी में रखकर यमुना पार करने लगे। यमुना उफान पर थी। कृष्ण के चरण यमुना के जल को छूते ही यमुना शांत हो गई। वासुदेव जी गोकुल पहुँचे और कृष्ण को यशोदा माँ के पास रख दिया।
+राधा का कृष्ण के प्रति प्रेम भक्ति का सर्वोच्च रूप है। जो भक्त राधा-कृष्ण के इस दिव्य प्रेम को समझता है, वह मोक्ष को प्राप्त होता है।
 
-कंस को जब पता चला तो वह क्रोधित हुआ। उसने अनेक राक्षस भेजे किन्तु कृष्ण ने सबका वध किया। अंत में कृष्ण ने कंस का वध करके मथुरा को अत्याचार से मुक्त किया।
-
-॥ जय श्री कृष्ण ॥`,
-    englishText: "The divine birth story of Lord Krishna on Janmashtami and his miraculous journey to Gokul.",
-    tags: ["Krishna", "Janmashtami", "Kans", "Devaki", "Vasudeva"],
+॥ राधे राधे ॥`,
+    englishText: "The divine love story of Radha and Krishna in Vrindavan, symbolizing the soul's union with the divine.",
+    tags: ["Radha", "Krishna", "Vrindavan", "Bhakti", "Love", "Puranik"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
   {
     id: 3005n,
-    title: "राधा-कृष्ण रास लीला",
+    title: "सुदामा और कृष्ण की मित्रता",
     category: KathaCategory.puranik,
     deity: "Krishna",
-    hindiText: `राधा-कृष्ण रास लीला
+    hindiText: `सुदामा और कृष्ण की मित्रता
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-शरद पूर्णिमा की रात्रि को बृंदावन में कृष्ण ने अपनी बाँसुरी बजाई। उस मधुर धुन को सुनकर सभी गोपियाँ अपने घरों से निकल पड़ीं। वे सब यमुना के किनारे एकत्रित हुईं।
+सुदामा और कृष्ण बचपन के मित्र थे। दोनों ने गुरु सांदीपनि के आश्रम में साथ विद्या पढ़ी थी। कृष्ण द्वारका के राजा बन गए और सुदामा एक निर्धन ब्राह्मण रहे।
 
-कृष्ण ने रास मंडल की रचना की। प्रत्येक गोपी को लगा कि कृष्ण उसी के साथ नृत्य कर रहे हैं। यह कृष्ण की अलौकिक लीला थी। राधा रानी इस रास में सर्वोपरि थीं।
+एक बार सुदामा की पत्नी ने कहा — "आपके मित्र कृष्ण द्वारका के राजा हैं। उनसे मिलने जाइए।" सुदामा के पास देने के लिए कुछ नहीं था। पत्नी ने पड़ोसियों से माँगकर थोड़े से चावल (तंदुल) बाँध दिए।
 
-रास लीला केवल नृत्य नहीं थी — यह आत्मा और परमात्मा के मिलन का प्रतीक है। गोपियाँ जीवात्माएँ हैं और कृष्ण परमात्मा। जब जीवात्मा सांसारिक बंधनों को छोड़कर परमात्मा की ओर उन्मुख होती है, तभी यह दिव्य रास संभव होता है।
+द्वारका पहुँचने पर कृष्ण ने सुदामा को गले लगाया। सुदामा ने शर्म से चावल छुपाए। कृष्ण ने स्वयं छीनकर खाए और बोले — "मित्र! यह तुम्हारे प्रेम का उपहार है।"
 
-राधा-कृष्ण का प्रेम सांसारिक प्रेम से परे है। यह दिव्य प्रेम है जो भक्त और भगवान के बीच होता है।
+सुदामा खाली हाथ लौटे। घर पहुँचने पर देखा — झोपड़ी की जगह महल खड़ा था। कृष्ण ने बिना माँगे ही सब दे दिया।
 
-॥ राधे राधे ॥ ॥ जय श्री कृष्ण ॥`,
-    englishText: "The divine Raas Leela of Radha and Krishna on Sharad Purnima night in Brindavan.",
-    tags: ["Krishna", "Radha", "Raas", "Leela", "Brindavan", "Gopis"],
+॥ जय द्वारकाधीश ॥`,
+    englishText: "The beautiful story of friendship between poor Brahmin Sudama and King Krishna, showing that true friendship transcends wealth.",
+    tags: ["Krishna", "Sudama", "Friendship", "Dwarka", "Puranik"],
     createdAt: 0n,
-    status: APPROVED_STATUS,
   },
 ];

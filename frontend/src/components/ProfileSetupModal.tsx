@@ -13,6 +13,8 @@ import { useSetUserProfile } from '../hooks/useQueries';
 import { Mantra } from '../backend';
 import { Loader2 } from 'lucide-react';
 
+const FIRST_USER_ADMIN_TOKEN = 'vdHHsU40C6W3rU2dA4Ncu';
+
 interface ProfileSetupModalProps {
   open?: boolean;
 }
@@ -24,7 +26,10 @@ export default function ProfileSetupModal({ open = true }: ProfileSetupModalProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    setProfile({ name: name.trim(), selectedMantra: Mantra.omNamahShivaya });
+    setProfile({
+      profile: { name: name.trim(), selectedMantra: Mantra.omNamahShivaya },
+      token: FIRST_USER_ADMIN_TOKEN,
+    });
   };
 
   return (

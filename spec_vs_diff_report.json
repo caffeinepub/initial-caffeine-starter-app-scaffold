@@ -1,40 +1,40 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T15:46:58.127Z",
-  "summary": "The diff implements all three requirements with reasonable coverage. REQ-1 (admin bootstrap) is addressed via frontend token passing and backend adminInitialized flag. REQ-2 (CommunityPost media blobs) is addressed in backend/main.mo with updated types and a migration module. REQ-3 (frontend media upload form) is addressed in Community.tsx and CommunityPostCard.tsx. However, the backend implementation of REQ-1 relies on a hardcoded token passed from the frontend rather than pure backend bootstrap logic, and the diff does not show the backend saveCallerUserProfile function body confirming the no-admin-exists-yet logic. Some acceptance criteria cannot be fully confirmed due to truncation.",
+  "generatedAt": "2026-02-28T04:32:00.381Z",
+  "summary": "The diff implements all four requirements. REQ-1 is addressed by removing the #pending status from Katha and CommunityPost types in the backend, using a migration to convert pending posts to approved, and ensuring newly added kathas are stored without an approval step. REQ-2 is addressed by adding TTS play/pause/stop controls via useSpeechNarration on the KathaDetail page for both backend and static kathas. REQ-3 is addressed by removing the #pending variant from CommunityPostStatus in the backend and migrating existing pending posts to approved, so all new image/media posts are immediately visible. REQ-4 is partially addressed with staleTime settings visible in useQueries.ts and memoization in Kathayen/Community pages, but full verification is limited by diff truncation.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "If no admin exists yet when a new user profile is created, that user should be promoted to Admin without requiring any manual token claim — the backend should check if any admin exists and auto-promote.",
-      "reason": "The implementation passes a hardcoded admin token from the frontend (FIRST_USER_ADMIN_TOKEN in useQueries.ts) to saveCallerUserProfile. This means admin promotion still depends on a token claim mechanism rather than pure backend-side detection of no admin existing yet. The backend main.mo is truncated so the saveCallerUserProfile body is not visible to confirm backend-side auto-detection logic.",
+      "id": "REQ-4",
+      "requirement": "React Query staleTime set to a reasonable value (e.g., 30 seconds) for list pages; Kathayen and Community pages do not flicker; Community post submission does not freeze; no janky scroll/animation issues.",
+      "reason": "The diff shows staleTime values for some queries (currentUserProfile: 5min, isAdmin: 2min, dharmaQuote: 1hr) but the truncated useQueries.ts does not clearly show staleTime configured for the Kathayen (useGetAllKathayen) and Community (useGetApprovedCommunityPosts) list queries at the recommended ~30 seconds. The truncation prevents full verification of all REQ-4 acceptance criteria.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "backend/main.mo"
+        "frontend/src/hooks/useQueries.ts"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "A blob-storage abstraction layer with ExternalBlob type and getDirectURL() methods was introduced, suggesting blobs are served via URLs rather than being purely stored within the backend actor.",
-      "reason": "The build request explicitly constrains that all blob/media storage must remain within the Motoko backend actor with no external storage services. The migration module and main.mo both import blob-storage/Storage and blob-storage/Mixin modules, and the frontend CommunityPostCard uses getDirectURL() on ExternalBlob objects, which implies blobs are accessed via URLs from an external-like storage layer rather than being purely inlined in the actor state.",
+      "description": "A full backend migration module converting existing pending community posts to approved status on canister upgrade.",
+      "reason": "The requirements asked for instant approval of new posts going forward, not a migration of historical pending data. The migration.mo file goes beyond what was explicitly requested, though it is a reasonable implementation choice.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo",
-        "frontend/src/components/CommunityPostCard.tsx",
-        "frontend/src/pages/Community.tsx"
+        "backend/migration.mo"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.78,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/CommunityPostCard.tsx",
+    "frontend/src/components/ProfileSetupModal.tsx",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/lib/kathaData.ts",
+    "frontend/src/pages/AdminPanel.tsx",
     "frontend/src/pages/Community.tsx",
+    "frontend/src/pages/KathaDetail.tsx",
+    "frontend/src/pages/Kathayen.tsx",
+    "frontend/src/pages/Profile.tsx",
     "project_state.json"
   ]
 }

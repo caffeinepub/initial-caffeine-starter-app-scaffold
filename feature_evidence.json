@@ -2,10 +2,53 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-community-page-post-submission-form-to-allow-users-to-attach-an-image-jpg-png-gif-a-video-mp4-webm-or-a-file-alongside-their-text-caption-show-a-preview-of-the-selected-image-before-posting-display-a-caption-text-input-field-alongside-the-media-picker-on-submit-send-the-media-blob-s-together-with-the-post-text-to-the-backend",
-      "featureTitle": "Update the Community page post submission form to allow users to attach an image (JPG/PNG/GIF), a video (MP4/WebM), or a file, alongside their text/caption. Show a preview of the selected image before posting. Display a caption/text input field alongside the media picker. On submit, send the media blob(s) together with the post text to the backend.",
+      "featureId": "feature-when-an-admin-adds-a-new-katha-from-the-admin-panel-it-must-be-saved-to-the-backend-and-immediately-appear-in-the-kathayen-section-without-requiring-any-extra-approval-step-or-manual-publishing-action",
+      "featureTitle": "When an admin adds a new Katha from the Admin Panel, it must be saved to the backend and immediately appear in the Kathayen section without requiring any extra approval step or manual publishing action.",
       "files": [
-        "frontend/src/components/CommunityPostCard.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend/src/pages/Kathayen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-every-katha-detail-page-must-include-an-automatic-text-to-speech-tts-narration-option-when-a-katha-is-added-via-the-admin-panel-the-tts-narration-control-must-be-present-on-its-detail-page-without-any-additional-configuration-required",
+      "featureTitle": "Every Katha detail page must include an automatic Text-to-Speech (TTS) narration option. When a Katha is added via the Admin Panel, the TTS narration control must be present on its detail page without any additional configuration required.",
+      "files": [
+        "frontend/src/pages/KathaDetail.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-community-posts-containing-images-must-appear-instantly-after-upload-without-any-approval-delay-remove-or-bypass-any-approval-queue-or-pending-state-for-image-media-posts-so-that-uploaded-photos-are-visible-to-the-uploader-and-other-users-immediately",
+      "featureTitle": "Community posts containing images must appear instantly after upload without any approval delay. Remove or bypass any approval queue or pending state for image/media posts so that uploaded photos are visible to the uploader and other users immediately.",
+      "files": [
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/Community.tsx"
       ],
@@ -21,6 +64,29 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-overall-app-performance-and-smoothness-reduce-unnecessary-re-renders-optimize-react-query-cache-settings-stale-time-cache-time-and-ensure-list-pages-kathayen-community-load-quickly-with-minimal-layout-shift",
+      "featureTitle": "Improve overall app performance and smoothness: reduce unnecessary re-renders, optimize React Query cache settings (stale time, cache time), and ensure list pages (Kathayen, Community) load quickly with minimal layout shift.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/Community.tsx",
+        "frontend/src/pages/Kathayen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -1,87 +1,106 @@
 {
   "kind": "build_request",
-  "title": "Fix Admin Access & Add Media Upload to Community Posts",
-  "projectName": "BairagiBeats",
-  "priority": "high",
+  "title": "Admin Katha Direct Publish with TTS, Instant Community Photos, and Performance Improvements",
+  "projectName": "Divya Darshan",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the admin bootstrap logic so that the very first user to register/create a profile is automatically assigned the Admin role. If no admin exists yet when a new user profile is created, that user should be promoted to Admin without requiring any manual token claim.",
-      "target": "backend",
+      "text": "When an admin adds a new Katha from the Admin Panel, it must be saved to the backend and immediately appear in the Kathayen section without requiring any extra approval step or manual publishing action.",
+      "target": "both",
       "source": {
         "messageIds": [
           "msg-3",
           "msg-5"
         ],
         "quotes": [
-          "Admin access نہیں مل رہی",
-          "پہلا registered user automatically Admin بنے"
+          "Admin panel me jo bhi katha admin add kre vo seedha katha section me add ho",
+          "Admin Panel से कथा add करने पर सीधे Katha Section में दिखे"
         ]
       },
       "acceptanceCriteria": [
-        "When the very first user profile is created, the backend assigns them the Admin role automatically.",
-        "Subsequent users are NOT automatically made Admin.",
-        "The admin panel is accessible to the first registered user without any additional steps.",
-        "If an admin already exists, new users are created as regular users."
+        "Admin submits a new Katha via the Admin Panel form.",
+        "The Katha is stored in the backend with an approved/published status by default.",
+        "The Katha immediately appears in the Kathayen listing page without requiring any additional approval toggle.",
+        "The newly added Katha card is visible to all users on the Kathayen page."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the backend CommunityPost data type and related functions to support optional image, video, and file attachments stored as blobs. Each post should support: a text/caption field (already present), an optional image blob field, an optional video blob field, and an optional file attachment blob with its filename.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-7"
-        ],
-        "quotes": [
-          "Community میں Photo/Image add کرنے کا option",
-          "Video/File upload بھی support ہوگا community posts میں"
-        ]
-      },
-      "acceptanceCriteria": [
-        "CommunityPost type includes optional fields for image blob, video blob, and file attachment blob plus filename.",
-        "Backend exposes updated createCommunityPost function accepting these optional media fields.",
-        "Existing posts without media continue to display correctly.",
-        "Media blobs are stored and retrievable via the backend actor."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update the Community page post submission form to allow users to attach an image (JPG/PNG/GIF), a video (MP4/WebM), or a file, alongside their text/caption. Show a preview of the selected image before posting. Display a caption/text input field alongside the media picker. On submit, send the media blob(s) together with the post text to the backend.",
+      "text": "Every Katha detail page must include an automatic Text-to-Speech (TTS) narration option. When a Katha is added via the Admin Panel, the TTS narration control must be present on its detail page without any additional configuration required.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-3",
-          "msg-7"
+          "msg-5"
         ],
         "quotes": [
-          "Community میں Image upload",
-          "photo کے ساتھ text/caption بھی لکھ سکیں گے",
-          "Video/File upload بھی support ہوگا"
+          "apne aap usme narration option add ho jaye",
+          "tts ka option apne aap add ho or admin jo katha add kre",
+          "हर कथा में automatically TTS (Text-to-Speech) narration option add हो जाए"
         ]
       },
       "acceptanceCriteria": [
-        "Community post form has a media attachment button with options for image, video, or file upload.",
-        "After selecting an image, a preview thumbnail is shown before submission.",
-        "Text/caption field is present and required alongside any media.",
-        "Submitted posts containing images display the image inline in the community feed.",
-        "Submitted posts containing videos display a playable video player in the feed.",
-        "Submitted posts containing files display a downloadable file link in the feed.",
-        "File type and size validation provides user-friendly error messages for unsupported types."
+        "KathaDetail page renders TTS play/pause/stop controls for every katha, including those added dynamically from the backend.",
+        "TTS uses Hindi voice when available (matching existing useSpeechNarration hook behavior).",
+        "TTS controls are visible without any manual toggle or extra admin step.",
+        "Static kathas from kathaData.ts also have TTS controls if not already present."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Community posts containing images must appear instantly after upload without any approval delay. Remove or bypass any approval queue or pending state for image/media posts so that uploaded photos are visible to the uploader and other users immediately.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-3",
+          "msg-5"
+        ],
+        "quotes": [
+          "community me jo bhi pic vagara upload krta hun to kam se kam 1 ghanta lagta hai dekhne ke liya",
+          "Community mein upload ki gayi photos turant dikhen bina kisi delay ke"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A community post with an image attachment is visible in the Community feed immediately after submission.",
+        "No approval step is required for community posts with image/video attachments.",
+        "The post appears in the feed within seconds of submission, not minutes or hours.",
+        "Existing approved posts remain unaffected."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Improve overall app performance and smoothness: reduce unnecessary re-renders, optimize React Query cache settings (stale time, cache time), and ensure list pages (Kathayen, Community) load quickly with minimal layout shift.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3",
+          "msg-5"
+        ],
+        "quotes": [
+          "app smoothly kaam kre",
+          "App ki overall performance aur smoothness improve karna"
+        ]
+      },
+      "acceptanceCriteria": [
+        "React Query staleTime is set to a reasonable value (e.g., 30 seconds) to avoid redundant refetches on navigation.",
+        "Kathayen and Community pages do not flicker or show empty states during data load when data is already cached.",
+        "Community post submission does not freeze or lag the UI.",
+        "No obvious janky scroll or animation issues on Home, Kathayen, and Community pages."
       ]
     }
   ],
   "constraints": [
-    "Do not change the existing community post approval workflow.",
-    "All blob/media storage must remain within the Motoko backend actor — no external storage services.",
-    "Immutable frontend paths (hooks/useInternetIdentity.ts, hooks/useActor.ts, main.tsx, components/ui) must not be modified."
+    "Do not alter immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "All backend logic must remain in the single-actor backend/main.mo file.",
+    "Preserve existing Internet Identity authentication flow.",
+    "Do not remove or break any existing sections (Aarti, Jap, Mandir, AIGuru, Panchang, etc.)."
   ],
   "nonGoals": [
-    "Real-time media streaming or live video features.",
-    "External CDN or cloud storage for media files.",
-    "Adding media upload support to any page other than Community posts.",
-    "Changing the existing admin panel UI or its feature tabs."
+    "Adding audio file upload for katha narration (TTS only, not recorded audio).",
+    "Implementing a moderation/approval workflow for kathas.",
+    "Changing the overall app design or color theme.",
+    "Adding new sections or features beyond those listed in requirements."
   ],
   "imageRequirements": {
     "required": [],

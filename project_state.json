@@ -1,18 +1,46 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with community features including admin access, image/video/file upload in community posts with captions.",
-  "architectural_notes": [],
+  "summary": "A religious/spiritual app with Katha Section, Community Section, and Admin Panel. Admin can add kathas directly to Katha Section with auto TTS narration. Community photos should appear instantly. App performance needs improvement.",
+  "architectural_notes": [
+    "App has three main sections: Katha Section, Community Section, and Admin Panel",
+    "TTS (Text-to-Speech) should be auto-integrated when admin adds a new katha",
+    "Community photo uploads should bypass approval delays and show instantly"
+  ],
   "known_issues": [
-    "Admin access not working — first registered user is not being assigned Admin role"
+    "Community photos take ~1 hour to appear after upload due to delay/approval process"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-community-page-post-submission-form-to-allow-users-to-attach-an-image-jpg-png-gif-a-video-mp4-webm-or-a-file-alongside-their-text-caption-show-a-preview-of-the-selected-image-before-posting-display-a-caption-text-input-field-alongside-the-media-picker-on-submit-send-the-media-blob-s-together-with-the-post-text-to-the-backend",
-      "title": "Update the Community page post submission form to allow users to attach an image (JPG/PNG/GIF), a video (MP4/WebM), or a file, alongside their text/caption. Show a preview of the selected image before posting. Display a caption/text input field alongside the media picker. On submit, send the media blob(s) together with the post text to the backend.",
+      "id": "feature-when-an-admin-adds-a-new-katha-from-the-admin-panel-it-must-be-saved-to-the-backend-and-immediately-appear-in-the-kathayen-section-without-requiring-any-extra-approval-step-or-manual-publishing-action",
+      "title": "When an admin adds a new Katha from the Admin Panel, it must be saved to the backend and immediately appear in the Kathayen section without requiring any extra approval step or manual publishing action.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-every-katha-detail-page-must-include-an-automatic-text-to-speech-tts-narration-option-when-a-katha-is-added-via-the-admin-panel-the-tts-narration-control-must-be-present-on-its-detail-page-without-any-additional-configuration-required",
+      "title": "Every Katha detail page must include an automatic Text-to-Speech (TTS) narration option. When a Katha is added via the Admin Panel, the TTS narration control must be present on its detail page without any additional configuration required.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-community-posts-containing-images-must-appear-instantly-after-upload-without-any-approval-delay-remove-or-bypass-any-approval-queue-or-pending-state-for-image-media-posts-so-that-uploaded-photos-are-visible-to-the-uploader-and-other-users-immediately",
+      "title": "Community posts containing images must appear instantly after upload without any approval delay. Remove or bypass any approval queue or pending state for image/media posts so that uploaded photos are visible to the uploader and other users immediately.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-overall-app-performance-and-smoothness-reduce-unnecessary-re-renders-optimize-react-query-cache-settings-stale-time-cache-time-and-ensure-list-pages-kathayen-community-load-quickly-with-minimal-layout-shift",
+      "title": "Improve overall app performance and smoothness: reduce unnecessary re-renders, optimize React Query cache settings (stale time, cache time), and ensure list pages (Kathayen, Community) load quickly with minimal layout shift.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -20,41 +48,31 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Admin access fix — first registered user automatically becomes Admin",
+      "summary": "Admin panel se katha add karne par seedha Katha Section mein dikhe bina extra steps ke",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Community image upload with text/caption support",
+      "summary": "Har katha mein automatically TTS (Text-to-Speech) narration option add ho jaye",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Community video and file upload support in posts",
+      "summary": "Community mein upload ki gayi photos turant dikhen bina kisi delay ke",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Fix the admin bootstrap logic so that the very first user to register/create a profile is automatically assigned the Admin role. If no admin exists yet when a new user profile is created, that user should be promoted to Admin without requiring any manual token claim.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Update the backend CommunityPost data type and related functions to support optional image, video, and file attachments stored as blobs. Each post should support: a text/caption field (already present), an optional image blob field, an optional video blob field, and an optional file attachment blob with its filename.",
-      "reqIds": [
-        "REQ-2"
-      ],
+      "summary": "App ki overall performance aur smoothness improve karna",
+      "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "BairagiBeats",
+  "projectName": "Divya Darshan",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
