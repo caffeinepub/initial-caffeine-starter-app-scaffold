@@ -40,7 +40,8 @@ export interface CommunityPost {
   'comments' : bigint,
   'deityTag' : [] | [string],
 }
-export type CommunityPostStatus = { 'approved' : null } |
+export type CommunityPostStatus = { 'pending' : null } |
+  { 'approved' : null } |
   { 'rejected' : null };
 export interface DharmaQuote {
   'id' : bigint,
@@ -139,6 +140,7 @@ export interface _SERVICE {
     bigint
   >,
   'addVrat' : ActorMethod<[string, string, string], bigint>,
+  'approveCommunityPost' : ActorMethod<[bigint], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createCommunityPost' : ActorMethod<
     [
@@ -171,6 +173,7 @@ export interface _SERVICE {
   'getJapStats' : ActorMethod<[], JapCounter>,
   'getKatha' : ActorMethod<[bigint], [] | [Katha]>,
   'getKrishnaLeelaStory' : ActorMethod<[], KrishnaLeela>,
+  'getPendingCommunityPosts' : ActorMethod<[], Array<CommunityPost>>,
   'getUserMantra' : ActorMethod<[], Mantra>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'incrementJap' : ActorMethod<[bigint], undefined>,
@@ -179,6 +182,7 @@ export interface _SERVICE {
   'likeCommunityPost' : ActorMethod<[bigint], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'listKathayenByCategory' : ActorMethod<[KathaCategory], Array<Katha>>,
+  'rejectCommunityPost' : ActorMethod<[bigint], boolean>,
   'reportCommunityPost' : ActorMethod<[bigint], boolean>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetJapStats' : ActorMethod<[], undefined>,

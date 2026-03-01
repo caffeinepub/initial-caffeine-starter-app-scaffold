@@ -88,14 +88,14 @@ const MANTRAS: MantraData[] = [
 
 function MantraCard({ mantra }: { mantra: MantraData }) {
   const [expanded, setExpanded] = useState(false);
-  const { speak, stop, narrationState } = useSpeechNarration();
+  const { startNarration, stopNarration, narrationState } = useSpeechNarration();
   const isSpeaking = narrationState === 'playing';
 
   const handleTTS = () => {
     if (isSpeaking) {
-      stop();
+      stopNarration();
     } else {
-      speak(mantra.sanskrit + ' ' + mantra.hindi, `mantra-${mantra.id}`);
+      startNarration(mantra.sanskrit + ' ' + mantra.hindi);
     }
   };
 

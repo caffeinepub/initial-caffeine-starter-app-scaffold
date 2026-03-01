@@ -14,30 +14,44 @@ function isHindiText(text: string): boolean {
 }
 
 const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
-  const { narrationState, currentMessageId, speak, pause, resume, stop, isSupported } =
+  const { narrationState, startNarration, pauseNarration, resumeNarration, stopNarration } =
     useSpeechNarration();
 
-  const isThisPlaying =
-    currentMessageId === message.id && narrationState === 'playing';
-  const isThisPaused =
-    currentMessageId === message.id && narrationState === 'paused';
-  const isThisActive = currentMessageId === message.id;
+  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  // Since the new hook doesn't track per-message ID, we track it locally
+  const [activeMessageId, setActiveMessageId] = React.useState<string | null>(null);
+
+  const isThisPlaying = activeMessageId === message.id && narrationState === 'playing';
+  const isThisPaused = activeMessageId === message.id && narrationState === 'paused';
+  const isThisActive = activeMessageId === message.id && narrationState !== 'idle' && narrationState !== 'error';
 
   const isHindi = isHindiText(message.content);
 
   const handleTTS = () => {
     if (isThisPlaying) {
-      pause();
+      pauseNarration();
     } else if (isThisPaused) {
-      resume();
+      resumeNarration();
     } else {
-      speak(message.content, message.id);
+      // Stop any other narration first
+      stopNarration();
+      setActiveMessageId(message.id);
+      startNarration(message.content);
     }
   };
 
   const handleStop = () => {
-    stop();
+    stopNarration();
+    setActiveMessageId(null);
   };
+
+  // Clear active message when narration goes idle
+  React.useEffect(() => {
+    if (narrationState === 'idle' || narrationState === 'error') {
+      setActiveMessageId(null);
+    }
+  }, [narrationState]);
 
   const isUser = message.role === 'user';
   const timestamp = new Date(message.timestamp).toLocaleTimeString('hi-IN', {

@@ -1,282 +1,278 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetApprovedCommunityPosts, useCreateCommunityPost } from '../hooks/useQueries';
+import React, { useState } from 'react';
+import { Users, Plus, Image, Video, Paperclip, X, Loader2, Clock } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import CommunityPostCard from '../components/CommunityPostCard';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Image, Video, Paperclip, X, Send, Users } from 'lucide-react';
-import { ExternalBlob, type FileAttachment } from '../backend';
-import { toast } from 'sonner';
-import { Progress } from '@/components/ui/progress';
-
-const DEITY_TAGS = ['Shiva', 'Vishnu', 'Durga', 'Krishna', 'Ganesh', 'Hanuman', 'Lakshmi', 'Saraswati'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-type AttachmentPreview = {
-  type: 'image' | 'video' | 'file';
-  file: File;
-  previewUrl?: string;
-  uploadProgress: number;
-};
+import {
+  useGetApprovedCommunityPosts,
+  useCreateCommunityPost,
+} from '../hooks/useQueries';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { ExternalBlob } from '../backend';
 
 export default function Community() {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  const { data: posts, isLoading: postsLoading } = useGetApprovedCommunityPosts();
-  const createPost = useCreateCommunityPost();
+  const { data: posts, isLoading } = useGetApprovedCommunityPosts();
 
+  const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState('');
   const [deityTag, setDeityTag] = useState('');
-  const [attachment, setAttachment] = useState<AttachmentPreview | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [attachFile, setAttachFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const createPost = useCreateCommunityPost();
 
-  const handleFileSelect = useCallback(async (file: File, type: 'image' | 'video' | 'file') => {
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('File size 10MB से ज्यादा नहीं होनी चाहिए');
-      return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim() && !imageFile && !videoFile && !attachFile) return;
+
+    let imageBlob: ExternalBlob | undefined;
+    let videoBlob: ExternalBlob | undefined;
+    let fileAttachment: { blob: ExternalBlob; filename: string } | undefined;
+
+    if (imageFile) {
+      const bytes = new Uint8Array(await imageFile.arrayBuffer());
+      imageBlob = ExternalBlob.fromBytes(bytes).withUploadProgress(p => setUploadProgress(p));
     }
-    const previewUrl = type !== 'file' ? URL.createObjectURL(file) : undefined;
-    setAttachment({ type, file, previewUrl, uploadProgress: 0 });
-  }, []);
-
-  const removeAttachment = () => {
-    if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
-    setAttachment(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!content.trim() && !attachment) {
-      toast.error('कुछ लिखें या media attach करें');
-      return;
+    if (videoFile) {
+      const bytes = new Uint8Array(await videoFile.arrayBuffer());
+      videoBlob = ExternalBlob.fromBytes(bytes).withUploadProgress(p => setUploadProgress(p));
     }
-    if (!isAuthenticated) {
-      toast.error('Post करने के लिए login करें');
-      return;
+    if (attachFile) {
+      const bytes = new Uint8Array(await attachFile.arrayBuffer());
+      fileAttachment = {
+        blob: ExternalBlob.fromBytes(bytes).withUploadProgress(p => setUploadProgress(p)),
+        filename: attachFile.name,
+      };
     }
 
-    setIsUploading(true);
-    try {
-      let image: ExternalBlob | undefined;
-      let video: ExternalBlob | undefined;
-      let fileAttachment: FileAttachment | undefined;
-
-      if (attachment) {
-        const bytes = new Uint8Array(await attachment.file.arrayBuffer());
-        const uploadedBlob = ExternalBlob.fromBytes(bytes).withUploadProgress((pct) => {
-          setAttachment(prev => prev ? { ...prev, uploadProgress: pct } : null);
-        });
-        if (attachment.type === 'image') image = uploadedBlob;
-        else if (attachment.type === 'video') video = uploadedBlob;
-        else fileAttachment = { blob: uploadedBlob, filename: attachment.file.name };
-      }
-
-      await createPost.mutateAsync({
+    createPost.mutate(
+      {
         content: content.trim(),
-        deityTag: deityTag || undefined,
-        image,
-        video,
+        deityTag: deityTag.trim() || undefined,
+        image: imageBlob,
+        video: videoBlob,
         fileAttachment,
-      });
-
-      setContent('');
-      setDeityTag('');
-      if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
-      setAttachment(null);
-      toast.success('Post हो गई! 🙏');
-    } catch (e: any) {
-      toast.error(e?.message || 'Post करने में error आई');
-    } finally {
-      setIsUploading(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          setContent('');
+          setDeityTag('');
+          setImageFile(null);
+          setVideoFile(null);
+          setAttachFile(null);
+          setUploadProgress(0);
+          setShowForm(false);
+        },
+      }
+    );
   };
 
-  const sortedPosts = React.useMemo(() => {
-    if (!posts) return [];
-    return [...posts].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
-  }, [posts]);
+  const sortedPosts = posts
+    ? [...posts].sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
+    : [];
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-700 to-orange-600 p-6 text-white">
-        <div className="flex items-center gap-3">
-          <Users className="w-7 h-7" />
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-amber-600 to-orange-500 px-4 pt-6 pb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+            <Users className="w-5 h-5 text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold">समुदाय</h1>
+            <h1 className="text-white font-bold text-xl">समुदाय</h1>
             <p className="text-amber-100 text-sm">भक्तों का परिवार</p>
           </div>
         </div>
+        <p className="text-amber-100 text-sm mt-2">
+          अपनी भक्ति, अनुभव और प्रेरणा यहाँ साझा करें
+        </p>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Create Post */}
+      <div className="px-4 py-4 space-y-4">
+        {/* Post Creation — only for authenticated users */}
         {isAuthenticated ? (
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-            <Textarea
-              placeholder="अपने विचार, भजन, या अनुभव share करें... 🙏"
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              className="bg-background border-border resize-none min-h-[80px]"
-              disabled={isUploading}
-            />
-
-            {/* Deity Tag */}
-            <div className="flex flex-wrap gap-2">
-              {DEITY_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => setDeityTag(deityTag === tag ? '' : tag)}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                    deityTag === tag
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/50'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-
-            {/* Attachment Preview */}
-            {attachment && (
-              <div className="relative bg-muted rounded-xl overflow-hidden">
-                {attachment.type === 'image' && attachment.previewUrl && (
-                  <img
-                    src={attachment.previewUrl}
-                    alt="preview"
-                    className="w-full max-h-48 object-cover"
-                  />
-                )}
-                {attachment.type === 'video' && attachment.previewUrl && (
-                  <video
-                    src={attachment.previewUrl}
-                    className="w-full max-h-48"
-                    controls
-                  />
-                )}
-                {attachment.type === 'file' && (
-                  <div className="p-3 flex items-center gap-2">
-                    <Paperclip className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground truncate">{attachment.file.name}</span>
-                  </div>
-                )}
-                {isUploading && attachment.uploadProgress > 0 && (
-                  <div className="p-2">
-                    <Progress value={attachment.uploadProgress} className="h-1" />
-                    <p className="text-xs text-muted-foreground mt-1 text-center">
-                      Upload: {Math.round(attachment.uploadProgress)}%
-                    </p>
-                  </div>
-                )}
-                <button
-                  onClick={removeAttachment}
-                  disabled={isUploading}
-                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-
-            {/* Action Row */}
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0], 'image')}
-                />
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0], 'video')}
-                />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0], 'file')}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={isUploading || !!attachment}
-                  className="gap-1"
-                >
-                  <Image className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs">Photo</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => videoInputRef.current?.click()}
-                  disabled={isUploading || !!attachment}
-                  className="gap-1"
-                >
-                  <Video className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs">Video</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading || !!attachment}
-                  className="gap-1"
-                >
-                  <Paperclip className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs">File</span>
-                </Button>
-              </div>
-
-              <Button
-                size="sm"
-                onClick={handleSubmit}
-                disabled={isUploading || createPost.isPending || (!content.trim() && !attachment)}
-                className="bg-gradient-to-r from-amber-600 to-orange-500 text-white gap-2"
+          <div className="bg-card border border-border rounded-xl p-4">
+            {!showForm ? (
+              <button
+                onClick={() => setShowForm(true)}
+                className="w-full flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors"
               >
-                {isUploading || createPost.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                  {identity.getPrincipal().toString()[0]?.toUpperCase() ?? '?'}
+                </div>
+                <span className="flex-1 text-left text-sm bg-muted rounded-full px-4 py-2">
+                  अपनी भक्ति साझा करें...
+                </span>
+                <Plus className="w-5 h-5" />
+              </button>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  placeholder="अपनी भक्ति, अनुभव या प्रेरणा लिखें..."
+                  className="w-full bg-muted rounded-lg p-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  rows={3}
+                  autoFocus
+                />
+
+                <input
+                  type="text"
+                  value={deityTag}
+                  onChange={e => setDeityTag(e.target.value)}
+                  placeholder="देवता tag (जैसे: श्री राम, कृष्ण)"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+
+                {/* Media Buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber-600 cursor-pointer transition-colors">
+                    <Image className="w-4 h-4" />
+                    <span>Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => setImageFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber-600 cursor-pointer transition-colors">
+                    <Video className="w-4 h-4" />
+                    <span>Video</span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={e => setVideoFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber-600 cursor-pointer transition-colors">
+                    <Paperclip className="w-4 h-4" />
+                    <span>File</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={e => setAttachFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+
+                  {imageFile && (
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      📷 {imageFile.name.slice(0, 15)}
+                      <button type="button" onClick={() => setImageFile(null)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {videoFile && (
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      🎥 {videoFile.name.slice(0, 15)}
+                      <button type="button" onClick={() => setVideoFile(null)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {attachFile && (
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      📎 {attachFile.name.slice(0, 15)}
+                      <button type="button" onClick={() => setAttachFile(null)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="w-full bg-muted rounded-full h-1.5">
+                    <div
+                      className="bg-amber-500 h-1.5 rounded-full transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                 )}
-                {isUploading ? 'Upload...' : 'Post करें'}
-              </Button>
-            </div>
+
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    रद्द करें
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createPost.isPending || (!content.trim() && !imageFile && !videoFile && !attachFile)}
+                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-full font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {createPost.isPending ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Post हो रहा है...
+                      </>
+                    ) : (
+                      'Post करें'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         ) : (
-          <div className="bg-card border border-border rounded-2xl p-4 text-center">
-            <p className="text-muted-foreground text-sm">Post करने के लिए login करें 🙏</p>
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
+            <p className="text-amber-700 dark:text-amber-300 text-sm font-medium">
+              Post करने के लिए Login करें
+            </p>
+            <p className="text-amber-600/70 dark:text-amber-400/70 text-xs mt-1">
+              Approved posts सभी को दिखती हैं
+            </p>
+          </div>
+        )}
+
+        {/* Pending notice for authenticated users */}
+        {isAuthenticated && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+            <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>आपकी post Admin approval के बाद community में दिखेगी</span>
           </div>
         )}
 
         {/* Posts Feed */}
-        {postsLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="w-9 h-9 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-2.5 w-16" />
+                  </div>
+                </div>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-40 w-full rounded-lg" />
+              </div>
+            ))}
           </div>
         ) : sortedPosts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Users className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p>अभी कोई post नहीं है</p>
-            <p className="text-sm mt-1">पहली post करें! 🙏</p>
+          <div className="text-center py-12">
+            <div className="text-4xl mb-3">🙏</div>
+            <p className="text-muted-foreground text-sm">
+              अभी कोई post नहीं है
+            </p>
+            <p className="text-muted-foreground/70 text-xs mt-1">
+              {isAuthenticated ? 'पहली post करें!' : 'Login करके पहली post करें!'}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             {sortedPosts.map(post => (
-              <CommunityPostCard
-                key={post.id.toString()}
-                post={post}
-              />
+              <CommunityPostCard key={post.id.toString()} post={post} />
             ))}
           </div>
         )}

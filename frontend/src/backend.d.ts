@@ -92,12 +92,8 @@ export interface Vrat {
     name: string;
     description: string;
 }
-export enum ApprovalStatus {
-    pending = "pending",
-    approved = "approved",
-    rejected = "rejected"
-}
 export enum CommunityPostStatus {
+    pending = "pending",
     approved = "approved",
     rejected = "rejected"
 }
@@ -131,6 +127,7 @@ export interface backendInterface {
     addDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<void>;
     addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>): Promise<bigint>;
     addVrat(name: string, date: string, description: string): Promise<bigint>;
+    approveCommunityPost(postId: bigint): Promise<boolean>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCommunityPost(content: string, deityTag: string | null, image: ExternalBlob | null, video: ExternalBlob | null, fileAttachment: FileAttachment | null): Promise<bigint>;
     deleteBhajan(id: bigint): Promise<boolean>;
@@ -154,6 +151,7 @@ export interface backendInterface {
     getJapStats(): Promise<JapCounter>;
     getKatha(id: bigint): Promise<Katha | null>;
     getKrishnaLeelaStory(): Promise<KrishnaLeela>;
+    getPendingCommunityPosts(): Promise<Array<CommunityPost>>;
     getUserMantra(): Promise<Mantra>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     incrementJap(count: bigint): Promise<void>;
@@ -162,6 +160,7 @@ export interface backendInterface {
     likeCommunityPost(postId: bigint): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     listKathayenByCategory(category: KathaCategory): Promise<Array<Katha>>;
+    rejectCommunityPost(postId: bigint): Promise<boolean>;
     reportCommunityPost(postId: bigint): Promise<boolean>;
     requestApproval(): Promise<void>;
     resetJapStats(): Promise<void>;

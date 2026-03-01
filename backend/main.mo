@@ -72,6 +72,7 @@ actor {
   };
 
   public type CommunityPostStatus = {
+    #pending;
     #approved;
     #rejected;
   };
@@ -390,15 +391,32 @@ actor {
     };
   };
 
+  // Community Posts
+  // Returns only approved posts for all callers (including unauthenticated/anonymous visitors)
   public query func getApprovedCommunityPosts() : async [CommunityPost] {
-    communityPosts.values().toArray();
+    let results = List.empty<CommunityPost>();
+    for ((_, post) in communityPosts.entries()) {
+      if (post.status == #approved) {
+        results.add(post);
+      };
+    };
+    results.toArray();
   };
 
   public query ({ caller }) func getAllCommunityPosts() : async [CommunityPost] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all posts");
-    };
+    requireAdmin(caller);
     communityPosts.values().toArray();
+  };
+
+  public query ({ caller }) func getPendingCommunityPosts() : async [CommunityPost] {
+    requireAdmin(caller);
+    let results = List.empty<CommunityPost>();
+    for ((_, post) in communityPosts.entries()) {
+      if (post.status == #pending) {
+        results.add(post);
+      };
+    };
+    results.toArray();
   };
 
   public shared ({ caller }) func createCommunityPost(
@@ -421,7 +439,7 @@ actor {
       timestamp = now;
       likes = 0;
       comments = 0;
-      status = #approved;
+      status = #pending;
       reports = 0;
       deityTag;
       image;
@@ -430,6 +448,41 @@ actor {
     };
     communityPosts.add(postId, post);
     postId;
+  };
+
+  public shared ({ caller }) func approveCommunityPost(postId : Nat) : async Bool {
+    requireAdmin(caller);
+    switch (communityPosts.get(postId)) {
+      case (?post) {
+        let updated = { post with status = #approved };
+        communityPosts.add(postId, updated);
+        true;
+      };
+      case (null) { false };
+    };
+  };
+
+  public shared ({ caller }) func rejectCommunityPost(postId : Nat) : async Bool {
+    requireAdmin(caller);
+    switch (communityPosts.get(postId)) {
+      case (?post) {
+        let updated = { post with status = #rejected };
+        communityPosts.add(postId, updated);
+        true;
+      };
+      case (null) { false };
+    };
+  };
+
+  public shared ({ caller }) func deleteCommunityPost(postId : Nat) : async Bool {
+    requireAdmin(caller);
+    switch (communityPosts.get(postId)) {
+      case (?post) {
+        communityPosts.remove(postId);
+        true;
+      };
+      case (null) { false };
+    };
   };
 
   public shared ({ caller }) func likeCommunityPost(postId : Nat) : async Bool {
@@ -460,17 +513,6 @@ actor {
         };
         let updated = { post with reports = post.reports + 1 };
         communityPosts.add(postId, updated);
-        true;
-      };
-      case (null) { false };
-    };
-  };
-
-  public shared ({ caller }) func deleteCommunityPost(postId : Nat) : async Bool {
-    requireAdmin(caller);
-    switch (communityPosts.get(postId)) {
-      case (?post) {
-        communityPosts.remove(postId);
         true;
       };
       case (null) { false };
@@ -537,8 +579,7 @@ actor {
   };
 
   public query func getAllKathayen() : async [Katha] {
-    let allKathaValues = kathayen.values().toArray();
-    allKathaValues;
+    kathayen.values().toArray();
   };
 
   public query func getKrishnaLeelaStory() : async KrishnaLeela {

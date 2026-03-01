@@ -46,6 +46,7 @@ export const Chalisa = IDL.Record({
   'fullText' : IDL.Text,
 });
 export const CommunityPostStatus = IDL.Variant({
+  'pending' : IDL.Null,
   'approved' : IDL.Null,
   'rejected' : IDL.Null,
 });
@@ -180,6 +181,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'addVrat' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
+  'approveCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createCommunityPost' : IDL.Func(
       [
@@ -217,6 +219,11 @@ export const idlService = IDL.Service({
   'getJapStats' : IDL.Func([], [JapCounter], ['query']),
   'getKatha' : IDL.Func([IDL.Nat], [IDL.Opt(Katha)], ['query']),
   'getKrishnaLeelaStory' : IDL.Func([], [KrishnaLeela], ['query']),
+  'getPendingCommunityPosts' : IDL.Func(
+      [],
+      [IDL.Vec(CommunityPost)],
+      ['query'],
+    ),
   'getUserMantra' : IDL.Func([], [Mantra], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -233,6 +240,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(Katha)],
       ['query'],
     ),
+  'rejectCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'reportCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'requestApproval' : IDL.Func([], [], []),
   'resetJapStats' : IDL.Func([], [], []),
@@ -309,6 +317,7 @@ export const idlFactory = ({ IDL }) => {
     'fullText' : IDL.Text,
   });
   const CommunityPostStatus = IDL.Variant({
+    'pending' : IDL.Null,
     'approved' : IDL.Null,
     'rejected' : IDL.Null,
   });
@@ -444,6 +453,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addVrat' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
+    'approveCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createCommunityPost' : IDL.Func(
         [
@@ -481,6 +491,11 @@ export const idlFactory = ({ IDL }) => {
     'getJapStats' : IDL.Func([], [JapCounter], ['query']),
     'getKatha' : IDL.Func([IDL.Nat], [IDL.Opt(Katha)], ['query']),
     'getKrishnaLeelaStory' : IDL.Func([], [KrishnaLeela], ['query']),
+    'getPendingCommunityPosts' : IDL.Func(
+        [],
+        [IDL.Vec(CommunityPost)],
+        ['query'],
+      ),
     'getUserMantra' : IDL.Func([], [Mantra], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
@@ -497,6 +512,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Katha)],
         ['query'],
       ),
+    'rejectCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'reportCommunityPost' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'requestApproval' : IDL.Func([], [], []),
     'resetJapStats' : IDL.Func([], [], []),

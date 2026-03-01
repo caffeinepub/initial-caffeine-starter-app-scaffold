@@ -105,7 +105,7 @@ const STATIC_BHAJANS: BhajanData[] = [
 
 function BhajanCard({ bhajan }: { bhajan: BhajanData }) {
   const [expanded, setExpanded] = useState(false);
-  const { speak, stop, narrationState } = useSpeechNarration();
+  const { startNarration, stopNarration, narrationState } = useSpeechNarration();
   const isSpeaking = narrationState === 'playing';
 
   return (
@@ -119,7 +119,7 @@ function BhajanCard({ bhajan }: { bhajan: BhajanData }) {
           </div>
         </div>
         <button
-          onClick={() => isSpeaking ? stop() : speak(bhajan.lyrics, `bhajan-${bhajan.id}`)}
+          onClick={() => isSpeaking ? stopNarration() : startNarration(bhajan.lyrics)}
           className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
             isSpeaking
               ? 'bg-red-500/20 text-red-400 animate-pulse'

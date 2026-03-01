@@ -1,268 +1,178 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Volume2, Play, Pause, Square, Languages } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useGetAllKathayen } from '../hooks/useQueries';
-import { staticKathaData } from '../lib/kathaData';
+import { ArrowLeft, Volume2, Pause, Play, Square, AlertCircle } from 'lucide-react';
+import { useGetKatha } from '../hooks/useQueries';
 import { useSpeechNarration } from '../hooks/useSpeechNarration';
-
-type KathaLike = {
-  id: number;
-  title: string;
-  category: string;
-  deity: string;
-  hindiText: string;
-  englishText: string;
-  tags: string[];
-};
-
-const BANNER_MAP: Record<string, string> = {
-  ramayan: '/assets/generated/ramayan-banner.dim_800x400.png',
-  mahabharat: '/assets/generated/mahabharat-banner.dim_800x400.png',
-  krishna: '/assets/generated/krishna-leela-banner.dim_800x400.png',
-  default: '/assets/generated/kathayen-banner.dim_1200x400.png',
-};
-
-function getBanner(katha: KathaLike): string {
-  const title = katha.title.toLowerCase();
-  if (title.includes('ramayan') || title.includes('राम')) return BANNER_MAP.ramayan;
-  if (title.includes('mahabharat') || title.includes('महाभारत')) return BANNER_MAP.mahabharat;
-  if (title.includes('krishna') || title.includes('कृष्ण')) return BANNER_MAP.krishna;
-  return BANNER_MAP.default;
-}
-
-function getCategoryLabel(category: string): string {
-  if (category === 'puranik') return 'पौराणिक';
-  if (category === 'vrat') return 'व्रत कथा';
-  return category;
-}
+import { staticKathaData } from '../lib/kathaData';
+import { KathaCategory } from '../backend';
 
 export default function KathaDetail() {
   const { id } = useParams({ from: '/katha/$id' });
   const navigate = useNavigate();
-  const [lang, setLang] = useState<'hindi' | 'english'>('hindi');
 
-  const { data: backendKathas } = useGetAllKathayen();
+  const numericId = useMemo(() => {
+    try { return BigInt(id); } catch { return null; }
+  }, [id]);
 
-  const katha = React.useMemo<KathaLike | null>(() => {
-    const numId = Number(id);
-    // Check backend first
-    if (backendKathas) {
-      const found = backendKathas.find(k => Number(k.id) === numId);
-      if (found) {
-        return {
-          id: Number(found.id),
-          title: found.title,
-          category: typeof found.category === 'string'
-            ? found.category
-            : Object.keys(found.category as object)[0],
-          deity: found.deity,
-          hindiText: found.hindiText,
-          englishText: found.englishText,
-          tags: found.tags,
-        };
-      }
+  const { data: backendKatha, isLoading } = useGetKatha(numericId);
+
+  // Fallback to static data
+  const katha = useMemo(() => {
+    if (backendKatha) return backendKatha;
+    const staticMatch = staticKathaData.find(k => k.id.toString() === id);
+    if (!staticMatch) return null;
+    return {
+      ...staticMatch,
+      id: typeof staticMatch.id === 'bigint' ? staticMatch.id : BigInt(staticMatch.id),
+      createdAt: BigInt(0),
+    };
+  }, [backendKatha, id]);
+
+  const { narrationState, startNarration, pauseNarration, resumeNarration, stopNarration, errorMessage } =
+    useSpeechNarration();
+
+  const handleNarration = () => {
+    if (!katha) return;
+    if (narrationState === 'idle' || narrationState === 'error') {
+      startNarration(katha.hindiText || katha.englishText || katha.title);
+    } else if (narrationState === 'playing') {
+      pauseNarration();
+    } else if (narrationState === 'paused') {
+      resumeNarration();
     }
-    // Fallback to static
-    const staticFound = staticKathaData.find(k => Number(k.id) === numId);
-    if (staticFound) {
-      return {
-        id: Number(staticFound.id),
-        title: staticFound.title,
-        category: typeof staticFound.category === 'string'
-          ? staticFound.category
-          : Object.keys(staticFound.category as object)[0],
-        deity: staticFound.deity,
-        hindiText: staticFound.hindiText,
-        englishText: staticFound.englishText,
-        tags: staticFound.tags,
-      };
+  };
+
+  const getCategoryLabel = (cat: unknown) => {
+    if (cat === KathaCategory.vrat || cat === 'vrat' || (typeof cat === 'object' && cat !== null && 'vrat' in cat)) {
+      return 'व्रत कथा';
     }
-    return null;
-  }, [id, backendKathas]);
+    return 'पौराणिक कथा';
+  };
 
-  const displayText = lang === 'hindi'
-    ? (katha?.hindiText ?? '')
-    : ((katha?.englishText || katha?.hindiText) ?? '');
-
-  const { narrationState, speak, pause, resume, stop } = useSpeechNarration();
-  const isPlaying = narrationState === 'playing';
-  const isPaused = narrationState === 'paused';
-  const isIdle = narrationState === 'idle';
-
-  // Stop narration when language changes
-  useEffect(() => {
-    stop();
-  }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!katha) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">कथा नहीं मिली</p>
-          <Button onClick={() => navigate({ to: '/kathayen' })}>वापस जाएं</Button>
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground text-sm">कथा लोड हो रही है...</p>
         </div>
       </div>
     );
   }
 
-  const bannerSrc = getBanner(katha);
-  const categoryLabel = getCategoryLabel(katha.category);
-
-  return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Banner */}
-      <div className="relative h-52 overflow-hidden">
-        <img src={bannerSrc} alt={katha.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/80" />
-        <button
-          onClick={() => navigate({ to: '/kathayen' })}
-          className="absolute top-4 left-4 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-amber-500/80 text-white text-xs px-2 py-0.5 rounded-full">{categoryLabel}</span>
-            <span className="text-amber-300 text-xs">🙏 {katha.deity}</span>
-          </div>
-          <h1 className="text-xl font-bold drop-shadow">{katha.title}</h1>
+  if (!katha) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-foreground font-medium">कथा नहीं मिली</p>
+          <button
+            onClick={() => navigate({ to: '/kathayen' })}
+            className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm"
+          >
+            वापस जाएं
+          </button>
         </div>
       </div>
+    );
+  }
 
-      <div className="p-4 space-y-4">
-        {/* Language Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setLang('hindi')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                lang === 'hindi'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              हिंदी
-            </button>
-            {katha.englishText && (
-              <button
-                onClick={() => setLang('english')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  lang === 'english'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                English
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Languages className="w-3 h-3" />
-            <span>{lang === 'hindi' ? 'हिंदी' : 'English'}</span>
-          </div>
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-gradient-to-r from-amber-600 to-orange-500 px-4 py-3 flex items-center gap-3">
+        <button
+          onClick={() => navigate({ to: '/kathayen' })}
+          className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-white font-bold text-base truncate">{katha.title}</h1>
+          <p className="text-amber-100 text-xs">{getCategoryLabel(katha.category)}</p>
         </div>
 
         {/* TTS Controls */}
-        <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/20 border border-amber-700/40 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Volume2 className="w-4 h-4 text-amber-400" />
-            <span className="text-amber-300 text-sm font-semibold">
-              🎙️ {lang === 'hindi' ? 'हिंदी में सुनें' : 'Listen in English'}
+        <div className="flex items-center gap-1.5">
+          {narrationState !== 'idle' && narrationState !== 'error' && (
+            <button
+              onClick={stopNarration}
+              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              title="बंद करें"
+            >
+              <Square className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={handleNarration}
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-white transition-colors ${
+              narrationState === 'playing'
+                ? 'bg-amber-400 hover:bg-amber-300'
+                : narrationState === 'paused'
+                ? 'bg-blue-400 hover:bg-blue-300'
+                : 'bg-white/20 hover:bg-white/30'
+            }`}
+            title={
+              narrationState === 'playing' ? 'रोकें' :
+              narrationState === 'paused' ? 'जारी रखें' : 'सुनें'
+            }
+          >
+            {narrationState === 'playing' ? (
+              <Pause className="w-3.5 h-3.5" />
+            ) : narrationState === 'paused' ? (
+              <Play className="w-3.5 h-3.5" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* TTS Error */}
+      {errorMessage && (
+        <div className="mx-4 mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-red-700 dark:text-red-300 text-xs">{errorMessage}</p>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="px-4 py-6 space-y-6">
+        {/* Meta */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {katha.deity && (
+            <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-3 py-1 rounded-full font-medium">
+              🙏 {katha.deity}
             </span>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {isIdle && (
-              <Button
-                size="sm"
-                onClick={() => speak(displayText, `katha-${id}-${lang}`)}
-                className="bg-amber-600 hover:bg-amber-700 text-white gap-2"
-              >
-                <Play className="w-4 h-4" />
-                {lang === 'hindi' ? 'सुनें ▶️' : 'Play ▶️'}
-              </Button>
-            )}
-            {isPlaying && (
-              <Button
-                size="sm"
-                onClick={pause}
-                className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
-              >
-                <Pause className="w-4 h-4" />
-                {lang === 'hindi' ? 'रोकें ⏸️' : 'Pause ⏸️'}
-              </Button>
-            )}
-            {isPaused && (
-              <Button
-                size="sm"
-                onClick={resume}
-                className="bg-amber-600 hover:bg-amber-700 text-white gap-2"
-              >
-                <Play className="w-4 h-4" />
-                {lang === 'hindi' ? 'जारी रखें ▶️' : 'Resume ▶️'}
-              </Button>
-            )}
-            {(isPlaying || isPaused) && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={stop}
-                className="border-amber-700/50 text-amber-400 gap-2"
-              >
-                <Square className="w-4 h-4" />
-                {lang === 'hindi' ? 'बंद करें ⏹️' : 'Stop ⏹️'}
-              </Button>
-            )}
-          </div>
-          {isPlaying && (
-            <p className="text-xs text-amber-400/70 mt-2 animate-pulse">
-              🔊 {lang === 'hindi' ? 'कथा सुनाई जा रही है...' : 'Narrating...'}
-            </p>
           )}
-          {isPaused && (
-            <p className="text-xs text-amber-400/70 mt-2">
-              ⏸️ {lang === 'hindi' ? 'रुकी हुई है' : 'Paused'}
-            </p>
-          )}
+          <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 px-3 py-1 rounded-full">
+            {getCategoryLabel(katha.category)}
+          </span>
+          {katha.tags.map(tag => (
+            <span key={tag} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+              #{tag}
+            </span>
+          ))}
         </div>
 
-        {/* Tags */}
-        {katha.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {katha.tags.map(tag => (
-              <span
-                key={tag}
-                className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs px-3 py-1 rounded-full border border-amber-500/20"
-              >
-                #{tag}
-              </span>
-            ))}
+        {/* Hindi Text */}
+        {katha.hindiText && (
+          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4">
+            <h2 className="text-amber-700 dark:text-amber-300 font-semibold text-sm mb-3">हिंदी</h2>
+            <p className="text-foreground text-base leading-relaxed whitespace-pre-wrap font-serif">
+              {katha.hindiText}
+            </p>
           </div>
         )}
 
-        {/* Katha Text */}
-        <div className="bg-card border border-amber-700/30 rounded-2xl p-5">
-          <div className="border-b border-amber-700/20 pb-3 mb-4">
-            <h2 className="text-lg font-bold text-foreground">
-              {lang === 'hindi' ? '📖 कथा पाठ' : '📖 Katha Text'}
-            </h2>
+        {/* English Text */}
+        {katha.englishText && (
+          <div className="bg-card border border-border rounded-xl p-4">
+            <h2 className="text-muted-foreground font-semibold text-sm mb-3">English</h2>
+            <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
+              {katha.englishText}
+            </p>
           </div>
-          <div
-            className={`leading-relaxed text-foreground whitespace-pre-wrap ${
-              lang === 'hindi' ? 'text-base font-medium' : 'text-sm'
-            }`}
-            style={{ fontFamily: lang === 'hindi' ? "'Noto Sans Devanagari', serif" : 'inherit' }}
-          >
-            {displayText}
-          </div>
-        </div>
-
-        {/* Bottom TTS reminder */}
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-center">
-          <p className="text-xs text-muted-foreground">
-            💡 ऊपर दिए गए <strong className="text-amber-500">🎙️ सुनें</strong> बटन से कथा को सुन सकते हैं
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );

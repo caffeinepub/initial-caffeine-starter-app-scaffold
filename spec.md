@@ -1,13 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** Make Katha publishing instant from the Admin Panel, add automatic TTS narration to all Katha detail pages, make Community photo uploads appear immediately without approval delays, and improve overall app performance.
+**Goal:** Fix authentication flow, public visibility of content, PWA narration, admin community controls, and image loading performance for the Divya Darshan app.
 
 **Planned changes:**
-- Admin-added Kathas are saved with a published/approved status by default so they appear immediately in the Kathayen section without any extra approval step.
-- Every Katha detail page (including dynamically added ones) automatically shows TTS play/pause/stop controls using the existing Hindi speech narration hook, with no additional admin configuration required.
-- Community posts with image/video attachments bypass any approval queue and appear in the feed instantly after submission.
-- Optimize React Query cache settings (staleTime, cacheTime) to reduce redundant refetches and prevent flickering on Kathayen and Community pages.
-- Reduce unnecessary re-renders on Home, Kathayen, and Community pages for smoother scrolling and navigation.
+- Implement one-click Internet Identity login/logout: clicking login immediately opens the Internet Identity popup (Google/passkey), no intermediate password form; a logout button is always visible when authenticated
+- Fix Vrat Katha public visibility: published kathas are returned by the backend for anonymous callers and displayed without requiring login
+- Fix Community posts public visibility: approved community posts are visible to unauthenticated users; backend returns approved posts for anonymous callers
+- Fix TTS narration in PWA: update the speech narration hook to handle Chrome Android PWA voice-loading bug, re-initialize Speech Synthesis on visibility changes, and add a fallback resume mechanism with a user-facing message if TTS is unavailable
+- Add Community Approval Queue tab in Admin Panel: list pending posts with Accept, Reject, and Delete actions; approved posts are also deletable by admin; backend restricts these actions to admin callers
+- Optimize community post image loading: add native lazy loading, skeleton/placeholder while loading, cache blob URLs to avoid re-fetching on every render
 
-**User-visible outcome:** Admins can add a Katha and it appears live immediately; all Katha pages have a built-in TTS narration control; community photos are visible right after upload; and the app navigates and loads faster with no flickering.
+**User-visible outcome:** Users can log in and out with one click via Internet Identity; Vrat Kathas and community posts are publicly visible without login; narration works correctly in the installed PWA; admins can manage community post approvals; community images load faster with placeholders.

@@ -18,7 +18,7 @@ export default function AartiDetail() {
       : aarti.englishText
     : '';
 
-  const { narrationState, speak, stop } = useSpeechNarration();
+  const { narrationState, startNarration, stopNarration } = useSpeechNarration();
   const isPlaying = narrationState === 'playing';
   const isPaused = narrationState === 'paused';
 
@@ -41,9 +41,9 @@ export default function AartiDetail() {
 
   const handleTTS = () => {
     if (isPlaying || isPaused) {
-      stop();
+      stopNarration();
     } else {
-      speak(textToDisplay, `aarti-${id}`);
+      startNarration(textToDisplay);
     }
   };
 

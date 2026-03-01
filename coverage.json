@@ -1,69 +1,102 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T04:32:00.384Z",
+  "generatedAt": "2026-03-01T03:19:17.058Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 6,
+    "implemented": 6,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "When an admin adds a new Katha from the Admin Panel, it must be saved to the backend and immediately appear in the Kathayen section without requiring any extra approval step or manual publishing action.",
+        "summary": "Implement one-click Internet Identity login/logout: clicking the login button must immediately open the Internet Identity flow (Google/passkey) with no additional password prompt. On successful authentication the user is logged in; a logout button must be visible and functional at all times when authenticated.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AdminPanel.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/Kathayen.tsx"
+          "frontend/src/components/LoginButton.tsx",
+          "frontend/src/components/AppLayout.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AdminPanel.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/Kathayen.tsx"
+          "frontend/src/components/LoginButton.tsx",
+          "frontend/src/components/AppLayout.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Every Katha detail page must include an automatic Text-to-Speech (TTS) narration option. When a Katha is added via the Admin Panel, the TTS narration control must be present on its detail page without any additional configuration required.",
+        "summary": "Fix Vrat Katha public visibility: when an admin uploads or publishes a Vrat Katha, it must immediately be visible to all public (unauthenticated) users, not only to the admin. The backend query for listing kathas must return all published/active kathas regardless of caller identity, and the frontend must display them without requiring login.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/pages/Kathayen.tsx",
           "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/hooks/useSpeechNarration.ts"
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/pages/KathaDetail.tsx"
+          "frontend/src/pages/Kathayen.tsx",
+          "frontend/src/pages/KathaDetail.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Community posts containing images must appear instantly after upload without any approval delay. Remove or bypass any approval queue or pending state for image/media posts so that uploaded photos are visible to the uploader and other users immediately.",
+        "summary": "Fix Community posts public visibility: admin-approved community posts must be visible to all users, including unauthenticated/public visitors. The backend query for listing community posts must return approved posts for anonymous callers, and the Community page must render them without requiring login.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/Community.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/CommunityPostCard.tsx"
         ],
         "matchedFiles": [
           "frontend/src/pages/Community.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/CommunityPostCard.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Improve overall app performance and smoothness: reduce unnecessary re-renders, optimize React Query cache settings (stale time, cache time), and ensure list pages (Kathayen, Community) load quickly with minimal layout shift.",
+        "summary": "Fix Narration (TTS) in PWA/installed app: the text-to-speech narration that works on the desktop browser must also work correctly when the app is installed as a PWA on mobile devices. Update the useSpeechNarration hook and any relevant pages (KathaDetail, AartiDetail, Bhajans, Mantras, Chalisa) to use a PWA-compatible TTS strategy — ensure the Speech Synthesis API is re-initialized after page visibility changes, handle the known Chrome Android PWA bug where voices are not loaded until an utterance event fires, and add a fallback resume mechanism so narration is not silently blocked.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/main.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/Kathayen.tsx",
-          "frontend/src/pages/Community.tsx",
-          "frontend/src/pages/Home.tsx"
+          "frontend/src/hooks/useSpeechNarration.ts",
+          "frontend/src/pages/KathaDetail.tsx",
+          "frontend/src/pages/AartiDetail.tsx",
+          "frontend/src/pages/Bhajans.tsx",
+          "frontend/src/pages/Mantras.tsx",
+          "frontend/src/pages/Chalisa.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/Kathayen.tsx",
+          "frontend/src/hooks/useSpeechNarration.ts",
+          "frontend/src/pages/KathaDetail.tsx",
+          "frontend/src/pages/AartiDetail.tsx",
+          "frontend/src/pages/Bhajans.tsx",
+          "frontend/src/pages/Mantras.tsx",
+          "frontend/src/pages/Chalisa.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Implement Community Admin Control panel: the Admin Panel must include a dedicated 'Community Approval Queue' tab listing all pending community posts (text, images, videos). For each pending post the admin must be able to Accept (approve and make public), Reject (decline without publishing), or Delete (permanently remove) the post. Already-approved posts must also be deletable by the admin. Backend must expose the necessary update/delete functions restricted to admin callers.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Optimize Community Photos loading speed: images in community posts must load faster. Implement lazy loading for images in CommunityPostCard (use native loading='lazy' attribute), add image dimension hints to avoid layout shift, and where possible display a low-quality placeholder or skeleton while the full image loads. If images are stored as blobs in the backend, serve them efficiently; avoid re-fetching large blobs on every render by caching blob URLs.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/CommunityPostCard.tsx",
+          "frontend/src/pages/Community.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/CommunityPostCard.tsx",
           "frontend/src/pages/Community.tsx"
         ]
       }
@@ -76,18 +109,25 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/ProfileSetupModal.tsx",
+    "frontend/src/components/AppLayout.tsx",
+    "frontend/src/components/ChatMessage.tsx",
+    "frontend/src/components/CommunityPostCard.tsx",
+    "frontend/src/components/LoginButton.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/kathaData.ts",
+    "frontend/src/hooks/useSpeechNarration.ts",
+    "frontend/src/pages/AartiDetail.tsx",
     "frontend/src/pages/AdminPanel.tsx",
+    "frontend/src/pages/Bhajans.tsx",
+    "frontend/src/pages/Chalisa.tsx",
     "frontend/src/pages/Community.tsx",
     "frontend/src/pages/KathaDetail.tsx",
     "frontend/src/pages/Kathayen.tsx",
-    "frontend/src/pages/Profile.tsx",
+    "frontend/src/pages/Mantras.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

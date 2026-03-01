@@ -1,119 +1,176 @@
-import { useState } from 'react';
-import { CommunityPost } from '../backend';
+import React, { useState, useMemo } from 'react';
+import { Heart, Flag, FileText, Play, Pause } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { CommunityPost } from '../backend';
 import { useLikeCommunityPost } from '../hooks/useQueries';
-import { Download, FileText } from 'lucide-react';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
 }
 
-export default function CommunityPostCard({ post }: CommunityPostCardProps) {
-  const likeMutation = useLikeCommunityPost();
-  const [liked, setLiked] = useState(false);
-
-  const handleLike = () => {
-    if (!liked) {
-      setLiked(true);
-      likeMutation.mutate(post.id);
-    }
-  };
-
-  const timeAgo = (timestamp: bigint) => {
-    const now = Date.now();
-    const postTime = Number(timestamp) / 1_000_000;
-    const diff = now - postTime;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    if (days > 0) return `${days} दिन पहले`;
-    if (hours > 0) return `${hours} घंटे पहले`;
-    if (minutes > 0) return `${minutes} मिनट पहले`;
-    return 'अभी';
-  };
+function ImageWithSkeleton({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 hover:border-gold-500/30 hover:scale-[1.01] transition-all duration-200">
+    <div className="relative w-full rounded-lg overflow-hidden bg-muted" style={{ minHeight: 180 }}>
+      {!loaded && !error && (
+        <Skeleton className="absolute inset-0 w-full h-full rounded-lg" />
+      )}
+      {!error && (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className={`w-full object-cover rounded-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          style={{ maxHeight: 320 }}
+          onLoad={() => setLoaded(true)}
+          onError={() => { setError(true); setLoaded(true); }}
+        />
+      )}
+      {error && (
+        <div className="flex items-center justify-center h-44 text-muted-foreground text-sm">
+          Image load failed
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function CommunityPostCard({ post }: CommunityPostCardProps) {
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
+  const likeMutation = useLikeCommunityPost();
+
+  // Cache direct URLs using useMemo to avoid recreating on every render
+  const imageUrl = useMemo(() => {
+    if (!post.image) return null;
+    return post.image.getDirectURL();
+  }, [post.image]);
+
+  const videoUrl = useMemo(() => {
+    if (!post.video) return null;
+    return post.video.getDirectURL();
+  }, [post.video]);
+
+  const fileUrl = useMemo(() => {
+    if (!post.fileAttachment) return null;
+    return post.fileAttachment.blob.getDirectURL();
+  }, [post.fileAttachment]);
+
+  const handleLike = () => {
+    if (!isAuthenticated) return;
+    likeMutation.mutate(post.id);
+  };
+
+  const authorShort = post.author.toString().slice(0, 8) + '...';
+  const timeAgo = formatTimeAgo(Number(post.timestamp));
+
+  return (
+    <article className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-saffron-600 to-gold-500 flex items-center justify-center text-white text-sm font-bold">
-            🙏
-          </div>
-          <div>
-            <p className="text-foreground text-sm font-medium">भक्त</p>
-            <p className="text-muted-foreground text-xs">{timeAgo(post.timestamp)}</p>
-          </div>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          {authorShort[0]?.toUpperCase() ?? '?'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{authorShort}</p>
+          <p className="text-xs text-muted-foreground">{timeAgo}</p>
         </div>
         {post.deityTag && (
-          <span className="bg-saffron-700/30 text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-500/30">
-            🕉️ {post.deityTag}
+          <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
+            {post.deityTag}
           </span>
         )}
       </div>
 
-      {/* Content text */}
+      {/* Content */}
       {post.content && (
-        <p className="text-foreground text-sm leading-relaxed mb-3">{post.content}</p>
+        <p className="text-foreground text-sm leading-relaxed mb-3 whitespace-pre-wrap">
+          {post.content}
+        </p>
       )}
 
-      {/* Image attachment */}
-      {post.image && (
-        <div className="mb-3 rounded-xl overflow-hidden border border-border/50">
-          <img
-            src={post.image.getDirectURL()}
-            alt="पोस्ट की छवि"
-            className="w-full max-h-72 object-cover"
-            loading="lazy"
+      {/* Image — lazy loaded with skeleton */}
+      {imageUrl && (
+        <div className="mb-3">
+          <ImageWithSkeleton src={imageUrl} alt="Community post image" />
+        </div>
+      )}
+
+      {/* Video */}
+      {videoUrl && (
+        <div className="mb-3">
+          <video
+            src={videoUrl}
+            controls
+            preload="metadata"
+            className="w-full rounded-lg max-h-72 bg-black"
+            style={{ display: 'block' }}
           />
         </div>
       )}
 
-      {/* Video attachment */}
-      {post.video && (
-        <div className="mb-3 rounded-xl overflow-hidden border border-border/50">
-          <video
-            src={post.video.getDirectURL()}
-            controls
-            className="w-full max-h-72"
-            preload="metadata"
-          >
-            आपका ब्राउज़र वीडियो नहीं चला सकता।
-          </video>
-        </div>
-      )}
-
-      {/* File attachment */}
-      {post.fileAttachment && (
+      {/* File Attachment */}
+      {fileUrl && post.fileAttachment && (
         <div className="mb-3">
           <a
-            href={post.fileAttachment.blob.getDirectURL()}
+            href={fileUrl}
             download={post.fileAttachment.filename}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-muted/60 border border-border/50 rounded-xl px-3 py-2 hover:bg-muted transition-all duration-200 group"
+            className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm text-foreground hover:bg-muted/80 transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-saffron-700/30 flex items-center justify-center flex-shrink-0">
-              <FileText size={16} className="text-amber-400" />
-            </div>
-            <span className="text-foreground text-sm truncate flex-1">{post.fileAttachment.filename}</span>
-            <Download size={14} className="text-muted-foreground group-hover:text-amber-400 transition-colors flex-shrink-0" />
+            <FileText className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="truncate">{post.fileAttachment.filename}</span>
           </a>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-4">
+      {/* Footer Actions */}
+      <div className="flex items-center gap-4 pt-2 border-t border-border/50">
         <button
           onClick={handleLike}
-          disabled={liked || likeMutation.isPending}
-          className={`flex items-center gap-1 text-sm transition-all duration-200 hover:scale-110 ${
-            liked ? 'text-red-400' : 'text-muted-foreground hover:text-red-400'
+          disabled={!isAuthenticated || likeMutation.isPending}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${
+            isAuthenticated
+              ? 'text-muted-foreground hover:text-red-500 cursor-pointer'
+              : 'text-muted-foreground/50 cursor-default'
           }`}
+          title={isAuthenticated ? 'Like this post' : 'Login to like'}
         >
-          {liked ? '❤️' : '🤍'} {Number(post.likes) + (liked ? 1 : 0)}
+          <Heart
+            className={`w-4 h-4 ${likeMutation.isPending ? 'animate-pulse' : ''}`}
+          />
+          <span>{Number(post.likes)}</span>
         </button>
-        <span className="text-muted-foreground text-xs">💬 {Number(post.comments)}</span>
+
+        {!isAuthenticated && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            Login करें like करने के लिए
+          </span>
+        )}
       </div>
-    </div>
+    </article>
   );
+}
+
+function formatTimeAgo(timestamp: number): string {
+  // timestamp is in nanoseconds from IC
+  const ms = timestamp / 1_000_000;
+  const now = Date.now();
+  const diff = now - ms;
+
+  if (diff < 0) return 'अभी';
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'अभी';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} मिनट पहले`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} घंटे पहले`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} दिन पहले`;
+  return new Date(ms).toLocaleDateString('hi-IN');
 }

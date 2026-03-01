@@ -1,179 +1,140 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { Search, BookOpen, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { useGetAllKathayen } from '../hooks/useQueries';
+import React, { useState, useMemo } from 'react';
+import { Search, BookOpen } from 'lucide-react';
 import KathaCard from '../components/KathaCard';
+import { useGetAllKathayen } from '../hooks/useQueries';
 import { staticKathaData } from '../lib/kathaData';
 import type { Katha } from '../backend';
 import { KathaCategory } from '../backend';
 
-type NormalisedKatha = {
-  id: number;
-  title: string;
-  category: KathaCategory | string;
-  deity: string;
-  hindiText: string;
-  englishText: string;
-  tags: string[];
-  source: 'static' | 'backend';
-};
+type FilterTab = 'all' | 'puranik' | 'vrat';
 
-function normaliseBackend(k: Katha): NormalisedKatha {
-  return {
-    id: Number(k.id),
-    title: k.title,
-    category: k.category,
-    deity: k.deity,
-    hindiText: k.hindiText,
-    englishText: k.englishText,
-    tags: k.tags,
-    source: 'backend',
-  };
+function isCategoryMatch(cat: unknown, target: 'puranik' | 'vrat'): boolean {
+  if (typeof cat === 'string') return cat === target;
+  if (typeof cat === 'object' && cat !== null) return target in cat;
+  return false;
 }
-
-function normaliseStatic(k: typeof staticKathaData[0]): NormalisedKatha {
-  return {
-    id: Number(k.id),
-    title: k.title,
-    category: typeof k.category === 'object' ? Object.keys(k.category)[0] : String(k.category),
-    deity: k.deity,
-    hindiText: k.hindiText,
-    englishText: k.englishText,
-    tags: k.tags,
-    source: 'static',
-  };
-}
-
-const FILTER_TABS = [
-  { key: 'all', label: 'सभी' },
-  { key: 'puranik', label: 'पौराणिक' },
-  { key: 'vrat', label: 'व्रत कथा' },
-];
 
 export default function Kathayen() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
+  // Public query — no auth required
   const { data: backendKathas, isLoading } = useGetAllKathayen();
 
-  const allKathas = useMemo<NormalisedKatha[]>(() => {
-    const backendNorm = (backendKathas ?? []).map(normaliseBackend);
-    const backendIds = new Set(backendNorm.map(k => k.id));
-    const staticNorm = staticKathaData
-      .map(normaliseStatic)
-      .filter(k => !backendIds.has(k.id));
-    return [...backendNorm, ...staticNorm];
+  const allKathas = useMemo((): Katha[] => {
+    const backend = backendKathas ?? [];
+    // Merge static + backend, backend takes precedence for same id
+    const staticAsKatha: Katha[] = staticKathaData.map(k => ({
+      ...k,
+      id: typeof k.id === 'bigint' ? k.id : BigInt(k.id as number),
+      createdAt: BigInt(0),
+    }));
+    const backendIds = new Set(backend.map(k => k.id.toString()));
+    const uniqueStatic = staticAsKatha.filter(k => !backendIds.has(k.id.toString()));
+    return [...backend, ...uniqueStatic];
   }, [backendKathas]);
 
   const filtered = useMemo(() => {
-    let list = allKathas;
-    if (activeFilter !== 'all') {
-      list = list.filter(k => {
-        const cat = typeof k.category === 'string'
-          ? k.category
-          : Object.keys(k.category as object)[0];
-        return cat === activeFilter;
+    let result = allKathas;
+
+    if (activeTab === 'puranik') {
+      result = result.filter(k => {
+        const cat = k.category;
+        return cat === KathaCategory.puranik || isCategoryMatch(cat, 'puranik');
+      });
+    } else if (activeTab === 'vrat') {
+      result = result.filter(k => {
+        const cat = k.category;
+        return cat === KathaCategory.vrat || isCategoryMatch(cat, 'vrat');
       });
     }
+
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(
+      result = result.filter(
         k =>
           k.title.toLowerCase().includes(q) ||
           k.deity.toLowerCase().includes(q) ||
-          k.tags.some(t => t.toLowerCase().includes(q)),
+          k.tags.some(t => t.toLowerCase().includes(q))
       );
     }
-    return list;
-  }, [allKathas, activeFilter, search]);
+
+    return result;
+  }, [allKathas, activeTab, search]);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
       {/* Hero Banner */}
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative overflow-hidden">
         <img
           src="/assets/generated/kathayen-banner.dim_1200x400.png"
           alt="Kathayen"
-          className="w-full h-full object-cover"
+          className="w-full h-40 object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70 flex flex-col items-center justify-center text-white">
-          <h1 className="text-3xl font-bold drop-shadow">📖 कथाएं</h1>
-          <p className="text-amber-200 text-sm mt-1">पवित्र कथाओं का संग्रह</p>
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-900/60 to-amber-900/80 flex flex-col items-center justify-center">
+          <h1 className="text-white font-bold text-2xl drop-shadow">कथाएं</h1>
+          <p className="text-amber-100 text-sm mt-1">पवित्र कथाओं का संग्रह</p>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="px-4 py-4 space-y-4">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="कथा खोजें..."
+          <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 bg-card border-border"
+            placeholder="कथा खोजें..."
+            className="w-full bg-muted rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
 
         {/* Filter Tabs */}
         <div className="flex gap-2">
-          {FILTER_TABS.map(tab => (
+          {(['all', 'puranik', 'vrat'] as FilterTab[]).map(tab => (
             <button
-              key={tab.key}
-              onClick={() => setActiveFilter(tab.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeFilter === tab.key
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                activeTab === tab
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
-              {tab.label}
+              {tab === 'all' ? 'सभी' : tab === 'puranik' ? 'पौराणिक' : 'व्रत'}
             </button>
           ))}
         </div>
 
         {/* Loading */}
         {isLoading && (
-          <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">कथाएं लोड हो रही हैं...</span>
+          <div className="grid grid-cols-1 gap-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-2 animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+                <div className="h-3 bg-muted rounded w-full" />
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Count */}
+        {/* Kathas Grid */}
         {!isLoading && (
-          <p className="text-xs text-muted-foreground">
-            {filtered.length} कथाएं मिलीं
-            {backendKathas && backendKathas.length > 0 && (
-              <span className="ml-2 text-primary">• {backendKathas.length} admin द्वारा add की गई</span>
+          <>
+            {filtered.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">कोई कथा नहीं मिली</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {filtered.map(katha => (
+                  <KathaCard key={katha.id.toString()} katha={katha as any} />
+                ))}
+              </div>
             )}
-          </p>
-        )}
-
-        {/* Grid — KathaCard handles its own navigation internally */}
-        <div className="grid grid-cols-1 gap-4">
-          {filtered.map(katha => (
-            <KathaCard
-              key={`${katha.source}-${katha.id}`}
-              katha={katha as any}
-            />
-          ))}
-        </div>
-
-        {filtered.length === 0 && !isLoading && (
-          <div className="text-center py-12 text-muted-foreground">
-            <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p>कोई कथा नहीं मिली</p>
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="mt-2 text-primary text-sm underline"
-              >
-                Search clear करें
-              </button>
-            )}
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
+import { LogIn, LogOut, Loader2 } from 'lucide-react';
 
 export default function LoginButton() {
   const { login, clear, loginStatus, identity } = useInternetIdentity();
@@ -16,9 +17,8 @@ export default function LoginButton() {
     } else {
       try {
         await login();
-      } catch (error: unknown) {
-        const err = error as Error;
-        if (err?.message === 'User is already authenticated') {
+      } catch (error: any) {
+        if (error?.message === 'User is already authenticated') {
           await clear();
           setTimeout(() => login(), 300);
         }
@@ -30,16 +30,32 @@ export default function LoginButton() {
     <button
       onClick={handleAuth}
       disabled={isLoggingIn}
-      className="px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 disabled:opacity-50"
-      style={{
-        background: isAuthenticated
-          ? 'rgba(255,255,255,0.25)'
-          : 'rgba(255,255,255,0.2)',
-        color: 'white',
-        border: '1px solid rgba(255,255,255,0.5)',
-      }}
+      className={`
+        flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+        transition-all duration-200 disabled:opacity-60
+        ${isAuthenticated
+          ? 'bg-white/20 hover:bg-white/30 text-white border border-white/30'
+          : 'bg-white text-amber-700 hover:bg-amber-50 shadow-sm'
+        }
+      `}
+      title={isAuthenticated ? 'Logout' : 'Login with Internet Identity (Google/Passkey)'}
     >
-      {isLoggingIn ? '...' : isAuthenticated ? 'लॉगआउट' : 'लॉगिन'}
+      {isLoggingIn ? (
+        <>
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <span className="hidden sm:inline">Login...</span>
+        </>
+      ) : isAuthenticated ? (
+        <>
+          <LogOut className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Logout</span>
+        </>
+      ) : (
+        <>
+          <LogIn className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Login</span>
+        </>
+      )}
     </button>
   );
 }

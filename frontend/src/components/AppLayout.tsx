@@ -1,76 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from '@tanstack/react-router';
+import React, { useState } from 'react';
+import { Outlet } from '@tanstack/react-router';
 import BottomNav from './BottomNav';
+import LoginButton from './LoginButton';
+import ProfileSetupModal from './ProfileSetupModal';
 import NotificationBanner from './NotificationBanner';
 import { useDailyNotifications } from '../hooks/useDailyNotifications';
+import { useGetCallerUserProfile } from '../hooks/useQueries';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
+export default function AppLayout() {
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
 
-export default function AppLayout({ children }: AppLayoutProps) {
+  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
+
   const { currentBanner, dismissBanner } = useDailyNotifications();
-  const [vratMode, setVratMode] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('vratMode');
-    setVratMode(stored === 'true');
-  }, []);
+  const handleDismissBanner = () => {
+    dismissBanner();
+    setBannerDismissed(true);
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-saffron-700 via-saffron-600 to-gold-500 shadow-lg">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-500 shadow-lg">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
+          {/* Logo + Title */}
+          <div className="flex items-center gap-2">
             <img
               src="/assets/generated/om-logo.dim_256x256.png"
               alt="Om"
-              className="w-9 h-9 rounded-full object-cover group-hover:scale-110 transition-transform duration-300"
-              onError={(e) => {
-                const el = e.target as HTMLImageElement;
-                el.style.display = 'none';
-              }}
+              className="w-8 h-8 rounded-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <div>
-              <h1 className="text-white font-bold text-lg leading-tight tracking-wide">श्री मंदिर</h1>
-              <p className="text-white/80 text-xs">Hindu Devotional App</p>
+              <h1 className="text-white font-bold text-base leading-tight">
+                श्री हरि भक्ति
+              </h1>
+              <p className="text-amber-100 text-xs leading-tight">
+                Devotional App
+              </p>
             </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            {vratMode && (
-              <Link
-                to="/vrat-dashboard"
-                className="bg-amber-500/20 border border-amber-400/50 text-amber-100 text-xs px-3 py-1 rounded-full font-medium"
-              >
-                🙏 व्रत मोड
-              </Link>
-            )}
-            <Link
-              to="/profile"
-              className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all duration-200 hover:scale-110"
-            >
-              <span className="text-white text-lg">👤</span>
-            </Link>
           </div>
+
+          {/* Login/Logout Button — always visible */}
+          <LoginButton />
         </div>
       </header>
 
       {/* Notification Banner */}
-      {currentBanner && (
+      {currentBanner && !bannerDismissed && (
         <NotificationBanner
           message={currentBanner}
-          onDismiss={dismissBanner}
+          onDismiss={handleDismissBanner}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-2xl mx-auto w-full pb-24">
-        {children}
+      <main className="flex-1 max-w-2xl mx-auto w-full pb-20">
+        <Outlet />
       </main>
 
       {/* Bottom Navigation */}
       <BottomNav />
+
+      {/* Profile Setup Modal — only shown to authenticated users without a profile */}
+      {showProfileSetup && <ProfileSetupModal />}
     </div>
   );
 }

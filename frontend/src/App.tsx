@@ -31,9 +31,7 @@ const queryClient = new QueryClient({
 
 const rootRoute = createRootRoute({
   component: () => (
-    <AppLayout>
-      <Outlet />
-    </AppLayout>
+    <AppLayout />
   ),
 });
 

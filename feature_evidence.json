@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-when-an-admin-adds-a-new-katha-from-the-admin-panel-it-must-be-saved-to-the-backend-and-immediately-appear-in-the-kathayen-section-without-requiring-any-extra-approval-step-or-manual-publishing-action",
-      "featureTitle": "When an admin adds a new Katha from the Admin Panel, it must be saved to the backend and immediately appear in the Kathayen section without requiring any extra approval step or manual publishing action.",
+      "featureId": "feature-implement-one-click-internet-identity-login-logout-clicking-the-login-button-must-immediately-open-the-internet-identity-flow-google-passkey-with-no-additional-password-prompt-on-successful-authentication-the-user-is-logged-in-a-logout-button-must-be-visible-and-functional-at-all-times-when-authenticated",
+      "featureTitle": "Implement one-click Internet Identity login/logout: clicking the login button must immediately open the Internet Identity flow (Google/passkey) with no additional password prompt. On successful authentication the user is logged in; a logout button must be visible and functional at all times when authenticated.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPanel.tsx",
-        "frontend/src/pages/Kathayen.tsx"
+        "frontend/src/components/AppLayout.tsx",
+        "frontend/src/components/LoginButton.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -25,10 +24,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-every-katha-detail-page-must-include-an-automatic-text-to-speech-tts-narration-option-when-a-katha-is-added-via-the-admin-panel-the-tts-narration-control-must-be-present-on-its-detail-page-without-any-additional-configuration-required",
-      "featureTitle": "Every Katha detail page must include an automatic Text-to-Speech (TTS) narration option. When a Katha is added via the Admin Panel, the TTS narration control must be present on its detail page without any additional configuration required.",
+      "featureId": "feature-fix-vrat-katha-public-visibility-when-an-admin-uploads-or-publishes-a-vrat-katha-it-must-immediately-be-visible-to-all-public-unauthenticated-users-not-only-to-the-admin-the-backend-query-for-listing-kathas-must-return-all-published-active-kathas-regardless-of-caller-identity-and-the-frontend-must-display-them-without-requiring-login",
+      "featureTitle": "Fix Vrat Katha public visibility: when an admin uploads or publishes a Vrat Katha, it must immediately be visible to all public (unauthenticated) users, not only to the admin. The backend query for listing kathas must return all published/active kathas regardless of caller identity, and the frontend must display them without requiring login.",
       "files": [
-        "frontend/src/pages/KathaDetail.tsx"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/KathaDetail.tsx",
+        "frontend/src/pages/Kathayen.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -46,9 +47,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-community-posts-containing-images-must-appear-instantly-after-upload-without-any-approval-delay-remove-or-bypass-any-approval-queue-or-pending-state-for-image-media-posts-so-that-uploaded-photos-are-visible-to-the-uploader-and-other-users-immediately",
-      "featureTitle": "Community posts containing images must appear instantly after upload without any approval delay. Remove or bypass any approval queue or pending state for image/media posts so that uploaded photos are visible to the uploader and other users immediately.",
+      "featureId": "feature-fix-community-posts-public-visibility-admin-approved-community-posts-must-be-visible-to-all-users-including-unauthenticated-public-visitors-the-backend-query-for-listing-community-posts-must-return-approved-posts-for-anonymous-callers-and-the-community-page-must-render-them-without-requiring-login",
+      "featureTitle": "Fix Community posts public visibility: admin-approved community posts must be visible to all users, including unauthenticated/public visitors. The backend query for listing community posts must return approved posts for anonymous callers, and the Community page must render them without requiring login.",
       "files": [
+        "frontend/src/components/CommunityPostCard.tsx",
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/Community.tsx"
       ],
@@ -68,12 +70,15 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-overall-app-performance-and-smoothness-reduce-unnecessary-re-renders-optimize-react-query-cache-settings-stale-time-cache-time-and-ensure-list-pages-kathayen-community-load-quickly-with-minimal-layout-shift",
-      "featureTitle": "Improve overall app performance and smoothness: reduce unnecessary re-renders, optimize React Query cache settings (stale time, cache time), and ensure list pages (Kathayen, Community) load quickly with minimal layout shift.",
+      "featureId": "feature-fix-narration-tts-in-pwa-installed-app-the-text-to-speech-narration-that-works-on-the-desktop-browser-must-also-work-correctly-when-the-app-is-installed-as-a-pwa-on-mobile-devices-update-the-usespeechnarration-hook-and-any-relevant-pages-kathadetail-aartidetail-bhajans-mantras-chalisa-to-use-a-pwa-compatible-tts-strategy-ensure-the-speech-synthesis-api-is-re-initialized-after-page-visibility-changes-handle-the-known-chrome-android-pwa-bug-where-voices-are-not-loaded-until-an-utterance-event-fires-and-add-a-fallback-resume-mechanism-so-narration-is-not-silently-blocked",
+      "featureTitle": "Fix Narration (TTS) in PWA/installed app: the text-to-speech narration that works on the desktop browser must also work correctly when the app is installed as a PWA on mobile devices. Update the useSpeechNarration hook and any relevant pages (KathaDetail, AartiDetail, Bhajans, Mantras, Chalisa) to use a PWA-compatible TTS strategy — ensure the Speech Synthesis API is re-initialized after page visibility changes, handle the known Chrome Android PWA bug where voices are not loaded until an utterance event fires, and add a fallback resume mechanism so narration is not silently blocked.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/Community.tsx",
-        "frontend/src/pages/Kathayen.tsx"
+        "frontend/src/hooks/useSpeechNarration.ts",
+        "frontend/src/pages/AartiDetail.tsx",
+        "frontend/src/pages/Bhajans.tsx",
+        "frontend/src/pages/Chalisa.tsx",
+        "frontend/src/pages/KathaDetail.tsx",
+        "frontend/src/pages/Mantras.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -87,6 +92,50 @@
       ],
       "testIds": [
         "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-community-admin-control-panel-the-admin-panel-must-include-a-dedicated-community-approval-queue-tab-listing-all-pending-community-posts-text-images-videos-for-each-pending-post-the-admin-must-be-able-to-accept-approve-and-make-public-reject-decline-without-publishing-or-delete-permanently-remove-the-post-already-approved-posts-must-also-be-deletable-by-the-admin-backend-must-expose-the-necessary-update-delete-functions-restricted-to-admin-callers",
+      "featureTitle": "Implement Community Admin Control panel: the Admin Panel must include a dedicated 'Community Approval Queue' tab listing all pending community posts (text, images, videos). For each pending post the admin must be able to Accept (approve and make public), Reject (decline without publishing), or Delete (permanently remove) the post. Already-approved posts must also be deletable by the admin. Backend must expose the necessary update/delete functions restricted to admin callers.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-optimize-community-photos-loading-speed-images-in-community-posts-must-load-faster-implement-lazy-loading-for-images-in-communitypostcard-use-native-loading-lazy-attribute-add-image-dimension-hints-to-avoid-layout-shift-and-where-possible-display-a-low-quality-placeholder-or-skeleton-while-the-full-image-loads-if-images-are-stored-as-blobs-in-the-backend-serve-them-efficiently-avoid-re-fetching-large-blobs-on-every-render-by-caching-blob-urls",
+      "featureTitle": "Optimize Community Photos loading speed: images in community posts must load faster. Implement lazy loading for images in CommunityPostCard (use native loading='lazy' attribute), add image dimension hints to avoid layout shift, and where possible display a low-quality placeholder or skeleton while the full image loads. If images are stored as blobs in the backend, serve them efficiently; avoid re-fetching large blobs on every render by caching blob URLs.",
+      "files": [
+        "frontend/src/components/CommunityPostCard.tsx",
+        "frontend/src/pages/Community.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
       ],
       "confidence": "high"
     }

@@ -1,106 +1,148 @@
 {
   "kind": "build_request",
-  "title": "Admin Katha Direct Publish with TTS, Instant Community Photos, and Performance Improvements",
+  "title": "Login/Logout, Public Visibility Fixes, TTS PWA Fix, Admin Controls & Photo Optimization",
   "projectName": "Divya Darshan",
-  "priority": "normal",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "When an admin adds a new Katha from the Admin Panel, it must be saved to the backend and immediately appear in the Kathayen section without requiring any extra approval step or manual publishing action.",
-      "target": "both",
+      "text": "Implement one-click Internet Identity login/logout: clicking the login button must immediately open the Internet Identity flow (Google/passkey) with no additional password prompt. On successful authentication the user is logged in; a logout button must be visible and functional at all times when authenticated.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3",
-          "msg-5"
+          "msg-1",
+          "msg-6"
         ],
         "quotes": [
-          "Admin panel me jo bhi katha admin add kre vo seedha katha section me add ho",
-          "Admin Panel से कथा add करने पर सीधे Katha Section में दिखे"
+          "One-click Login/Logout — Google/passkey पर click करते ही सीधे Internet Identity से login, कोई password नहीं",
+          "login me koe password nhi mange seedha hi login ho or logout ho gmail pr click krke"
         ]
       },
       "acceptanceCriteria": [
-        "Admin submits a new Katha via the Admin Panel form.",
-        "The Katha is stored in the backend with an approved/published status by default.",
-        "The Katha immediately appears in the Kathayen listing page without requiring any additional approval toggle.",
-        "The newly added Katha card is visible to all users on the Kathayen page."
+        "Clicking the login button launches Internet Identity directly without any intermediate password form",
+        "Google/passkey option is presented in the Internet Identity popup",
+        "After login, the UI shows a visible logout button",
+        "Clicking logout clears the session and returns the user to the unauthenticated state",
+        "No custom password field is rendered anywhere in the login flow"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Every Katha detail page must include an automatic Text-to-Speech (TTS) narration option. When a Katha is added via the Admin Panel, the TTS narration control must be present on its detail page without any additional configuration required.",
-      "target": "frontend",
+      "text": "Fix Vrat Katha public visibility: when an admin uploads or publishes a Vrat Katha, it must immediately be visible to all public (unauthenticated) users, not only to the admin. The backend query for listing kathas must return all published/active kathas regardless of caller identity, and the frontend must display them without requiring login.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-3",
-          "msg-5"
+          "msg-1",
+          "msg-3"
         ],
         "quotes": [
-          "apne aap usme narration option add ho jaye",
-          "tts ka option apne aap add ho or admin jo katha add kre",
-          "हर कथा में automatically TTS (Text-to-Speech) narration option add हो जाए"
+          "Vrat Katha public visibility fix — Upload होने के बाद सभी public users को दिखे",
+          "vrat katha upload krne ke baad public ko nahi dikh raha hai sitf admin ko visisble hai isse bhi thik kro"
         ]
       },
       "acceptanceCriteria": [
-        "KathaDetail page renders TTS play/pause/stop controls for every katha, including those added dynamically from the backend.",
-        "TTS uses Hindi voice when available (matching existing useSpeechNarration hook behavior).",
-        "TTS controls are visible without any manual toggle or extra admin step.",
-        "Static kathas from kathaData.ts also have TTS controls if not already present."
+        "A Vrat Katha uploaded/published by admin appears in the listing for unauthenticated users immediately",
+        "The backend getKathas (or equivalent) query returns published kathas for anonymous callers",
+        "No login is required to browse or read Vrat Kathas",
+        "Admin-only drafts or pending items are still hidden from public"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Community posts containing images must appear instantly after upload without any approval delay. Remove or bypass any approval queue or pending state for image/media posts so that uploaded photos are visible to the uploader and other users immediately.",
+      "text": "Fix Community posts public visibility: admin-approved community posts must be visible to all users, including unauthenticated/public visitors. The backend query for listing community posts must return approved posts for anonymous callers, and the Community page must render them without requiring login.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-3",
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "community me jo bhi pic vagara upload krta hun to kam se kam 1 ghanta lagta hai dekhne ke liya",
-          "Community mein upload ki gayi photos turant dikhen bina kisi delay ke"
+          "Community posts public visibility — Admin द्वारा approved posts सभी users को visible हों"
         ]
       },
       "acceptanceCriteria": [
-        "A community post with an image attachment is visible in the Community feed immediately after submission.",
-        "No approval step is required for community posts with image/video attachments.",
-        "The post appears in the feed within seconds of submission, not minutes or hours.",
-        "Existing approved posts remain unaffected."
+        "Approved community posts are visible on the Community page to logged-out users",
+        "Backend getCommunityPosts (or equivalent) returns approved posts for anonymous callers",
+        "Pending or rejected posts remain hidden from public",
+        "Authenticated users and anonymous users see the same set of approved posts"
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Improve overall app performance and smoothness: reduce unnecessary re-renders, optimize React Query cache settings (stale time, cache time), and ensure list pages (Kathayen, Community) load quickly with minimal layout shift.",
+      "text": "Fix Narration (TTS) in PWA/installed app: the text-to-speech narration that works on the desktop browser must also work correctly when the app is installed as a PWA on mobile devices. Update the useSpeechNarration hook and any relevant pages (KathaDetail, AartiDetail, Bhajans, Mantras, Chalisa) to use a PWA-compatible TTS strategy — ensure the Speech Synthesis API is re-initialized after page visibility changes, handle the known Chrome Android PWA bug where voices are not loaded until an utterance event fires, and add a fallback resume mechanism so narration is not silently blocked.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3",
-          "msg-5"
+          "msg-1",
+          "msg-4"
         ],
         "quotes": [
-          "app smoothly kaam kre",
-          "App ki overall performance aur smoothness improve karna"
+          "Narration (TTS) fix — PWA/downloaded app में भी narration सही से काम करे",
+          "narration option web pr sahi kam krta hai lekin download hone ke baad nahi krta"
         ]
       },
       "acceptanceCriteria": [
-        "React Query staleTime is set to a reasonable value (e.g., 30 seconds) to avoid redundant refetches on navigation.",
-        "Kathayen and Community pages do not flicker or show empty states during data load when data is already cached.",
-        "Community post submission does not freeze or lag the UI.",
-        "No obvious janky scroll or animation issues on Home, Kathayen, and Community pages."
+        "TTS narration plays correctly when the app is installed and opened as a PWA on Android/iOS",
+        "Voices load properly on first use inside the PWA without requiring a page reload",
+        "Narration controls (play/pause/stop) are functional in the PWA environment",
+        "No silent failure — if TTS is unavailable an appropriate message is shown to the user"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Implement Community Admin Control panel: the Admin Panel must include a dedicated 'Community Approval Queue' tab listing all pending community posts (text, images, videos). For each pending post the admin must be able to Accept (approve and make public), Reject (decline without publishing), or Delete (permanently remove) the post. Already-approved posts must also be deletable by the admin. Backend must expose the necessary update/delete functions restricted to admin callers.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Community Admin Control — Posts का approval queue, accept/reject/delete"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin Panel has a 'Pending Posts' or 'Approval Queue' tab",
+        "Each pending post shows its content, author, and timestamp",
+        "Admin can click Accept to approve a post (it becomes visible to public)",
+        "Admin can click Reject to decline a post (it is not shown publicly)",
+        "Admin can click Delete to permanently remove any post",
+        "Non-admin users cannot access approval or delete functions",
+        "After an action, the queue updates to reflect the new state"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Optimize Community Photos loading speed: images in community posts must load faster. Implement lazy loading for images in CommunityPostCard (use native loading='lazy' attribute), add image dimension hints to avoid layout shift, and where possible display a low-quality placeholder or skeleton while the full image loads. If images are stored as blobs in the backend, serve them efficiently; avoid re-fetching large blobs on every render by caching blob URLs.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Community Photos speed optimization — Images जल्दी load हों"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Community post images use native lazy loading",
+        "A skeleton/placeholder is shown while images are loading",
+        "Images below the fold do not block initial page render",
+        "Blob URLs for backend-stored images are cached and not recreated on every render",
+        "Visible improvement in perceived load time for the Community page"
       ]
     }
   ],
   "constraints": [
-    "Do not alter immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "All backend logic must remain in the single-actor backend/main.mo file.",
-    "Preserve existing Internet Identity authentication flow.",
-    "Do not remove or break any existing sections (Aarti, Jap, Mandir, AIGuru, Panchang, etc.)."
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts or frontend/src/hooks/useActor.ts — compose or wrap them instead",
+    "Do not modify files under frontend/src/components/ui",
+    "Do not modify frontend/src/main.tsx",
+    "All Motoko logic must remain in the single backend/main.mo actor",
+    "Internet Identity is the only supported authentication method — no custom username/password backend"
   ],
   "nonGoals": [
-    "Adding audio file upload for katha narration (TTS only, not recorded audio).",
-    "Implementing a moderation/approval workflow for kathas.",
-    "Changing the overall app design or color theme.",
-    "Adding new sections or features beyond those listed in requirements."
+    "Adding any third-party OAuth outside of Internet Identity",
+    "Email or SMS notifications",
+    "Real-time WebSocket-based updates",
+    "External image CDN or cloud storage integration",
+    "Building a separate microservice for media handling"
   ],
   "imageRequirements": {
     "required": [],
