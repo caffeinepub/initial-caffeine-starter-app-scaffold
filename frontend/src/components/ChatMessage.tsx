@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, Square, Volume2, Mic } from 'lucide-react';
+import { Play, Pause, Square, Volume2, Mic, AlertCircle } from 'lucide-react';
 import { ChatMessage as ChatMessageType } from '../hooks/useAIChat';
 import { useSpeechNarration } from '../hooks/useSpeechNarration';
 
@@ -7,24 +7,22 @@ interface ChatMessageProps {
   message: ChatMessageType;
 }
 
-// Detect if text is primarily Hindi/Devanagari
 function isHindiText(text: string): boolean {
   const devanagariChars = (text.match(/[\u0900-\u097F]/g) || []).length;
   return devanagariChars > text.length * 0.2;
 }
 
 const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
-  const { narrationState, startNarration, pauseNarration, resumeNarration, stopNarration } =
+  const { narrationState, startNarration, pauseNarration, resumeNarration, stopNarration, error: ttsError } =
     useSpeechNarration();
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
-
-  // Since the new hook doesn't track per-message ID, we track it locally
   const [activeMessageId, setActiveMessageId] = React.useState<string | null>(null);
 
   const isThisPlaying = activeMessageId === message.id && narrationState === 'playing';
   const isThisPaused = activeMessageId === message.id && narrationState === 'paused';
   const isThisActive = activeMessageId === message.id && narrationState !== 'idle' && narrationState !== 'error';
+  const isThisError = activeMessageId === message.id && narrationState === 'error';
 
   const isHindi = isHindiText(message.content);
 
@@ -34,7 +32,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
     } else if (isThisPaused) {
       resumeNarration();
     } else {
-      // Stop any other narration first
       stopNarration();
       setActiveMessageId(message.id);
       startNarration(message.content);
@@ -46,12 +43,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
     setActiveMessageId(null);
   };
 
-  // Clear active message when narration goes idle
   React.useEffect(() => {
     if (narrationState === 'idle' || narrationState === 'error') {
-      setActiveMessageId(null);
+      // Only clear if this message was active
+      if (activeMessageId === message.id && narrationState === 'idle') {
+        setActiveMessageId(null);
+      }
     }
-  }, [narrationState]);
+  }, [narrationState, activeMessageId, message.id]);
 
   const isUser = message.role === 'user';
   const timestamp = new Date(message.timestamp).toLocaleTimeString('hi-IN', {
@@ -75,49 +74,29 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
               : 'bg-card border border-amber-200/30 text-foreground rounded-tl-sm'
           }`}
         >
-          {/* Message text */}
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
         </div>
 
-        {/* TTS controls for assistant messages */}
         {!isUser && isSupported && (
-          <div className="flex items-center gap-1 mt-1.5 ml-1">
+          <div className="flex items-center gap-1 mt-1.5 ml-1 flex-wrap">
             <button
               onClick={handleTTS}
               className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all ${
                 isThisActive
                   ? 'bg-amber-500 text-white shadow-md'
+                  : isThisError
+                  ? 'bg-red-100/60 text-red-600'
                   : 'bg-amber-100/60 text-amber-700 hover:bg-amber-200/80'
               }`}
-              title={
-                isThisPlaying
-                  ? 'Pause narration'
-                  : isThisPaused
-                  ? 'Resume narration'
-                  : isHindi
-                  ? 'हिंदी में सुनें'
-                  : 'Listen'
-              }
             >
               {isThisPlaying ? (
-                <>
-                  <Pause className="w-3 h-3" />
-                  <span>रुकें</span>
-                </>
+                <><Pause className="w-3 h-3" /><span>रुकें</span></>
               ) : isThisPaused ? (
-                <>
-                  <Play className="w-3 h-3" />
-                  <span>जारी रखें</span>
-                </>
+                <><Play className="w-3 h-3" /><span>जारी रखें</span></>
+              ) : isThisError ? (
+                <><AlertCircle className="w-3 h-3" /><span>Retry</span></>
               ) : (
-                <>
-                  {isHindi ? (
-                    <Mic className="w-3 h-3" />
-                  ) : (
-                    <Volume2 className="w-3 h-3" />
-                  )}
-                  <span>{isHindi ? 'हिंदी सुनें' : 'सुनें'}</span>
-                </>
+                <>{isHindi ? <Mic className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}<span>{isHindi ? 'हिंदी सुनें' : 'सुनें'}</span></>
               )}
             </button>
 
@@ -125,17 +104,21 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
               <button
                 onClick={handleStop}
                 className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100/60 text-red-600 hover:bg-red-200/80 transition-colors"
-                title="Stop narration"
               >
                 <Square className="w-3 h-3" />
               </button>
+            )}
+
+            {isThisError && ttsError && (
+              <span className="text-xs text-red-500 ml-1 max-w-[150px] truncate" title={ttsError}>
+                {ttsError}
+              </span>
             )}
 
             <span className="text-xs text-muted-foreground ml-1">{timestamp}</span>
           </div>
         )}
 
-        {/* Timestamp for user messages */}
         {isUser && (
           <span className="text-xs text-muted-foreground mt-1 mr-1">{timestamp}</span>
         )}

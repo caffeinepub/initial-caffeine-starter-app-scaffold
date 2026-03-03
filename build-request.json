@@ -1,148 +1,126 @@
 {
   "kind": "build_request",
-  "title": "Login/Logout, Public Visibility Fixes, TTS PWA Fix, Admin Controls & Photo Optimization",
-  "projectName": "Divya Darshan",
+  "title": "Fix Admin Panel Katha errors, add MP3 upload, fix Community Posts visibility, and fix TTS",
+  "projectName": "Hindu Dharma App",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement one-click Internet Identity login/logout: clicking the login button must immediately open the Internet Identity flow (Google/passkey) with no additional password prompt. On successful authentication the user is logged in; a logout button must be visible and functional at all times when authenticated.",
-      "target": "frontend",
+      "text": "Fix the Admin Panel error that occurs when adding a new Katha (religious story). The backend `addKatha` or equivalent function should correctly accept and persist all required fields without throwing errors. Validate that the Motoko actor's katha creation logic handles all field types properly and that the frontend form submits correct data types matching the backend interface.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-6"
+          "msg-6",
+          "msg-8"
         ],
         "quotes": [
-          "One-click Login/Logout — Google/passkey पर click करते ही सीधे Internet Identity से login, कोई password नहीं",
-          "login me koe password nhi mange seedha hi login ho or logout ho gmail pr click krke"
+          "Admin Panel fix — कथाएं add करते समय जो error आता था वो fix होगा",
+          "phele m kathayen add krta to error aa jata or add nahi hoti usse bhi thik kro"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the login button launches Internet Identity directly without any intermediate password form",
-        "Google/passkey option is presented in the Internet Identity popup",
-        "After login, the UI shows a visible logout button",
-        "Clicking logout clears the session and returns the user to the unauthenticated state",
-        "No custom password field is rendered anywhere in the login flow"
+        "Admin can fill out the Katha form in the Admin Panel and submit without any error",
+        "The submitted Katha appears in the backend and is retrievable from the Kathayen listing page",
+        "No console errors or failure messages when adding a new Katha"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix Vrat Katha public visibility: when an admin uploads or publishes a Vrat Katha, it must immediately be visible to all public (unauthenticated) users, not only to the admin. The backend query for listing kathas must return all published/active kathas regardless of caller identity, and the frontend must display them without requiring login.",
+      "text": "Add an MP3 file upload field in the Admin Panel's Katha creation/edit form. The admin should be able to upload an MP3 audio file along with each Katha. The MP3 binary data should be stored in the backend (as a Blob/chunk) associated with the Katha record. The backend Katha data model should include an optional `audioBlob` or `audioData` field to store the uploaded MP3 bytes.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-3"
+          "msg-6",
+          "msg-8"
         ],
         "quotes": [
-          "Vrat Katha public visibility fix — Upload होने के बाद सभी public users को दिखे",
-          "vrat katha upload krne ke baad public ko nahi dikh raha hai sitf admin ko visisble hai isse bhi thik kro"
+          "admin khud MP3 audio file upload kar sake katha ke saath",
+          "ek feature or add kro ki kathayen upload krte time khud admin hi mp3 upload krega"
         ]
       },
       "acceptanceCriteria": [
-        "A Vrat Katha uploaded/published by admin appears in the listing for unauthenticated users immediately",
-        "The backend getKathas (or equivalent) query returns published kathas for anonymous callers",
-        "No login is required to browse or read Vrat Kathas",
-        "Admin-only drafts or pending items are still hidden from public"
+        "Admin Panel Katha form includes an MP3 file upload input",
+        "After upload, the MP3 is stored in the backend associated with the Katha",
+        "The Katha record indicates whether audio is available"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Fix Community posts public visibility: admin-approved community posts must be visible to all users, including unauthenticated/public visitors. The backend query for listing community posts must return approved posts for anonymous callers, and the Community page must render them without requiring login.",
-      "target": "both",
+      "text": "Add an audio player ('सुनें' / Listen button) on the public-facing Katha detail page (`KathaDetail.tsx`). When a Katha has an associated MP3 uploaded by the admin, the 'सुनें' button should appear and play that audio when clicked. Use an HTML5 audio player or a styled play/pause control that streams or loads the MP3 blob from the backend.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6",
+          "msg-8"
         ],
         "quotes": [
-          "Community posts public visibility — Admin द्वारा approved posts सभी users को visible हों"
+          "us katha me sun ne wale option pr click krke sun sakte hai",
+          "Public side par Audio Player — 'सुनें' button se MP3 play hoga"
         ]
       },
       "acceptanceCriteria": [
-        "Approved community posts are visible on the Community page to logged-out users",
-        "Backend getCommunityPosts (or equivalent) returns approved posts for anonymous callers",
-        "Pending or rejected posts remain hidden from public",
-        "Authenticated users and anonymous users see the same set of approved posts"
+        "A 'सुनें' (Listen) button is visible on the Katha detail page only when an MP3 is associated with that Katha",
+        "Clicking the button plays the uploaded MP3 audio",
+        "User can pause and resume playback",
+        "If no MP3 is uploaded, the button is hidden or disabled"
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Fix Narration (TTS) in PWA/installed app: the text-to-speech narration that works on the desktop browser must also work correctly when the app is installed as a PWA on mobile devices. Update the useSpeechNarration hook and any relevant pages (KathaDetail, AartiDetail, Bhajans, Mantras, Chalisa) to use a PWA-compatible TTS strategy — ensure the Speech Synthesis API is re-initialized after page visibility changes, handle the known Chrome Android PWA bug where voices are not loaded until an utterance event fires, and add a fallback resume mechanism so narration is not silently blocked.",
-      "target": "frontend",
+      "text": "Fix Community Posts so that all logged-in users can see all approved posts and also create new posts. The Community page (`Community.tsx`) should display a YouTube-style feed of all posts to any authenticated user. Non-logged-in users should not be able to view or create posts. Fix any backend query or approval-status filter that may be preventing posts from appearing to regular users.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-4"
+          "msg-6",
+          "msg-8"
         ],
         "quotes": [
-          "Narration (TTS) fix — PWA/downloaded app में भी narration सही से काम करे",
-          "narration option web pr sahi kam krta hai lekin download hone ke baad nahi krta"
+          "community post nahi ho rahi hai or na public ko dikh rahi hai",
+          "Community Posts fix — Posts sabhi logged-in users ko dikhein aur YouTube jaisa feed ho",
+          "Login ke baad hi community posts dekh aur upload kar sakte hain"
         ]
       },
       "acceptanceCriteria": [
-        "TTS narration plays correctly when the app is installed and opened as a PWA on Android/iOS",
-        "Voices load properly on first use inside the PWA without requiring a page reload",
-        "Narration controls (play/pause/stop) are functional in the PWA environment",
-        "No silent failure — if TTS is unavailable an appropriate message is shown to the user"
+        "Logged-in users can see all community posts in a feed-style layout",
+        "Logged-in users can create and submit new community posts",
+        "Posts submitted by users appear in the feed after submission",
+        "Unauthenticated users are shown a login prompt and cannot view or create posts",
+        "The feed visually resembles a YouTube/social feed with post cards showing author, content, and media"
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Implement Community Admin Control panel: the Admin Panel must include a dedicated 'Community Approval Queue' tab listing all pending community posts (text, images, videos). For each pending post the admin must be able to Accept (approve and make public), Reject (decline without publishing), or Delete (permanently remove) the post. Already-approved posts must also be deletable by the admin. Backend must expose the necessary update/delete functions restricted to admin callers.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Community Admin Control — Posts का approval queue, accept/reject/delete"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin Panel has a 'Pending Posts' or 'Approval Queue' tab",
-        "Each pending post shows its content, author, and timestamp",
-        "Admin can click Accept to approve a post (it becomes visible to public)",
-        "Admin can click Reject to decline a post (it is not shown publicly)",
-        "Admin can click Delete to permanently remove any post",
-        "Non-admin users cannot access approval or delete functions",
-        "After an action, the queue updates to reflect the new state"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Optimize Community Photos loading speed: images in community posts must load faster. Implement lazy loading for images in CommunityPostCard (use native loading='lazy' attribute), add image dimension hints to avoid layout shift, and where possible display a low-quality placeholder or skeleton while the full image loads. If images are stored as blobs in the backend, serve them efficiently; avoid re-fetching large blobs on every render by caching blob URLs.",
+      "text": "Fix the Text-to-Speech (TTS) functionality in the production/downloaded app. The `useSpeechNarration` hook currently uses the Web Speech API which may not work reliably in installed PWA or certain browsers. Ensure TTS works in production by: (1) verifying the speech synthesis voices are loaded before speaking, (2) adding a user-gesture-triggered warm-up, (3) handling the case where `speechSynthesis` is cancelled silently in background tabs or PWA mode with a retry/resume mechanism.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6",
+          "msg-8"
         ],
         "quotes": [
-          "Community Photos speed optimization — Images जल्दी load हों"
+          "tts in downloaded app not working",
+          "TTS fix — Text-to-Speech sahi se kaam karega"
         ]
       },
       "acceptanceCriteria": [
-        "Community post images use native lazy loading",
-        "A skeleton/placeholder is shown while images are loading",
-        "Images below the fold do not block initial page render",
-        "Blob URLs for backend-stored images are cached and not recreated on every render",
-        "Visible improvement in perceived load time for the Community page"
+        "TTS plays correctly when user taps the narration/play button in the production/installed app",
+        "TTS works on Katha detail page and other pages that use `useSpeechNarration`",
+        "TTS does not silently fail — if unavailable, a clear message or fallback is shown",
+        "TTS resumes or restarts if interrupted by background/foreground switch in PWA mode"
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts or frontend/src/hooks/useActor.ts — compose or wrap them instead",
-    "Do not modify files under frontend/src/components/ui",
-    "Do not modify frontend/src/main.tsx",
-    "All Motoko logic must remain in the single backend/main.mo actor",
-    "Internet Identity is the only supported authentication method — no custom username/password backend"
+    "Do not rebuild the app from scratch — only modify the existing codebase",
+    "Keep the existing login system (Internet Identity + admin username/password) unchanged",
+    "Do not modify immutable frontend paths: useInternetIdentity.ts, useActor.ts, main.tsx, components/ui",
+    "All Motoko logic must remain in the single backend/main.mo actor file"
   ],
   "nonGoals": [
-    "Adding any third-party OAuth outside of Internet Identity",
-    "Email or SMS notifications",
-    "Real-time WebSocket-based updates",
-    "External image CDN or cloud storage integration",
-    "Building a separate microservice for media handling"
+    "Rebuilding or redesigning the entire application",
+    "Changing the authentication system or login flow",
+    "Adding new pages or navigation items beyond what is described",
+    "External audio hosting or CDN integration — MP3 stored in backend blob storage only"
   ],
   "imageRequirements": {
     "required": [],

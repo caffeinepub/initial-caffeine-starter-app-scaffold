@@ -2,251 +2,250 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export type NarrationState = 'idle' | 'playing' | 'paused' | 'error';
 
-interface UseSpeechNarrationReturn {
+export interface SpeechNarrationControls {
   narrationState: NarrationState;
+  isPlaying: boolean;
+  isPaused: boolean;
+  error: string | null;
+  isSupported: boolean;
   startNarration: (text: string) => void;
   pauseNarration: () => void;
   resumeNarration: () => void;
   stopNarration: () => void;
-  errorMessage: string | null;
 }
 
-function isDevanagari(text: string): boolean {
-  return /[\u0900-\u097F]/.test(text);
-}
-
-function getHindiVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  // Priority 1: exact hi-IN
-  const hiIN = voices.find(v => v.lang === 'hi-IN');
-  if (hiIN) return hiIN;
-  // Priority 2: hi-* prefix
-  const hiAny = voices.find(v => v.lang.startsWith('hi'));
-  if (hiAny) return hiAny;
-  // Priority 3: voice name contains 'Hindi'
-  const namedHindi = voices.find(v => v.name.toLowerCase().includes('hindi'));
-  if (namedHindi) return namedHindi;
-  return null;
-}
-
-export function useSpeechNarration(): UseSpeechNarrationReturn {
+export function useSpeechNarration(): SpeechNarrationControls {
   const [narrationState, setNarrationState] = useState<NarrationState>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const textRef = useRef<string>('');
-  const voicesLoadedRef = useRef<boolean>(false);
-  const isMountedRef = useRef<boolean>(true);
+  const retryCountRef = useRef(0);
+  const currentTextRef = useRef<string>('');
+  const voicesReadyRef = useRef(false);
 
-  // Warm up voices on mount — critical for PWA/Chrome Android
+  // Warm up voices on mount (PWA fix) — wait for voices to load
   useEffect(() => {
-    isMountedRef.current = true;
-
-    const synth = window.speechSynthesis;
-    if (!synth) return;
+    if (!isSupported) return;
 
     const loadVoices = () => {
-      const voices = synth.getVoices();
+      const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
-        voicesLoadedRef.current = true;
+        voicesReadyRef.current = true;
       }
     };
 
-    // Try immediately
     loadVoices();
 
-    // Listen for voiceschanged event (fires in most browsers)
-    synth.addEventListener('voiceschanged', loadVoices);
-
-    // PWA fix: Chrome Android sometimes needs a dummy utterance to unlock voices
-    // We schedule a silent warm-up after a short delay
-    const warmUpTimer = setTimeout(() => {
-      if (!voicesLoadedRef.current) {
-        try {
-          const dummy = new SpeechSynthesisUtterance('');
-          dummy.volume = 0;
-          dummy.onend = () => {
-            loadVoices();
-          };
-          synth.speak(dummy);
-        } catch {
-          // ignore
-        }
-      }
-    }, 500);
-
-    // Page Visibility API: resume synthesis when app comes back to foreground
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Re-load voices after coming back to foreground
+    if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+      window.speechSynthesis.onvoiceschanged = () => {
         loadVoices();
-        // If synthesis was paused by the browser (PWA background), resume it
-        if (synth.paused) {
-          synth.resume();
+      };
+    }
+
+    // Fallback: mark voices ready after 2s even if event never fires
+    const fallbackTimer = setTimeout(() => {
+      voicesReadyRef.current = true;
+    }, 2000);
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      window.speechSynthesis.cancel();
+    };
+  }, [isSupported]);
+
+  // Page Visibility API for PWA — pause/resume on background/foreground
+  useEffect(() => {
+    if (!isSupported) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (narrationState === 'playing') {
+          try {
+            window.speechSynthesis.pause();
+            setNarrationState('paused');
+          } catch {
+            // ignore
+          }
         }
       } else {
-        // App going to background — pause to avoid silent blocking
-        if (synth.speaking && !synth.paused) {
-          synth.pause();
+        if (narrationState === 'paused') {
+          try {
+            window.speechSynthesis.resume();
+            setNarrationState('playing');
+          } catch {
+            // If resume fails, restart from beginning
+            if (currentTextRef.current) {
+              window.speechSynthesis.cancel();
+              setTimeout(() => {
+                if (currentTextRef.current) {
+                  startNarrationInternal(currentTextRef.current, 0);
+                }
+              }, 300);
+            }
+          }
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [narrationState, isSupported]);
 
-    return () => {
-      isMountedRef.current = false;
-      clearTimeout(warmUpTimer);
-      synth.removeEventListener('voiceschanged', loadVoices);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      synth.cancel();
+  const getHindiVoice = (): SpeechSynthesisVoice | null => {
+    const voices = window.speechSynthesis.getVoices();
+    return (
+      voices.find(v => v.lang === 'hi-IN') ||
+      voices.find(v => v.lang.startsWith('hi')) ||
+      voices.find(v => v.lang.includes('IN')) ||
+      null
+    );
+  };
+
+  const startNarrationInternal = useCallback((text: string, retryCount: number) => {
+    if (!isSupported) return;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'hi-IN';
+    utterance.rate = 0.85;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    const voice = getHindiVoice();
+    if (voice) utterance.voice = voice;
+
+    utterance.onstart = () => {
+      setNarrationState('playing');
+      setError(null);
     };
-  }, []);
 
-  const stopNarration = useCallback(() => {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    synth.cancel();
-    // Small delay after cancel to let Chrome clear its queue
-    setTimeout(() => {
-      if (isMountedRef.current) {
+    utterance.onend = () => {
+      setNarrationState('idle');
+      utteranceRef.current = null;
+      currentTextRef.current = '';
+    };
+
+    utterance.onerror = (e) => {
+      // Ignore intentional cancellations
+      if (e.error === 'interrupted' || e.error === 'canceled') {
         setNarrationState('idle');
-        setErrorMessage(null);
+        return;
       }
-    }, 50);
-    utteranceRef.current = null;
-  }, []);
+      // Retry up to 3 times with exponential backoff
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 300;
+        setTimeout(() => {
+          window.speechSynthesis.cancel();
+          startNarrationInternal(text, retryCount + 1);
+        }, delay);
+        return;
+      }
+      setNarrationState('error');
+      setError('TTS में समस्या आई। कृपया Chrome browser में try करें या audio player use करें।');
+    };
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+
+    // Chrome Android PWA fix: resume if stuck after 150ms
+    setTimeout(() => {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }, 150);
+
+    // Additional Chrome fix: re-trigger if still not speaking after 1s
+    setTimeout(() => {
+      if (
+        utteranceRef.current === utterance &&
+        !window.speechSynthesis.speaking &&
+        narrationState !== 'playing'
+      ) {
+        window.speechSynthesis.cancel();
+        if (retryCount < 3) {
+          startNarrationInternal(text, retryCount + 1);
+        }
+      }
+    }, 1000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSupported]);
 
   const startNarration = useCallback((text: string) => {
-    const synth = window.speechSynthesis;
-    if (!synth) {
+    if (!isSupported) {
+      setError('आपका browser TTS support नहीं करता।');
       setNarrationState('error');
-      setErrorMessage('आपके browser में Text-to-Speech उपलब्ध नहीं है।');
       return;
     }
 
-    // Cancel any ongoing speech
-    synth.cancel();
-    setTimeout(() => {
-      if (!isMountedRef.current) return;
+    window.speechSynthesis.cancel();
+    retryCountRef.current = 0;
+    currentTextRef.current = text;
+    setError(null);
+    setNarrationState('idle');
 
-      textRef.current = text;
-      const utterance = new SpeechSynthesisUtterance(text);
+    // If voices not ready yet, wait briefly then speak
+    const doSpeak = () => startNarrationInternal(text, 0);
 
-      // Voice selection
-      const voices = synth.getVoices();
-      const isHindi = isDevanagari(text);
-
-      if (isHindi) {
-        const hindiVoice = getHindiVoice(voices);
-        if (hindiVoice) {
-          utterance.voice = hindiVoice;
-          utterance.lang = hindiVoice.lang;
-        } else {
-          utterance.lang = 'hi-IN';
-        }
-        utterance.rate = 0.85;
-      } else {
-        utterance.lang = 'en-US';
-        utterance.rate = 0.95;
-      }
-
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-
-      utterance.onstart = () => {
-        if (isMountedRef.current) {
-          setNarrationState('playing');
-          setErrorMessage(null);
-        }
+    if (voicesReadyRef.current || window.speechSynthesis.getVoices().length > 0) {
+      doSpeak();
+    } else {
+      // Wait for voices to load
+      const timeout = setTimeout(doSpeak, 500);
+      const handler = () => {
+        clearTimeout(timeout);
+        doSpeak();
       };
-
-      utterance.onend = () => {
-        if (isMountedRef.current) {
-          setNarrationState('idle');
-          utteranceRef.current = null;
-        }
-      };
-
-      utterance.onerror = (event) => {
-        if (!isMountedRef.current) return;
-        // 'interrupted' and 'canceled' are not real errors
-        if (event.error === 'interrupted' || event.error === 'canceled') {
-          setNarrationState('idle');
-          return;
-        }
-        setNarrationState('error');
-        if (event.error === 'not-allowed') {
-          setErrorMessage('Narration के लिए user interaction आवश्यक है। कृपया पुनः try करें।');
-        } else if (event.error === 'network') {
-          setErrorMessage('Network error: Online voice unavailable। Offline voice try हो रही है।');
-        } else {
-          setErrorMessage(`Narration error: ${event.error}। कृपया पुनः try करें।`);
-        }
-      };
-
-      utterance.onpause = () => {
-        if (isMountedRef.current) setNarrationState('paused');
-      };
-
-      utterance.onresume = () => {
-        if (isMountedRef.current) setNarrationState('playing');
-      };
-
-      utteranceRef.current = utterance;
-      setNarrationState('playing');
-
-      try {
-        synth.speak(utterance);
-
-        // PWA Chrome Android fix: sometimes speak() silently fails
-        // Check after 1s if synthesis actually started
-        setTimeout(() => {
-          if (!isMountedRef.current) return;
-          if (utteranceRef.current === utterance && !synth.speaking && !synth.pending) {
-            // Try again once
-            try {
-              synth.cancel();
-              setTimeout(() => {
-                if (isMountedRef.current && utteranceRef.current === utterance) {
-                  synth.speak(utterance);
-                }
-              }, 100);
-            } catch {
-              setNarrationState('error');
-              setErrorMessage('Narration शुरू नहीं हो सकी। कृपया पुनः try करें।');
-            }
-          }
-        }, 1000);
-      } catch {
-        setNarrationState('error');
-        setErrorMessage('Narration शुरू नहीं हो सकी। कृपया पुनः try करें।');
-      }
-    }, 50);
-  }, []);
+      window.speechSynthesis.onvoiceschanged = handler;
+    }
+  }, [isSupported, startNarrationInternal]);
 
   const pauseNarration = useCallback(() => {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    if (synth.speaking && !synth.paused) {
-      synth.pause();
+    if (!isSupported) return;
+    try {
+      window.speechSynthesis.pause();
       setNarrationState('paused');
+    } catch {
+      // ignore
     }
-  }, []);
+  }, [isSupported]);
 
   const resumeNarration = useCallback(() => {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    if (synth.paused) {
-      synth.resume();
+    if (!isSupported) return;
+    try {
+      window.speechSynthesis.resume();
       setNarrationState('playing');
+    } catch {
+      // If resume fails, restart
+      if (currentTextRef.current) {
+        window.speechSynthesis.cancel();
+        setTimeout(() => startNarrationInternal(currentTextRef.current, 0), 200);
+      }
     }
-  }, []);
+  }, [isSupported, startNarrationInternal]);
+
+  const stopNarration = useCallback(() => {
+    if (!isSupported) return;
+    try {
+      window.speechSynthesis.cancel();
+    } catch {
+      // ignore
+    }
+    utteranceRef.current = null;
+    currentTextRef.current = '';
+    setNarrationState('idle');
+    setError(null);
+  }, [isSupported]);
 
   return {
     narrationState,
+    isPlaying: narrationState === 'playing',
+    isPaused: narrationState === 'paused',
+    error,
+    isSupported,
     startNarration,
     pauseNarration,
     resumeNarration,
     stopNarration,
-    errorMessage,
   };
 }

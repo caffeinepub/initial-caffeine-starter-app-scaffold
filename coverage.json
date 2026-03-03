@@ -1,103 +1,76 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-01T03:19:17.058Z",
+  "generatedAt": "2026-03-03T02:53:07.253Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 6,
+    "total": 5,
+    "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement one-click Internet Identity login/logout: clicking the login button must immediately open the Internet Identity flow (Google/passkey) with no additional password prompt. On successful authentication the user is logged in; a logout button must be visible and functional at all times when authenticated.",
+        "summary": "Fix the Admin Panel error that occurs when adding a new Katha (religious story). The backend `addKatha` or equivalent function should correctly accept and persist all required fields without throwing errors. Validate that the Motoko actor's katha creation logic handles all field types properly and that the frontend form submits correct data types matching the backend interface.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/LoginButton.tsx",
-          "frontend/src/components/AppLayout.tsx"
+          "frontend/src/pages/AdminPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/LoginButton.tsx",
-          "frontend/src/components/AppLayout.tsx"
+          "frontend/src/pages/AdminPanel.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix Vrat Katha public visibility: when an admin uploads or publishes a Vrat Katha, it must immediately be visible to all public (unauthenticated) users, not only to the admin. The backend query for listing kathas must return all published/active kathas regardless of caller identity, and the frontend must display them without requiring login.",
+        "summary": "Add an MP3 file upload field in the Admin Panel's Katha creation/edit form. The admin should be able to upload an MP3 audio file along with each Katha. The MP3 binary data should be stored in the backend (as a Blob/chunk) associated with the Katha record. The backend Katha data model should include an optional `audioBlob` or `audioData` field to store the uploaded MP3 bytes.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/Kathayen.tsx",
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/pages/AdminPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/Kathayen.tsx",
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/pages/AdminPanel.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Fix Community posts public visibility: admin-approved community posts must be visible to all users, including unauthenticated/public visitors. The backend query for listing community posts must return approved posts for anonymous callers, and the Community page must render them without requiring login.",
+        "summary": "Add an audio player ('सुनें' / Listen button) on the public-facing Katha detail page (`KathaDetail.tsx`). When a Katha has an associated MP3 uploaded by the admin, the 'सुनें' button should appear and play that audio when clicked. Use an HTML5 audio player or a styled play/pause control that streams or loads the MP3 blob from the backend.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/Community.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/CommunityPostCard.tsx"
+          "frontend/src/pages/KathaDetail.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/Community.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/CommunityPostCard.tsx"
+          "frontend/src/pages/KathaDetail.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Fix Narration (TTS) in PWA/installed app: the text-to-speech narration that works on the desktop browser must also work correctly when the app is installed as a PWA on mobile devices. Update the useSpeechNarration hook and any relevant pages (KathaDetail, AartiDetail, Bhajans, Mantras, Chalisa) to use a PWA-compatible TTS strategy — ensure the Speech Synthesis API is re-initialized after page visibility changes, handle the known Chrome Android PWA bug where voices are not loaded until an utterance event fires, and add a fallback resume mechanism so narration is not silently blocked.",
+        "summary": "Fix Community Posts so that all logged-in users can see all approved posts and also create new posts. The Community page (`Community.tsx`) should display a YouTube-style feed of all posts to any authenticated user. Non-logged-in users should not be able to view or create posts. Fix any backend query or approval-status filter that may be preventing posts from appearing to regular users.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useSpeechNarration.ts",
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/pages/AartiDetail.tsx",
-          "frontend/src/pages/Bhajans.tsx",
-          "frontend/src/pages/Mantras.tsx",
-          "frontend/src/pages/Chalisa.tsx"
+          "frontend/src/pages/Community.tsx",
+          "frontend/src/components/CommunityPostCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useSpeechNarration.ts",
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/pages/AartiDetail.tsx",
-          "frontend/src/pages/Bhajans.tsx",
-          "frontend/src/pages/Mantras.tsx",
-          "frontend/src/pages/Chalisa.tsx"
+          "frontend/src/pages/Community.tsx",
+          "frontend/src/components/CommunityPostCard.tsx"
         ]
       },
       {
         "id": "REQ-5",
-        "summary": "Implement Community Admin Control panel: the Admin Panel must include a dedicated 'Community Approval Queue' tab listing all pending community posts (text, images, videos). For each pending post the admin must be able to Accept (approve and make public), Reject (decline without publishing), or Delete (permanently remove) the post. Already-approved posts must also be deletable by the admin. Backend must expose the necessary update/delete functions restricted to admin callers.",
+        "summary": "Fix the Text-to-Speech (TTS) functionality in the production/downloaded app. The `useSpeechNarration` hook currently uses the Web Speech API which may not work reliably in installed PWA or certain browsers. Ensure TTS works in production by: (1) verifying the speech synthesis voices are loaded before speaking, (2) adding a user-gesture-triggered warm-up, (3) handling the case where `speechSynthesis` is cancelled silently in background tabs or PWA mode with a retry/resume mechanism.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AdminPanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useSpeechNarration.ts",
+          "frontend/src/pages/KathaDetail.tsx",
+          "frontend/src/pages/AartiDetail.tsx",
+          "frontend/src/components/ChatMessage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AdminPanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ]
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Optimize Community Photos loading speed: images in community posts must load faster. Implement lazy loading for images in CommunityPostCard (use native loading='lazy' attribute), add image dimension hints to avoid layout shift, and where possible display a low-quality placeholder or skeleton while the full image loads. If images are stored as blobs in the backend, serve them efficiently; avoid re-fetching large blobs on every render by caching blob URLs.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/CommunityPostCard.tsx",
-          "frontend/src/pages/Community.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/CommunityPostCard.tsx",
-          "frontend/src/pages/Community.tsx"
+          "frontend/src/hooks/useSpeechNarration.ts",
+          "frontend/src/pages/KathaDetail.tsx",
+          "frontend/src/pages/AartiDetail.tsx",
+          "frontend/src/components/ChatMessage.tsx"
         ]
       }
     ]
@@ -109,25 +82,18 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/AppLayout.tsx",
     "frontend/src/components/ChatMessage.tsx",
     "frontend/src/components/CommunityPostCard.tsx",
-    "frontend/src/components/LoginButton.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/hooks/useSpeechNarration.ts",
     "frontend/src/pages/AartiDetail.tsx",
     "frontend/src/pages/AdminPanel.tsx",
-    "frontend/src/pages/Bhajans.tsx",
-    "frontend/src/pages/Chalisa.tsx",
     "frontend/src/pages/Community.tsx",
     "frontend/src/pages/KathaDetail.tsx",
-    "frontend/src/pages/Kathayen.tsx",
-    "frontend/src/pages/Mantras.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

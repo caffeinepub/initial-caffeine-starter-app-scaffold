@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Heart, Flag, FileText, Play, Pause } from 'lucide-react';
+import { Heart, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { CommunityPost } from '../backend';
 import { useLikeCommunityPost } from '../hooks/useQueries';
@@ -39,10 +39,39 @@ function ImageWithSkeleton({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+// Derive a display name from the principal string
+function getAuthorDisplay(principalStr: string): string {
+  // Show first 6 chars + ... + last 4 chars for readability
+  if (principalStr.length <= 12) return principalStr;
+  return `${principalStr.slice(0, 6)}...${principalStr.slice(-4)}`;
+}
+
+// Generate a consistent avatar color from principal
+function getAvatarColor(principalStr: string): string {
+  const colors = [
+    'from-amber-400 to-orange-500',
+    'from-rose-400 to-pink-500',
+    'from-violet-400 to-purple-500',
+    'from-teal-400 to-cyan-500',
+    'from-green-400 to-emerald-500',
+    'from-blue-400 to-indigo-500',
+  ];
+  let hash = 0;
+  for (let i = 0; i < principalStr.length; i++) {
+    hash = (hash * 31 + principalStr.charCodeAt(i)) % colors.length;
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
 export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
   const likeMutation = useLikeCommunityPost();
+
+  const authorStr = post.author.toString();
+  const authorDisplay = getAuthorDisplay(authorStr);
+  const avatarColor = getAvatarColor(authorStr);
+  const avatarLetter = authorStr[0]?.toUpperCase() ?? '?';
 
   // Cache direct URLs using useMemo to avoid recreating on every render
   const imageUrl = useMemo(() => {
@@ -65,23 +94,24 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
     likeMutation.mutate(post.id);
   };
 
-  const authorShort = post.author.toString().slice(0, 8) + '...';
   const timeAgo = formatTimeAgo(Number(post.timestamp));
 
   return (
     <article className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {authorShort[0]?.toUpperCase() ?? '?'}
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+          {avatarLetter}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{authorShort}</p>
+          <p className="text-sm font-semibold text-foreground truncate">
+            भक्त {authorDisplay}
+          </p>
           <p className="text-xs text-muted-foreground">{timeAgo}</p>
         </div>
         {post.deityTag && (
-          <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
-            {post.deityTag}
+          <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium shrink-0">
+            🙏 {post.deityTag}
           </span>
         )}
       </div>

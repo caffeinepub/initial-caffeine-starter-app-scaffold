@@ -1,172 +1,109 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Login/Logout, Public Visibility Fixes, TTS PWA Fix, Admin Controls & Photo Optimization",
+  "title": "Fix Admin Panel Katha errors, add MP3 upload, fix Community Posts visibility, and fix TTS",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Implement one-click Internet Identity login/logout with no intermediate password prompt",
+      "summary": "Fix Admin Panel Katha form errors to correctly submit all required fields matching the backend interface",
       "acceptanceCriteria": [
-        "Clicking the login button launches Internet Identity directly without any intermediate password form",
-        "Google/passkey option is presented in the Internet Identity popup",
-        "After login, the UI shows a visible logout button",
-        "Clicking logout clears the session and returns the user to the unauthenticated state",
-        "No custom password field is rendered anywhere in the login flow"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/LoginButton.tsx",
-          "operation": "modify",
-          "description": "Ensure the login button directly invokes the Internet Identity flow without any intermediate prompts or password fields. Verify that the authorization component's usage instructions are followed for immediate II launch. The button must call login() from useInternetIdentity immediately on click when unauthenticated, and call clear() followed by queryClient.clear() when authenticated. Ensure the logout button remains visible at all times when the user is authenticated."
-        },
-        {
-          "path": "frontend/src/components/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Ensure the LoginButton is rendered in the header and remains visible at all times. Remove any conditional logic that might hide the logout button when authenticated. Verify that no password input or custom authentication UI is rendered anywhere in the layout."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Fix Vrat Katha public visibility so uploaded kathas are immediately visible to unauthenticated users",
-      "acceptanceCriteria": [
-        "A Vrat Katha uploaded/published by admin appears in the listing for unauthenticated users immediately",
-        "The backend getKathas (or equivalent) query returns published kathas for anonymous callers",
-        "No login is required to browse or read Vrat Kathas",
-        "Admin-only drafts or pending items are still hidden from public"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/Kathayen.tsx",
-          "operation": "modify",
-          "description": "Ensure the page calls getAllKathayen (which returns all published kathas) without any authentication checks. Remove any conditional rendering that hides kathas from unauthenticated users. Merge backend data with static katha data and display all items publicly. Verify that the useGetAllKathayen query does not require authentication and displays results for anonymous visitors."
-        },
-        {
-          "path": "frontend/src/pages/KathaDetail.tsx",
-          "operation": "modify",
-          "description": "Ensure the katha detail page loads and displays content for unauthenticated users. Remove any authentication guards or login prompts that might block public access to the katha text, narration controls, and sharing features. Verify the useGetKatha query works for anonymous callers."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Review the useGetAllKathayen and useGetKatha hooks to ensure they do not add authentication checks or enabled flags that block anonymous calls. The backend methods getAllKathayen and getKatha must be callable without authentication, so ensure the hooks reflect this by not requiring an authenticated actor."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Fix Community posts public visibility so admin-approved posts are visible to all users including unauthenticated visitors",
-      "acceptanceCriteria": [
-        "Approved community posts are visible on the Community page to logged-out users",
-        "Backend getCommunityPosts (or equivalent) returns approved posts for anonymous callers",
-        "Pending or rejected posts remain hidden from public",
-        "Authenticated users and anonymous users see the same set of approved posts"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/Community.tsx",
-          "operation": "modify",
-          "description": "Modify the Community page to call getApprovedCommunityPosts (which returns only approved posts) for public display, ensuring this query works for unauthenticated users. Remove any authentication guards that hide the approved posts list from anonymous visitors. Keep the post creation form visible only to authenticated users, but ensure the approved posts feed is always public. Verify that the useGetApprovedCommunityPosts query does not require authentication."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Review and update the useGetApprovedCommunityPosts hook to ensure it does not add authentication checks or enabled flags that block anonymous calls. The backend method getApprovedCommunityPosts must be callable without authentication, so the hook should allow the query to run for unauthenticated users. Ensure the query is enabled as long as the actor is available, regardless of authentication state."
-        },
-        {
-          "path": "frontend/src/components/CommunityPostCard.tsx",
-          "operation": "modify",
-          "description": "Ensure the CommunityPostCard renders approved posts for all users without any authentication checks. Remove any conditional logic that might hide post content, images, videos, or file attachments from unauthenticated visitors. The like button and author information should be visible to all users."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Fix Narration (TTS) in PWA/installed app by implementing PWA-compatible TTS strategy",
-      "acceptanceCriteria": [
-        "TTS narration plays correctly when the app is installed and opened as a PWA on Android/iOS",
-        "Voices load properly on first use inside the PWA without requiring a page reload",
-        "Narration controls (play/pause/stop) are functional in the PWA environment",
-        "No silent failure — if TTS is unavailable an appropriate message is shown to the user"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useSpeechNarration.ts",
-          "operation": "modify",
-          "description": "Update the useSpeechNarration hook to support PWA environments. Implement a PWA-compatible TTS strategy that handles the Chrome Android PWA bug where voices are not loaded until an utterance event fires. Add logic to re-initialize the Speech Synthesis API after page visibility changes (using the Page Visibility API). Include a fallback resume mechanism to prevent silent blocking of narration. On mount and after visibility changes, check if voices are loaded; if not, trigger a dummy utterance to force voice loading. Add error handling that shows a user-facing message if TTS is unavailable or fails in the PWA context. Ensure the hook works correctly in KathaDetail, AartiDetail, Bhajans, Mantras, and Chalisa pages when the app is installed as a PWA."
-        },
-        {
-          "path": "frontend/src/pages/KathaDetail.tsx",
-          "operation": "modify",
-          "description": "Verify that the narration controls using useSpeechNarration work correctly in the PWA environment. Add a visible error message or toast if TTS fails or is unavailable. Test that play/pause/stop controls function properly after the PWA has been backgrounded and foregrounded."
-        },
-        {
-          "path": "frontend/src/pages/AartiDetail.tsx",
-          "operation": "modify",
-          "description": "Verify that the narration controls using useSpeechNarration work correctly in the PWA environment. Add a visible error message or toast if TTS fails or is unavailable. Ensure the aarti text narration is not silently blocked in the installed PWA."
-        },
-        {
-          "path": "frontend/src/pages/Bhajans.tsx",
-          "operation": "modify",
-          "description": "Verify that per-bhajan narration using useSpeechNarration works correctly in the PWA environment. Add error handling to show a message if TTS is unavailable. Ensure that each bhajan's play/pause controls function properly in the installed app."
-        },
-        {
-          "path": "frontend/src/pages/Mantras.tsx",
-          "operation": "modify",
-          "description": "Verify that per-mantra narration using useSpeechNarration works correctly in the PWA environment. Add error handling to show a message if TTS is unavailable. Ensure that each mantra's play/pause controls function properly in the installed app."
-        },
-        {
-          "path": "frontend/src/pages/Chalisa.tsx",
-          "operation": "modify",
-          "description": "Verify that Chalisa narration using useSpeechNarration works correctly in the PWA environment. Add a visible error message or toast if TTS fails or is unavailable. Ensure the Hanuman Chalisa text narration is not silently blocked in the installed PWA."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Implement Community Admin Control panel with approval queue for pending community posts",
-      "acceptanceCriteria": [
-        "Admin Panel has a 'Pending Posts' or 'Approval Queue' tab",
-        "Each pending post shows its content, author, and timestamp",
-        "Admin can click Accept to approve a post (it becomes visible to public)",
-        "Admin can click Reject to decline a post (it is not shown publicly)",
-        "Admin can click Delete to permanently remove any post",
-        "Non-admin users cannot access approval or delete functions",
-        "After an action, the queue updates to reflect the new state"
+        "Admin can fill out the Katha form in the Admin Panel and submit without any error",
+        "The submitted Katha appears in the backend and is retrievable from the Kathayen listing page",
+        "No console errors or failure messages when adding a new Katha"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Add a new 'Community Approval Queue' tab to the AdminPanel. This tab must display all pending community posts by calling the useGetPendingCommunityPosts query hook. For each pending post, render a card showing the post content (text, images, videos, file attachments), author Principal, and timestamp. Provide three action buttons: 'Accept' (calls approveCommunityPost mutation), 'Reject' (calls rejectCommunityPost mutation), and 'Delete' (calls deleteCommunityPost mutation). Ensure these actions are only accessible to authenticated admin users (check with useIsCallerAdmin). After any action, invalidate the pending posts query to refresh the queue. Also add a section or tab listing already-approved posts with a 'Delete' button for each, allowing admins to remove approved posts. Ensure all UI updates reflect the new post state immediately."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add or verify the useGetPendingCommunityPosts query hook that calls getPendingCommunityPosts from the backend. Add or verify mutation hooks for approveCommunityPost, rejectCommunityPost, and deleteCommunityPost, ensuring they invalidate the 'communityPosts' and 'pendingCommunityPosts' query keys on success. Verify that the authorization component's usage instructions are followed, ensuring these hooks are only enabled when the caller is authenticated and has admin permissions."
+          "description": "Fix the Katha form submission logic to ensure all required fields (title, category, deity, hindiText, englishText, tags, audioBlob) are correctly typed and match the backend addKatha signature. Verify the form correctly handles the KathaCategory enum, converts tags input to Array<string>, and passes audioBlob as ExternalBlob | null. Add form validation and error display for required fields. Ensure the mutation invalidates the kathayen query cache on success."
         }
       ]
     },
     {
-      "id": "REQ-6",
-      "summary": "Optimize Community Photos loading speed with lazy loading, dimension hints, and blob URL caching",
+      "id": "REQ-2",
+      "summary": "Add MP3 file upload field to the Admin Panel Katha form using ExternalBlob",
       "acceptanceCriteria": [
-        "Community post images use native lazy loading",
-        "A skeleton/placeholder is shown while images are loading",
-        "Images below the fold do not block initial page render",
-        "Blob URLs for backend-stored images are cached and not recreated on every render",
-        "Visible improvement in perceived load time for the Community page"
+        "Admin Panel Katha form includes an MP3 file upload input",
+        "After upload, the MP3 is stored in the backend associated with the Katha",
+        "The Katha record indicates whether audio is available"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/CommunityPostCard.tsx",
+          "path": "frontend/src/pages/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Add native lazy loading to all <img> tags by setting the loading='lazy' attribute. For images that are ExternalBlob instances, cache the result of getDirectURL() using useMemo to avoid recreating blob URLs on every render. Add explicit width and height attributes or CSS dimensions to prevent layout shift while images load. Display a skeleton placeholder (e.g., a gray rectangle with a pulse animation) while the image is loading by using the onLoad event. Apply the same optimizations to video elements if applicable. Verify that the blob-storage component's usage instructions are followed when displaying images. Ensure that images below the fold do not block the initial render of the page."
-        },
+          "description": "Add an MP3 file input field to the Katha creation/edit form. Use ExternalBlob.fromBytes() to convert the uploaded File to ExternalBlob format. Add withUploadProgress() callback to display upload progress percentage. Include validation to ensure only MP3 files are accepted (accept='audio/mpeg'). Store the ExternalBlob in form state and pass it to the addKatha/updateKatha mutation as the audioBlob parameter. Display upload progress and success/error feedback. Verify the component's usage instructions from the blob-storage component before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add audio player with 'सुनें' button to Katha detail page when MP3 is available",
+      "acceptanceCriteria": [
+        "A 'सुनें' (Listen) button is visible on the Katha detail page only when an MP3 is associated with that Katha",
+        "Clicking the button plays the uploaded MP3 audio",
+        "User can pause and resume playback",
+        "If no MP3 is uploaded, the button is hidden or disabled"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/KathaDetail.tsx",
+          "operation": "modify",
+          "description": "Add conditional rendering for the 'सुनें' button when katha.audioBlob exists. Use katha.audioBlob.getDirectURL() to obtain the streaming URL for the HTML5 audio element. Implement a styled audio player with play/pause controls using the button and an <audio> element. Add state to track playback status (playing/paused) and update the button icon accordingly. Position the audio player prominently near the katha title. Hide the button when katha.audioBlob is null or undefined. Verify the component's usage instructions from the blob-storage component before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Fix Community Posts visibility so logged-in users can view and create posts in a YouTube-style feed",
+      "acceptanceCriteria": [
+        "Logged-in users can see all community posts in a feed-style layout",
+        "Logged-in users can create and submit new community posts",
+        "Posts submitted by users appear in the feed after submission",
+        "Unauthenticated users are shown a login prompt and cannot view or create posts",
+        "The feed visually resembles a YouTube/social feed with post cards showing author, content, and media"
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/pages/Community.tsx",
           "operation": "modify",
-          "description": "Ensure the Community page renders CommunityPostCard components in a way that supports lazy loading (e.g., not using display:none that would load all images immediately). Verify that the post list container does not force all images to load at once. If the page uses infinite scroll or pagination, ensure only visible posts are rendered initially. Add a loading skeleton for the entire post list while the approved posts are being fetched."
+          "description": "Replace the current query hook call from getCommunityPosts to getAllCommunityPosts to fetch all approved posts visible to authenticated users. Add an authentication guard at the top of the component: if not authenticated, display a login prompt with the LoginButton component and return early. Ensure the post creation form is only shown to authenticated users. Refactor the layout to use a vertical feed design with post cards stacked in a single column (YouTube-style). Update the CommunityPostCard rendering to include author name display using getUserProfile for each post's author principal. Invalidate the community posts query cache after successful post creation. Add loading states and empty state messages."
+        },
+        {
+          "path": "frontend/src/components/CommunityPostCard.tsx",
+          "operation": "modify",
+          "description": "Enhance the card to display the post author's name by fetching the UserProfile for the post.author principal using the getUserProfile query hook. Show a fallback placeholder if the profile is not found. Ensure the card layout accommodates author info, content text, and media (image/video/file) in a vertical stack. Add proper spacing and styling for a feed-style card appearance."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Fix Text-to-Speech functionality in production/downloaded app by improving voice loading, warm-up, and resume logic",
+      "acceptanceCriteria": [
+        "TTS plays correctly when user taps the narration/play button in the production/installed app",
+        "TTS works on Katha detail page and other pages that use useSpeechNarration",
+        "TTS does not silently fail — if unavailable, a clear message or fallback is shown",
+        "TTS resumes or restarts if interrupted by background/foreground switch in PWA mode"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useSpeechNarration.ts",
+          "operation": "modify",
+          "description": "Enhance the speech synthesis reliability by: (1) Adding a voice availability check before speaking—wait for speechSynthesis.getVoices() to return a non-empty array using a voiceschanged event listener with timeout. (2) Implement a user-gesture-triggered warm-up call (speak an empty utterance) on first interaction to wake up the speech engine. (3) Add robust retry logic: if speaking fails or is cancelled silently, detect via onend/onerror handlers and retry up to 3 times with exponential backoff. (4) Handle PWA visibility changes: listen to document visibilitychange event and resume/restart speech if paused when the app returns to foreground. (5) Add a fallback error state that displays a user-friendly message if TTS is unavailable after retries. (6) Store the current utterance and position to allow resume after interruption."
+        },
+        {
+          "path": "frontend/src/pages/KathaDetail.tsx",
+          "operation": "modify",
+          "description": "Update the TTS controls to handle the new error state from useSpeechNarration. Display a visible error message or toast notification if TTS fails after retries. Add a retry button in the error state. Ensure the narration controls (play/pause/stop) reflect the updated hook's state accurately."
+        },
+        {
+          "path": "frontend/src/pages/AartiDetail.tsx",
+          "operation": "modify",
+          "description": "Update the TTS controls to handle the new error state from useSpeechNarration. Display a visible error message if TTS fails after retries. Add a retry button in the error state. Ensure the narration controls reflect the updated hook's state accurately."
+        },
+        {
+          "path": "frontend/src/components/ChatMessage.tsx",
+          "operation": "modify",
+          "description": "Update the TTS controls to handle the new error state from useSpeechNarration. Display a visible error message if TTS fails after retries. Ensure the play/pause/stop buttons reflect the updated hook's state accurately."
         }
       ]
     }

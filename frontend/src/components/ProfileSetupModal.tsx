@@ -9,11 +9,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSetUserProfile } from '../hooks/useQueries';
+import { useSaveUserProfile } from '../hooks/useQueries';
 import { Mantra } from '../backend';
 import { Loader2 } from 'lucide-react';
-
-const FIRST_USER_ADMIN_TOKEN = 'vdHHsU40C6W3rU2dA4Ncu';
 
 interface ProfileSetupModalProps {
   open?: boolean;
@@ -21,15 +19,12 @@ interface ProfileSetupModalProps {
 
 export default function ProfileSetupModal({ open = true }: ProfileSetupModalProps) {
   const [name, setName] = useState('');
-  const { mutate: setProfile, isPending } = useSetUserProfile();
+  const { mutate: saveProfile, isPending } = useSaveUserProfile();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    setProfile({
-      profile: { name: name.trim(), selectedMantra: Mantra.omNamahShivaya },
-      token: FIRST_USER_ADMIN_TOKEN,
-    });
+    saveProfile({ name: name.trim(), selectedMantra: Mantra.omNamahShivaya });
   };
 
   return (
@@ -70,7 +65,7 @@ export default function ProfileSetupModal({ open = true }: ProfileSetupModalProp
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="अपना नाम लिखें..."
-              className="bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-saffron-500/60 focus:ring-saffron-500/30"
+              className="bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground"
               autoFocus
             />
           </div>
@@ -82,7 +77,6 @@ export default function ProfileSetupModal({ open = true }: ProfileSetupModalProp
               background: name.trim() && !isPending
                 ? 'linear-gradient(135deg, #f97316, #f59e0b)'
                 : undefined,
-              boxShadow: name.trim() && !isPending ? '0 0 20px rgba(249,115,22,0.4)' : undefined,
             }}
           >
             {isPending ? (

@@ -1,212 +1,133 @@
-import { useState, useEffect } from 'react';
-import { Link } from '@tanstack/react-router';
-import { useGetJapStats, useIsAdmin, useGetCallerUserProfile } from '../hooks/useQueries';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import React, { useState } from 'react';
+import { Shield, LogOut, User, Star, RotateCcw, Loader2 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useGetJapStats, useResetJapStats } from '../hooks/useQueries';
 import VratModeToggle from '../components/VratModeToggle';
-import { Skeleton } from '@/components/ui/skeleton';
+import VratModeDashboard from '../components/VratModeDashboard';
 
 export default function Profile() {
-  const { data: japStats, isLoading: statsLoading } = useGetJapStats();
-  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
-  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
-  const { identity } = useInternetIdentity();
+  const { user, isAdmin, isAuthenticated, logout } = useAuth();
   const [vratMode, setVratMode] = useState(false);
+  const [showLoginHint, setShowLoginHint] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('vratMode');
-    setVratMode(stored === 'true');
-  }, []);
+  const { data: japStats } = useGetJapStats();
+  const resetJap = useResetJapStats();
 
-  const handleVratToggle = (enabled: boolean) => {
-    setVratMode(enabled);
-    localStorage.setItem('vratMode', String(enabled));
-  };
-
-  const lifetimeJaps = japStats ? Number(japStats.lifetime) : 0;
-  const malaCount = Math.floor(lifetimeJaps / 108);
-  const isAuthenticated = !!identity;
-
-  return (
-    <div className="animate-fade-in">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-saffron-800 to-background px-4 pt-6 pb-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-saffron-600 to-gold-500 flex items-center justify-center text-4xl mx-auto mb-3 shadow-lg ring-4 ring-gold-500/30">
-          🙏
-        </div>
-        {profileLoading ? (
-          <Skeleton className="h-6 w-32 mx-auto mb-1" />
-        ) : (
-          <h1 className="text-xl font-bold text-white">
-            {userProfile?.name ? `🙏 ${userProfile.name}` : 'भक्त प्रोफाइल'}
-          </h1>
-        )}
-        <p className="text-amber-200 text-sm mt-1">आपकी भक्ति यात्रा</p>
-        {isAuthenticated && userProfile?.selectedMantra && (
-          <div className="mt-2 inline-block bg-white/10 border border-white/20 rounded-full px-3 py-1">
-            <p className="text-amber-100 text-xs">
-              🕉️ {getMantraLabel(String(userProfile.selectedMantra))}
-            </p>
-          </div>
-        )}
-        {/* Admin badge */}
-        {isAuthenticated && !adminLoading && isAdmin && (
-          <div className="mt-2 inline-block bg-gold-500/20 border border-gold-500/40 rounded-full px-3 py-1 ml-2">
-            <p className="text-gold-400 text-xs">👑 Admin</p>
-          </div>
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 pb-24">
+        <div className="text-6xl">🕉️</div>
+        <h2 className="text-xl font-bold text-foreground">प्रोफाइल</h2>
+        <p className="text-muted-foreground text-center text-sm">
+          अपनी प्रोफाइल देखने के लिए login करें।
+        </p>
+        <button
+          onClick={() => setShowLoginHint(true)}
+          className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium"
+        >
+          Login करें
+        </button>
+        {showLoginHint && (
+          <p className="text-xs text-muted-foreground text-center">
+            Header में Login बटन दबाएँ।
+          </p>
         )}
       </div>
+    );
+  }
 
-      <div className="px-4 space-y-4 pb-8">
-        {/* Lifetime Stats */}
-        <div className="bg-card border border-border rounded-2xl p-4">
-          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
-            <span>⭐</span> जीवन भर के आंकड़े
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 border border-amber-500/20 rounded-xl p-3 text-center">
-              <p className="text-2xl mb-1">🕉️</p>
-              {statsLoading ? (
-                <Skeleton className="h-7 w-16 mx-auto mb-1" />
-              ) : (
-                <p className="text-2xl font-bold text-gold-400">{lifetimeJaps.toLocaleString('hi-IN')}</p>
-              )}
-              <p className="text-xs text-muted-foreground">कुल नाम जाप</p>
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      {/* Profile Header */}
+      <div className="bg-gradient-to-br from-primary to-accent px-4 pt-8 pb-10">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full bg-primary-foreground/20 flex items-center justify-center text-4xl border-2 border-primary-foreground/40">
+              {isAdmin ? '👑' : '🕉️'}
             </div>
-            <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 border border-amber-500/20 rounded-xl p-3 text-center">
-              <p className="text-2xl mb-1">📿</p>
-              {statsLoading ? (
-                <Skeleton className="h-7 w-16 mx-auto mb-1" />
-              ) : (
-                <p className="text-2xl font-bold text-gold-400">{malaCount.toLocaleString('hi-IN')}</p>
-              )}
-              <p className="text-xs text-muted-foreground">माला पूर्ण (108)</p>
-            </div>
+            {isAdmin && (
+              <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1">
+                <Shield size={12} className="text-yellow-900" />
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-primary-foreground">{user?.username}</h2>
+            {isAdmin && (
+              <div className="flex items-center justify-center gap-1.5 mt-1.5 bg-yellow-400/20 border border-yellow-400/40 rounded-full px-3 py-1">
+                <Shield size={12} className="text-yellow-300" />
+                <span className="text-yellow-300 text-xs font-bold">ADMIN</span>
+                <Star size={10} className="text-yellow-300" />
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Daily Stats */}
-        <div className="bg-card border border-border rounded-2xl p-4">
-          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
-            <span>📊</span> आज के आंकड़े
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: 'आज का जाप', value: statsLoading ? null : (japStats ? Number(japStats.daily) : 0), emoji: '📅' },
-              { label: 'स्ट्रीक', value: statsLoading ? null : (japStats ? `${Number(japStats.streak)} दिन` : '0 दिन'), emoji: '🔥' },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-muted/50 rounded-xl p-3 text-center hover:scale-105 transition-all duration-200"
-              >
-                <p className="text-xl mb-1">{stat.emoji}</p>
-                {stat.value === null ? (
-                  <Skeleton className="h-6 w-12 mx-auto mb-1" />
-                ) : (
-                  <p className="text-lg font-bold text-gold-400">{stat.value}</p>
-                )}
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
+      <div className="max-w-md mx-auto px-4 -mt-5">
+        {/* Stats Card */}
+        <div className="bg-card border border-border rounded-2xl p-4 mb-4 shadow-sm">
+          <h3 className="font-semibold text-foreground text-sm mb-3">🙏 जप आँकड़े</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{japStats?.daily?.toString() ?? '0'}</p>
+              <p className="text-xs text-muted-foreground">आज</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{japStats?.lifetime?.toString() ?? '0'}</p>
+              <p className="text-xs text-muted-foreground">कुल</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{japStats?.streak?.toString() ?? '0'}</p>
+              <p className="text-xs text-muted-foreground">streak</p>
+            </div>
           </div>
-          {!isAuthenticated && (
-            <p className="text-center text-muted-foreground text-xs mt-3 bg-muted/30 rounded-lg p-2">
-              🔐 जाप आंकड़े देखने के लिए Login करें
-            </p>
-          )}
+          <button
+            onClick={() => resetJap.mutate()}
+            disabled={resetJap.isPending}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground text-xs font-medium transition-colors disabled:opacity-50"
+          >
+            {resetJap.isPending ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+            जप रीसेट करें
+          </button>
         </div>
 
         {/* Vrat Mode */}
-        <div className="bg-card border border-border rounded-2xl p-4">
-          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
-            <span>🙏</span> व्रत मोड
-          </h2>
-          <VratModeToggle enabled={vratMode} onToggle={handleVratToggle} />
-          {vratMode && (
-            <Link
-              to="/vrat-dashboard"
-              className="mt-3 block w-full bg-gradient-to-r from-amber-700 to-amber-500 text-white py-2 rounded-xl text-sm font-medium text-center hover:scale-[1.02] transition-all duration-200"
-            >
-              📋 व्रत डैशबोर्ड देखें
-            </Link>
-          )}
+        <div className="bg-card border border-border rounded-2xl p-4 mb-4 shadow-sm">
+          <VratModeToggle enabled={vratMode} onToggle={setVratMode} />
         </div>
 
-        {/* Quick Links */}
-        <div className="bg-card border border-border rounded-2xl p-4">
-          <h2 className="text-foreground font-bold mb-3 flex items-center gap-2">
-            <span>🔗</span> त्वरित लिंक
-          </h2>
-          <div className="space-y-2">
-            {[
-              { path: '/jap', label: 'जाप करें', emoji: '📿' },
-              { path: '/aarti', label: 'आरती', emoji: '🪔' },
-              { path: '/kathayen', label: 'कथाएं', emoji: '📖' },
-              { path: '/community', label: 'समुदाय', emoji: '🤝' },
-              { path: '/mandir', label: 'मंदिर खोजें', emoji: '🛕' },
-              { path: '/ai-guru', label: 'AI गुरु', emoji: '🔮' },
-            ].map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-all duration-200 hover:scale-[1.01]"
-              >
-                <span className="text-xl">{link.emoji}</span>
-                <span className="text-foreground text-sm font-medium">{link.label}</span>
-                <span className="ml-auto text-muted-foreground">→</span>
-              </Link>
-            ))}
+        {vratMode && (
+          <div className="mb-4">
+            <VratModeDashboard />
           </div>
-        </div>
-
-        {/* Admin Panel Link — shown only when confirmed admin */}
-        {isAuthenticated && !adminLoading && isAdmin && (
-          <Link
-            to="/admin"
-            className="block bg-gradient-to-r from-gray-800 to-gray-700 border border-gold-500/30 rounded-2xl p-4 hover:scale-[1.02] transition-all duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚙️</span>
-              <div>
-                <p className="text-white font-bold">Admin Panel</p>
-                <p className="text-gray-300 text-xs">सामग्री और उपयोगकर्ता प्रबंधन</p>
-              </div>
-              <span className="ml-auto bg-gold-500/20 text-gold-400 text-xs px-2 py-1 rounded-full border border-gold-500/30">
-                👑 Admin
-              </span>
-            </div>
-          </Link>
         )}
 
-        {/* App Info */}
-        <div className="bg-card border border-border rounded-2xl p-4 text-center">
-          <p className="text-muted-foreground text-xs">
-            © {new Date().getFullYear()} श्री मंदिर • Built with ❤️ using{' '}
-            <a
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gold-400 hover:text-gold-300"
+        {/* Admin Section */}
+        {isAdmin && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-2xl p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield size={16} className="text-yellow-600 dark:text-yellow-400" />
+              <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 text-sm">Admin Controls</h3>
+            </div>
+            <button
+              onClick={() => window.location.href = '/admin'}
+              className="w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-sm font-medium transition-colors"
             >
-              caffeine.ai
-            </a>
-          </p>
-        </div>
+              Admin Panel खोलें
+            </button>
+          </div>
+        )}
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-card border border-border rounded-2xl text-foreground hover:bg-muted transition-colors text-sm font-medium"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
       </div>
     </div>
   );
-}
-
-function getMantraLabel(mantra: string): string {
-  const labels: Record<string, string> = {
-    omNamahShivaya: 'ॐ नमः शिवाय',
-    hareKrishna: 'हरे कृष्ण',
-    gayatriMantra: 'गायत्री मंत्र',
-    mahamrityunjayaMantra: 'महामृत्युंजय मंत्र',
-    saiRam: 'साईं राम',
-    sitaram: 'सीताराम',
-    omMantra: 'ॐ',
-    radhaNamJap: 'राधे राधे',
-    jaiShreeRamNamJap: 'जय श्री राम',
-  };
-  return labels[mantra] || mantra;
 }

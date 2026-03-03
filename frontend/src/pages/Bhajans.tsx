@@ -91,15 +91,14 @@ const STATIC_BHAJANS: BhajanData[] = [
   },
   {
     id: 8,
-    title: 'हनुमान चालीसा',
-    deity: 'हनुमान जी',
-    emoji: '🐒',
-    lyrics: `जय हनुमान ज्ञान गुण सागर।
-जय कपीस तिहुं लोक उजागर।।
-राम दूत अतुलित बल धामा।
-अंजनि पुत्र पवनसुत नामा।।
-महावीर विक्रम बजरंगी।
-कुमति निवार सुमति के संगी।।`,
+    title: 'तुम ही हो माता',
+    deity: 'माँ लक्ष्मी',
+    emoji: '💛',
+    lyrics: `तुम ही हो माता, पिता तुम ही हो।
+तुम ही हो बंधु, सखा तुम ही हो।।
+तुम ही हो साथी, तुम ही सहारा।
+कोई न अपना सिवाय तुम्हारा।।
+तुम ही हो माता, पिता तुम ही हो।।`,
   },
 ];
 
@@ -109,7 +108,7 @@ function BhajanCard({ bhajan }: { bhajan: BhajanData }) {
   const isSpeaking = narrationState === 'playing';
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 hover:border-gold-500/50 hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
+    <div className="bg-card border border-border rounded-2xl p-4 hover:border-gold/50 hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{bhajan.emoji}</span>
@@ -123,7 +122,7 @@ function BhajanCard({ bhajan }: { bhajan: BhajanData }) {
           className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
             isSpeaking
               ? 'bg-red-500/20 text-red-400 animate-pulse'
-              : 'bg-gold-500/20 text-gold-400 hover:bg-gold-500/30'
+              : 'bg-gold/20 text-gold hover:bg-gold/30'
           }`}
         >
           {isSpeaking ? '⏹️' : '🔊'}
@@ -131,12 +130,12 @@ function BhajanCard({ bhajan }: { bhajan: BhajanData }) {
       </div>
 
       <div className={`overflow-hidden transition-all duration-300 ${expanded ? 'max-h-96' : 'max-h-16'}`}>
-        <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">{bhajan.lyrics}</p>
+        <p className="text-foreground text-sm leading-relaxed whitespace-pre-line font-hindi">{bhajan.lyrics}</p>
       </div>
 
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-2 text-xs text-gold-400 hover:text-gold-300 transition-colors"
+        className="mt-2 text-xs text-gold hover:text-gold/80 transition-colors"
       >
         {expanded ? '▲ कम दिखाएं' : '▼ पूरा भजन देखें'}
       </button>
@@ -158,7 +157,7 @@ export default function Bhajans() {
   const allBhajans = [...STATIC_BHAJANS, ...backendConverted];
 
   return (
-    <div className="animate-slide-up">
+    <div className="animate-fade-in-up">
       <div className="bg-gradient-to-b from-pink-900 to-background px-4 pt-6 pb-4 text-center">
         <h1 className="text-2xl font-bold text-white mb-1">🎵 भक्ति भजन</h1>
         <p className="text-pink-200 text-sm">हिंदू भक्ति संगीत — पूर्ण गीत सहित</p>
@@ -169,6 +168,20 @@ export default function Bhajans() {
           <BhajanCard key={bhajan.id} bhajan={bhajan} />
         ))}
       </div>
+
+      <footer className="px-4 py-6 text-center border-t border-border mt-4">
+        <p className="text-muted-foreground text-xs">
+          © {new Date().getFullYear()} दिव्य दर्शन • Built with ❤️ using{' '}
+          <a
+            href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gold hover:text-gold/80 transition-colors"
+          >
+            caffeine.ai
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

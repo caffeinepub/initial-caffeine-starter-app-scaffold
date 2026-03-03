@@ -1,141 +1,69 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { useInternetIdentity } from './useInternetIdentity';
-import type {
-  UserProfile,
-  Katha,
+import { Principal } from '@dfinity/principal';
+import {
   KathaCategory,
-  DharmaQuote,
-  CommunityPost,
-  JapCounter,
-  Vrat,
-  Bhajan,
-  Chalisa,
-  UserApprovalInfo,
+  ExternalBlob,
+  Variant_hindi_english,
+  type Katha,
+  type CommunityPost,
+  type JapCounter,
+  type DharmaQuote,
+  type Bhajan,
+  type Chalisa,
+  type Vrat,
+  type UserProfile,
+  type UserApprovalInfo,
 } from '../backend';
-import { ExternalBlob } from '../backend';
-
-// ─── Auth ────────────────────────────────────────────────────────────────────
-
-export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
-    },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
-}
-
-export function useSetUserProfile() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ profile, token }: { profile: UserProfile; token: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.setUserProfile(profile, token);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-    },
-  });
-}
-
-export function useIsAdmin() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  return useQuery<boolean>({
-    queryKey: ['isAdmin'],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
-    },
-    enabled: !!actor && !actorFetching && !!identity,
-  });
-}
-
-// Legacy alias
-export const useIsCallerAdmin = useIsAdmin;
-
-// ─── Dharma Quote ────────────────────────────────────────────────────────────
-
-export function useGetDharmaQuote() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<DharmaQuote | null>({
-    queryKey: ['dharmaQuote'],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getDharmaQuoteOfDay();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-// Legacy alias
-export const useGetDharmaQuoteOfDay = useGetDharmaQuote;
 
 // ─── Kathayen ────────────────────────────────────────────────────────────────
 
 export function useGetAllKathayen() {
-  const { actor, isFetching: actorFetching } = useActor();
-
+  const { actor, isFetching } = useActor();
   return useQuery<Katha[]>({
     queryKey: ['kathayen'],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllKathayen();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useGetKatha(id: bigint | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-
+  const { actor, isFetching } = useActor();
   return useQuery<Katha | null>({
     queryKey: ['katha', id?.toString()],
     queryFn: async () => {
       if (!actor || id === null) return null;
       return actor.getKatha(id);
     },
-    enabled: !!actor && !actorFetching && id !== null,
+    enabled: !!actor && !isFetching && id !== null,
   });
 }
 
 export function useAddKatha() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (params: {
+    mutationFn: async (data: {
       title: string;
       category: KathaCategory;
       deity: string;
       hindiText: string;
       englishText: string;
       tags: string[];
+      audioBlob?: ExternalBlob | null;
     }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addKatha(
-        params.title,
-        params.category,
-        params.deity,
-        params.hindiText,
-        params.englishText,
-        params.tags
+        data.title,
+        data.category,
+        data.deity,
+        data.hindiText,
+        data.englishText,
+        data.tags,
+        data.audioBlob ?? null
       );
     },
     onSuccess: () => {
@@ -144,71 +72,108 @@ export function useAddKatha() {
   });
 }
 
-// ─── Community Posts ─────────────────────────────────────────────────────────
+export function useUpdateKatha() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      id: bigint;
+      title: string;
+      category: KathaCategory;
+      deity: string;
+      hindiText: string;
+      englishText: string;
+      tags: string[];
+      audioBlob?: ExternalBlob | null;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateKatha(
+        data.id,
+        data.title,
+        data.category,
+        data.deity,
+        data.hindiText,
+        data.englishText,
+        data.tags,
+        data.audioBlob ?? null
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kathayen'] });
+    },
+  });
+}
 
-// Public query — works for unauthenticated users too
+export function useDeleteKatha() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteKatha(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kathayen'] });
+    },
+  });
+}
+
+// ─── Community Posts ──────────────────────────────────────────────────────────
+
 export function useGetApprovedCommunityPosts() {
-  const { actor, isFetching: actorFetching } = useActor();
-
+  const { actor, isFetching } = useActor();
   return useQuery<CommunityPost[]>({
     queryKey: ['communityPosts', 'approved'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getApprovedCommunityPosts();
+      // getCommunityPosts returns only approved posts for authenticated users
+      return actor.getCommunityPosts();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
   });
 }
 
-// Admin only — all posts
-export function useGetAllCommunityPosts() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  return useQuery<CommunityPost[]>({
-    queryKey: ['communityPosts', 'all'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllCommunityPosts();
-    },
-    enabled: !!actor && !actorFetching && !!identity,
-  });
-}
-
-// Admin only — pending posts
 export function useGetPendingCommunityPosts() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
+  const { actor, isFetching } = useActor();
   return useQuery<CommunityPost[]>({
     queryKey: ['communityPosts', 'pending'],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getPendingCommunityPosts();
     },
-    enabled: !!actor && !actorFetching && !!identity,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetAllCommunityPosts() {
+  const { actor, isFetching } = useActor();
+  return useQuery<CommunityPost[]>({
+    queryKey: ['communityPosts', 'all'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllCommunityPosts();
+    },
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useCreateCommunityPost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (params: {
+    mutationFn: async (data: {
       content: string;
       deityTag?: string;
       image?: ExternalBlob;
       video?: ExternalBlob;
-      fileAttachment?: { blob: ExternalBlob; filename: string };
     }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.createCommunityPost(
-        params.content,
-        params.deityTag ?? null,
-        params.image ?? null,
-        params.video ?? null,
-        params.fileAttachment ?? null
+        data.content,
+        data.deityTag ?? null,
+        data.image ?? null,
+        data.video ?? null,
+        null
       );
     },
     onSuccess: () => {
@@ -220,7 +185,6 @@ export function useCreateCommunityPost() {
 export function useApproveCommunityPost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error('Actor not available');
@@ -235,7 +199,6 @@ export function useApproveCommunityPost() {
 export function useRejectCommunityPost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error('Actor not available');
@@ -250,7 +213,6 @@ export function useRejectCommunityPost() {
 export function useDeleteCommunityPost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error('Actor not available');
@@ -265,7 +227,6 @@ export function useDeleteCommunityPost() {
 export function useLikeCommunityPost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error('Actor not available');
@@ -277,183 +238,23 @@ export function useLikeCommunityPost() {
   });
 }
 
-// ─── Vrats ───────────────────────────────────────────────────────────────────
-
-export function useGetAllVrats() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Vrat[]>({
-    queryKey: ['vrats'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllVrats();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-export function useAddVrat() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (params: { name: string; date: string; description: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.addVrat(params.name, params.date, params.description);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vrats'] });
-    },
-  });
-}
-
-export function useUpdateVrat() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (params: { id: bigint; name: string; date: string; description: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateVrat(params.id, params.name, params.date, params.description);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vrats'] });
-    },
-  });
-}
-
-export function useDeleteVrat() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteVrat(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vrats'] });
-    },
-  });
-}
-
-// ─── Bhajans ─────────────────────────────────────────────────────────────────
-
-export function useGetAllBhajans() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Bhajan[]>({
-    queryKey: ['bhajans'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllBhajans();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-export function useAddBhajan() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (params: {
-      title: string;
-      lyrics: string;
-      language: 'hindi' | 'english';
-    }) => {
-      if (!actor) throw new Error('Actor not available');
-      const lang = params.language === 'hindi'
-        ? { hindi: null } as any
-        : { english: null } as any;
-      return actor.addBhajan(params.title, params.lyrics, lang);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bhajans'] });
-    },
-  });
-}
-
-export function useDeleteBhajan() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteBhajan(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bhajans'] });
-    },
-  });
-}
-
-// ─── Chalisa ─────────────────────────────────────────────────────────────────
-
-export function useGetAllChalisa() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Chalisa[]>({
-    queryKey: ['chalisa'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllChalisa();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-export function useAddChalisa() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (params: { title: string; fullText: string; meaning: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.addChalisa(params.title, params.fullText, params.meaning);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chalisa'] });
-    },
-  });
-}
-
-export function useDeleteChalisa() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteChalisa(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chalisa'] });
-    },
-  });
-}
-
-// ─── Jap Counter ─────────────────────────────────────────────────────────────
+// ─── Jap Counter ──────────────────────────────────────────────────────────────
 
 export function useGetJapStats() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  return useQuery<JapCounter | null>({
+  const { actor, isFetching } = useActor();
+  return useQuery<JapCounter>({
     queryKey: ['japStats'],
     queryFn: async () => {
-      if (!actor) return null;
+      if (!actor) throw new Error('Actor not available');
       return actor.getJapStats();
     },
-    enabled: !!actor && !actorFetching && !!identity,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useIncrementJap() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (count: bigint) => {
       if (!actor) throw new Error('Actor not available');
@@ -468,7 +269,6 @@ export function useIncrementJap() {
 export function useResetJapStats() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
@@ -480,33 +280,234 @@ export function useResetJapStats() {
   });
 }
 
-// ─── User Approvals ──────────────────────────────────────────────────────────
+// ─── Dharma Quote ─────────────────────────────────────────────────────────────
+
+export function useGetDharmaQuote() {
+  const { actor, isFetching } = useActor();
+  return useQuery<DharmaQuote | null>({
+    queryKey: ['dharmaQuote'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getDharmaQuoteOfDay();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+// Legacy alias
+export const useGetDharmaQuoteOfDay = useGetDharmaQuote;
+
+// ─── Bhajans ──────────────────────────────────────────────────────────────────
+
+export function useGetAllBhajans() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Bhajan[]>({
+    queryKey: ['bhajans'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllBhajans();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAddBhajan() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { title: string; lyrics: string; language: Variant_hindi_english }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addBhajan(data.title, data.lyrics, data.language);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bhajans'] });
+    },
+  });
+}
+
+export function useDeleteBhajan() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteBhajan(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bhajans'] });
+    },
+  });
+}
+
+// ─── Chalisa ──────────────────────────────────────────────────────────────────
+
+export function useGetAllChalisa() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Chalisa[]>({
+    queryKey: ['chalisa'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllChalisa();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAddChalisa() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { title: string; fullText: string; meaning: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addChalisa(data.title, data.fullText, data.meaning);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chalisa'] });
+    },
+  });
+}
+
+export function useDeleteChalisa() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteChalisa(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chalisa'] });
+    },
+  });
+}
+
+// ─── Vrats ────────────────────────────────────────────────────────────────────
+
+export function useGetAllVrats() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Vrat[]>({
+    queryKey: ['vrats'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllVrats();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAddVrat() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; date: string; description: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addVrat(data.name, data.date, data.description);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vrats'] });
+    },
+  });
+}
+
+export function useDeleteVrat() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteVrat(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vrats'] });
+    },
+  });
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+export function useGetCallerUserProfile() {
+  const { actor, isFetching } = useActor();
+  return useQuery<UserProfile | null>({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getCallerUserProfile();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSaveUserProfile() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (profile: UserProfile) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.saveCallerUserProfile(profile);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+    },
+  });
+}
+
+// Legacy alias used by ProfileSetupModal
+export const useSetUserProfile = useSaveUserProfile;
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+export function useIsAdmin() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ['isAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+// Legacy alias
+export const useIsCallerAdmin = useIsAdmin;
 
 export function useListApprovals() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
+  const { actor, isFetching } = useActor();
   return useQuery<UserApprovalInfo[]>({
     queryKey: ['approvals'],
     queryFn: async () => {
       if (!actor) return [];
       return actor.listApprovals();
     },
-    enabled: !!actor && !actorFetching && !!identity,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useSetApproval() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (params: { user: any; status: any }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mutationFn: async (data: { user: Principal; status: any }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.setApproval(params.user, params.status);
+      return actor.setApproval(data.user, data.status);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
+    },
+  });
+}
+
+export function useAddDharmaQuote() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { id: bigint; englishText: string; hindiText: string; author: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addDharmaQuote(data.id, data.englishText, data.hindiText, data.author);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dharmaQuote'] });
     },
   });
 }

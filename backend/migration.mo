@@ -3,88 +3,57 @@ import Nat "mo:core/Nat";
 import Storage "blob-storage/Storage";
 
 module {
-  // The old post type may have had only #approved | #rejected status variants,
-  // or may have included an isPublic field. We normalise everything on upgrade:
-  // existing approved posts stay approved; everything else becomes pending.
-  type OldCommunityPostStatus = {
-    #approved;
-    #rejected;
-  };
-
-  type OldCommunityPost = {
+  // Old Katha type without `audioBlob`
+  type OldKatha = {
     id : Nat;
-    author : Principal;
-    content : Text;
-    timestamp : Nat;
-    likes : Nat;
-    comments : Nat;
-    status : OldCommunityPostStatus;
-    reports : Nat;
-    deityTag : ?Text;
-    image : ?Storage.ExternalBlob;
-    video : ?Storage.ExternalBlob;
-    fileAttachment : ?{
-      blob : Storage.ExternalBlob;
-      filename : Text;
+    title : Text;
+    category : {
+      #puranik;
+      #vrat;
     };
+    deity : Text;
+    hindiText : Text;
+    englishText : Text;
+    tags : [Text];
+    createdAt : Int;
   };
 
-  type NewCommunityPostStatus = {
-    #pending;
-    #approved;
-    #rejected;
-  };
-
-  type NewCommunityPost = {
-    id : Nat;
-    author : Principal;
-    content : Text;
-    timestamp : Nat;
-    likes : Nat;
-    comments : Nat;
-    status : NewCommunityPostStatus;
-    reports : Nat;
-    deityTag : ?Text;
-    image : ?Storage.ExternalBlob;
-    video : ?Storage.ExternalBlob;
-    fileAttachment : ?{
-      blob : Storage.ExternalBlob;
-      filename : Text;
-    };
-  };
-
+  // Old actor type
   type OldActor = {
-    communityPosts : Map.Map<Nat, OldCommunityPost>;
+    kathayen : Map.Map<Nat, OldKatha>;
   };
 
+  // New Katha type with `audioBlob`
+  type NewKatha = {
+    id : Nat;
+    title : Text;
+    category : {
+      #puranik;
+      #vrat;
+    };
+    deity : Text;
+    hindiText : Text;
+    englishText : Text;
+    tags : [Text];
+    createdAt : Int;
+    audioBlob : ?Storage.ExternalBlob;
+  };
+
+  // New actor type with updated Katha definition
   type NewActor = {
-    communityPosts : Map.Map<Nat, NewCommunityPost>;
+    kathayen : Map.Map<Nat, NewKatha>;
   };
 
+  // Migration function transforms `OldActor` to `NewActor`
   public func run(old : OldActor) : NewActor {
-    let newCommunityPosts = old.communityPosts.map<Nat, OldCommunityPost, NewCommunityPost>(
-      func(_id, post) {
-        let newStatus : NewCommunityPostStatus = switch (post.status) {
-          case (#approved) { #approved };
-          // All non-approved legacy posts become 'pending'
-          case (#rejected) { #pending };
-        };
+    let newKathayen = old.kathayen.map<Nat, OldKatha, NewKatha>(
+      func(_id, oldKatha) {
         {
-          id = post.id;
-          author = post.author;
-          content = post.content;
-          timestamp = post.timestamp;
-          likes = post.likes;
-          comments = post.comments;
-          status = newStatus;
-          reports = post.reports;
-          deityTag = post.deityTag;
-          image = post.image;
-          video = post.video;
-          fileAttachment = post.fileAttachment;
+          oldKatha with
+          audioBlob = null;
         };
       }
     );
-    { communityPosts = newCommunityPosts };
+    { kathayen = newKathayen };
   };
 };

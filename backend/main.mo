@@ -21,9 +21,6 @@ actor {
   include MixinAuthorization(accessControlState);
   let approvalState = UserApproval.initState(accessControlState);
 
-  var adminInitialized : Bool = false;
-  let adminToken = "vdHHsU40C6W3rU2dA4Ncu";
-
   public type Festival = {
     name : Text;
     date : Text;
@@ -126,6 +123,7 @@ actor {
     englishText : Text;
     tags : [Text];
     createdAt : Int;
+    audioBlob : ?Storage.ExternalBlob;
   };
 
   public type KrishnaLeela = {
@@ -181,19 +179,6 @@ actor {
     },
   );
 
-  func requireAdmin(caller : Principal) {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-  };
-
-  func assignFirstUserAdmin(caller : Principal, userProvidedToken : Text) {
-    if (not adminInitialized and not caller.isAnonymous()) {
-      AccessControl.initialize(accessControlState, caller, adminToken, userProvidedToken);
-      adminInitialized := true;
-    };
-  };
-
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -201,16 +186,7 @@ actor {
     userProfiles.get(caller);
   };
 
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile, userProvidedToken : Text) : async () {
-    assignFirstUserAdmin(caller, userProvidedToken);
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
-    userProfiles.add(caller, profile);
-  };
-
-  public shared ({ caller }) func setUserProfile(profile : UserProfile, userProvidedToken : Text) : async () {
-    assignFirstUserAdmin(caller, userProvidedToken);
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
@@ -301,13 +277,17 @@ actor {
   };
 
   public shared ({ caller }) func addDharmaQuote(id : Nat, englishText : Text, hindiText : Text, author : Text) : async () {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     let quote = { id; englishText; hindiText; author };
     dharmaQuotes.add(id, quote);
   };
 
   public shared ({ caller }) func updateDharmaQuote(id : Nat, englishText : Text, hindiText : Text, author : Text) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (dharmaQuotes.get(id)) {
       case (?quote) {
         let updated = { id; englishText; hindiText; author };
@@ -319,7 +299,9 @@ actor {
   };
 
   public shared ({ caller }) func deleteDharmaQuote(id : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (dharmaQuotes.get(id)) {
       case (?quote) {
         dharmaQuotes.remove(id);
@@ -349,7 +331,9 @@ actor {
   };
 
   public shared ({ caller }) func addVrat(name : Text, date : Text, description : Text) : async Nat {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
 
     let vrat : Vrat = {
       id = vratCounter;
@@ -364,7 +348,9 @@ actor {
   };
 
   public shared ({ caller }) func updateVrat(id : Nat, name : Text, date : Text, description : Text) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (vratDates.get(id)) {
       case (?vrat) {
         let updated = {
@@ -381,7 +367,9 @@ actor {
   };
 
   public shared ({ caller }) func deleteVrat(id : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (vratDates.get(id)) {
       case (?vrat) {
         vratDates.remove(id);
@@ -392,8 +380,12 @@ actor {
   };
 
   // Community Posts
-  // Returns only approved posts for all callers (including unauthenticated/anonymous visitors)
-  public query func getApprovedCommunityPosts() : async [CommunityPost] {
+  // Only approved posts are visible to authenticated (logged-in) users
+  // Non-logged-in users (guests) cannot view posts
+  public query ({ caller }) func getCommunityPosts() : async [CommunityPost] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view community posts");
+    };
     let results = List.empty<CommunityPost>();
     for ((_, post) in communityPosts.entries()) {
       if (post.status == #approved) {
@@ -404,12 +396,16 @@ actor {
   };
 
   public query ({ caller }) func getAllCommunityPosts() : async [CommunityPost] {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     communityPosts.values().toArray();
   };
 
   public query ({ caller }) func getPendingCommunityPosts() : async [CommunityPost] {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     let results = List.empty<CommunityPost>();
     for ((_, post) in communityPosts.entries()) {
       if (post.status == #pending) {
@@ -451,7 +447,9 @@ actor {
   };
 
   public shared ({ caller }) func approveCommunityPost(postId : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (communityPosts.get(postId)) {
       case (?post) {
         let updated = { post with status = #approved };
@@ -463,7 +461,9 @@ actor {
   };
 
   public shared ({ caller }) func rejectCommunityPost(postId : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (communityPosts.get(postId)) {
       case (?post) {
         let updated = { post with status = #rejected };
@@ -475,7 +475,9 @@ actor {
   };
 
   public shared ({ caller }) func deleteCommunityPost(postId : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (communityPosts.get(postId)) {
       case (?post) {
         communityPosts.remove(postId);
@@ -519,8 +521,19 @@ actor {
     };
   };
 
-  public shared ({ caller }) func addKatha(title : Text, category : KathaCategory, deity : Text, hindiText : Text, englishText : Text, tags : [Text]) : async Nat {
-    requireAdmin(caller);
+  // Katha management - admin-only write, public read
+  public shared ({ caller }) func addKatha(
+    title : Text,
+    category : KathaCategory,
+    deity : Text,
+    hindiText : Text,
+    englishText : Text,
+    tags : [Text],
+    audioBlob : ?Storage.ExternalBlob,
+  ) : async Nat {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
 
     let katha : Katha = {
       id = kathaCounter;
@@ -531,6 +544,7 @@ actor {
       englishText;
       tags;
       createdAt = Time.now();
+      audioBlob;
     };
 
     kathayen.add(kathaCounter, katha);
@@ -538,8 +552,53 @@ actor {
     katha.id;
   };
 
+  public shared ({ caller }) func updateKatha(id : Nat, title : Text, category : KathaCategory, deity : Text, hindiText : Text, englishText : Text, tags : [Text], audioBlob : ?Storage.ExternalBlob) : async Bool {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    switch (kathayen.get(id)) {
+      case (?katha) {
+        let updated : Katha = {
+          id;
+          title;
+          category;
+          deity;
+          hindiText;
+          englishText;
+          tags;
+          createdAt = katha.createdAt;
+          audioBlob;
+        };
+        kathayen.add(id, updated);
+        true;
+      };
+      case (null) { false };
+    };
+  };
+
+  public shared ({ caller }) func deleteKatha(id : Nat) : async Bool {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    switch (kathayen.get(id)) {
+      case (?katha) {
+        kathayen.remove(id);
+        true;
+      };
+      case (null) { false };
+    };
+  };
+
   public query func getKatha(id : Nat) : async ?Katha {
     kathayen.get(id);
+  };
+
+  public query func getKathayen() : async [Katha] {
+    kathayen.values().toArray();
+  };
+
+  public query func getAllKathayen() : async [Katha] {
+    kathayen.values().toArray();
   };
 
   public query func listKathayenByCategory(category : KathaCategory) : async [Katha] {
@@ -578,10 +637,6 @@ actor {
     results.toArray();
   };
 
-  public query func getAllKathayen() : async [Katha] {
-    kathayen.values().toArray();
-  };
-
   public query func getKrishnaLeelaStory() : async KrishnaLeela {
     switch (krishnaLeelaData.get(0)) {
       case (?story) { story };
@@ -598,7 +653,9 @@ actor {
   };
 
   public shared ({ caller }) func addBhajan(title : Text, lyrics : Text, language : { #hindi; #english }) : async Nat {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
 
     let bhajan : Bhajan = {
       id = bhajanCounter;
@@ -613,7 +670,9 @@ actor {
   };
 
   public shared ({ caller }) func updateBhajan(id : Nat, title : Text, lyrics : Text, language : { #hindi; #english }) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (bhajans.get(id)) {
       case (?bhajan) {
         let updated = {
@@ -630,7 +689,9 @@ actor {
   };
 
   public shared ({ caller }) func deleteBhajan(id : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (bhajans.get(id)) {
       case (?bhajan) {
         bhajans.remove(id);
@@ -649,7 +710,9 @@ actor {
   };
 
   public shared ({ caller }) func addChalisa(title : Text, fullText : Text, meaning : Text) : async Nat {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
 
     let chalisa : Chalisa = {
       id = chalisaCounter;
@@ -664,7 +727,9 @@ actor {
   };
 
   public shared ({ caller }) func updateChalisa(id : Nat, title : Text, fullText : Text, meaning : Text) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (chalisaEntries.get(id)) {
       case (?chalisa) {
         let updated = {
@@ -681,7 +746,9 @@ actor {
   };
 
   public shared ({ caller }) func deleteChalisa(id : Nat) : async Bool {
-    requireAdmin(caller);
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
     switch (chalisaEntries.get(id)) {
       case (?chalisa) {
         chalisaEntries.remove(id);

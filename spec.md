@@ -1,14 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Fix authentication flow, public visibility of content, PWA narration, admin community controls, and image loading performance for the Divya Darshan app.
+**Goal:** Fix multiple bugs in the Hindu Dharma App: Admin Panel Katha creation errors, add MP3 upload support for Kathas, fix Community Posts visibility, and fix Text-to-Speech in the production/PWA app.
 
 **Planned changes:**
-- Implement one-click Internet Identity login/logout: clicking login immediately opens the Internet Identity popup (Google/passkey), no intermediate password form; a logout button is always visible when authenticated
-- Fix Vrat Katha public visibility: published kathas are returned by the backend for anonymous callers and displayed without requiring login
-- Fix Community posts public visibility: approved community posts are visible to unauthenticated users; backend returns approved posts for anonymous callers
-- Fix TTS narration in PWA: update the speech narration hook to handle Chrome Android PWA voice-loading bug, re-initialize Speech Synthesis on visibility changes, and add a fallback resume mechanism with a user-facing message if TTS is unavailable
-- Add Community Approval Queue tab in Admin Panel: list pending posts with Accept, Reject, and Delete actions; approved posts are also deletable by admin; backend restricts these actions to admin callers
-- Optimize community post image loading: add native lazy loading, skeleton/placeholder while loading, cache blob URLs to avoid re-fetching on every render
+- Fix the Admin Panel Katha creation form so it submits correctly without errors, ensuring the backend Motoko actor properly accepts and persists all Katha fields
+- Add an MP3 file upload field to the Admin Panel Katha creation/edit form; store the audio blob in the backend associated with the Katha record
+- Add a "सुनें" (Listen) audio player button on the public Katha detail page that plays the uploaded MP3 when available, with play/pause controls; hidden if no MP3 is uploaded
+- Fix Community Posts so all logged-in users can view and create posts in a feed-style layout (YouTube-style cards showing author, content, media); unauthenticated users see a login prompt instead
+- Fix Text-to-Speech (TTS) in the production/installed PWA by ensuring speech synthesis voices are loaded before speaking, adding a user-gesture warm-up, and adding a retry/resume mechanism for background/foreground switches
 
-**User-visible outcome:** Users can log in and out with one click via Internet Identity; Vrat Kathas and community posts are publicly visible without login; narration works correctly in the installed PWA; admins can manage community post approvals; community images load faster with placeholders.
+**User-visible outcome:** Admins can add Kathas with optional MP3 uploads without errors; users can listen to Kathas via an audio player; logged-in users can view and create community posts in a social feed; and TTS narration works reliably in the installed app.
