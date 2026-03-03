@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-admin-panel-error-that-occurs-when-adding-a-new-katha-religious-story-the-backend-addkatha-or-equivalent-function-should-correctly-accept-and-persist-all-required-fields-without-throwing-errors-validate-that-the-motoko-actor-s-katha-creation-logic-handles-all-field-types-properly-and-that-the-frontend-form-submits-correct-data-types-matching-the-backend-interface",
-      "featureTitle": "Fix the Admin Panel error that occurs when adding a new Katha (religious story). The backend `addKatha` or equivalent function should correctly accept and persist all required fields without throwing errors. Validate that the Motoko actor's katha creation logic handles all field types properly and that the frontend form submits correct data types matching the backend interface.",
+      "featureId": "feature-fix-the-aarti-section-frontend-src-pages-aarti-tsx-so-that-all-aartis-from-static-data-frontend-src-lib-staticdata-ts-are-correctly-loaded-and-displayed-as-cards-when-the-section-is-opened-the-page-must-not-show-an-error-on-load-and-must-render-all-available-aarti-entries-on-all-devices",
+      "featureTitle": "Fix the Aarti section (frontend/src/pages/Aarti.tsx) so that all aartis from static data (frontend/src/lib/staticData.ts) are correctly loaded and displayed as cards when the section is opened. The page must not show an error on load and must render all available aarti entries on all devices.",
       "files": [
-        "frontend/src/pages/AdminPanel.tsx"
+        "frontend/src/pages/Aarti.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -23,10 +23,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-an-mp3-file-upload-field-in-the-admin-panel-s-katha-creation-edit-form-the-admin-should-be-able-to-upload-an-mp3-audio-file-along-with-each-katha-the-mp3-binary-data-should-be-stored-in-the-backend-as-a-blob-chunk-associated-with-the-katha-record-the-backend-katha-data-model-should-include-an-optional-audioblob-or-audiodata-field-to-store-the-uploaded-mp3-bytes",
-      "featureTitle": "Add an MP3 file upload field in the Admin Panel's Katha creation/edit form. The admin should be able to upload an MP3 audio file along with each Katha. The MP3 binary data should be stored in the backend (as a Blob/chunk) associated with the Katha record. The backend Katha data model should include an optional `audioBlob` or `audioData` field to store the uploaded MP3 bytes.",
+      "featureId": "feature-add-a-graceful-empty-state-ui-to-the-aarti-section-frontend-src-pages-aarti-tsx-in-case-no-aarti-data-is-available-showing-a-friendly-hindi-message-instead-of-an-error-or-blank-screen",
+      "featureTitle": "Add a graceful empty state UI to the Aarti section (frontend/src/pages/Aarti.tsx) in case no aarti data is available, showing a friendly Hindi message instead of an error or blank screen.",
       "files": [
-        "frontend/src/pages/AdminPanel.tsx"
+        "frontend/src/pages/Aarti.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -40,73 +40,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-an-audio-player-listen-button-on-the-public-facing-katha-detail-page-kathadetail-tsx-when-a-katha-has-an-associated-mp3-uploaded-by-the-admin-the-button-should-appear-and-play-that-audio-when-clicked-use-an-html5-audio-player-or-a-styled-play-pause-control-that-streams-or-loads-the-mp3-blob-from-the-backend",
-      "featureTitle": "Add an audio player ('सुनें' / Listen button) on the public-facing Katha detail page (`KathaDetail.tsx`). When a Katha has an associated MP3 uploaded by the admin, the 'सुनें' button should appear and play that audio when clicked. Use an HTML5 audio player or a styled play/pause control that streams or loads the MP3 blob from the backend.",
-      "files": [
-        "frontend/src/pages/KathaDetail.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-fix-community-posts-so-that-all-logged-in-users-can-see-all-approved-posts-and-also-create-new-posts-the-community-page-community-tsx-should-display-a-youtube-style-feed-of-all-posts-to-any-authenticated-user-non-logged-in-users-should-not-be-able-to-view-or-create-posts-fix-any-backend-query-or-approval-status-filter-that-may-be-preventing-posts-from-appearing-to-regular-users",
-      "featureTitle": "Fix Community Posts so that all logged-in users can see all approved posts and also create new posts. The Community page (`Community.tsx`) should display a YouTube-style feed of all posts to any authenticated user. Non-logged-in users should not be able to view or create posts. Fix any backend query or approval-status filter that may be preventing posts from appearing to regular users.",
-      "files": [
-        "frontend/src/components/CommunityPostCard.tsx",
-        "frontend/src/pages/Community.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-fix-the-text-to-speech-tts-functionality-in-the-production-downloaded-app-the-usespeechnarration-hook-currently-uses-the-web-speech-api-which-may-not-work-reliably-in-installed-pwa-or-certain-browsers-ensure-tts-works-in-production-by-1-verifying-the-speech-synthesis-voices-are-loaded-before-speaking-2-adding-a-user-gesture-triggered-warm-up-3-handling-the-case-where-speechsynthesis-is-cancelled-silently-in-background-tabs-or-pwa-mode-with-a-retry-resume-mechanism",
-      "featureTitle": "Fix the Text-to-Speech (TTS) functionality in the production/downloaded app. The `useSpeechNarration` hook currently uses the Web Speech API which may not work reliably in installed PWA or certain browsers. Ensure TTS works in production by: (1) verifying the speech synthesis voices are loaded before speaking, (2) adding a user-gesture-triggered warm-up, (3) handling the case where `speechSynthesis` is cancelled silently in background tabs or PWA mode with a retry/resume mechanism.",
-      "files": [
-        "frontend/src/components/ChatMessage.tsx",
-        "frontend/src/hooks/useSpeechNarration.ts",
-        "frontend/src/pages/AartiDetail.tsx",
-        "frontend/src/pages/KathaDetail.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
       ],
       "confidence": "high"
     }

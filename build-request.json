@@ -1,126 +1,60 @@
 {
   "kind": "build_request",
-  "title": "Fix Admin Panel Katha errors, add MP3 upload, fix Community Posts visibility, and fix TTS",
-  "projectName": "Hindu Dharma App",
+  "title": "Fix Aarti Section Error — Aartis Not Displaying",
+  "projectName": "Divya Darshan",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the Admin Panel error that occurs when adding a new Katha (religious story). The backend `addKatha` or equivalent function should correctly accept and persist all required fields without throwing errors. Validate that the Motoko actor's katha creation logic handles all field types properly and that the frontend form submits correct data types matching the backend interface.",
-      "target": "both",
+      "text": "Fix the Aarti section (frontend/src/pages/Aarti.tsx) so that all aartis from static data (frontend/src/lib/staticData.ts) are correctly loaded and displayed as cards when the section is opened. The page must not show an error on load and must render all available aarti entries on all devices.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6",
-          "msg-8"
+          "msg-8",
+          "msg-9",
+          "msg-11"
         ],
         "quotes": [
-          "Admin Panel fix — कथाएं add करते समय जो error आता था वो fix होगा",
-          "phele m kathayen add krta to error aa jata or add nahi hoti usse bhi thik kro"
+          "Sabhi device me aaraha hai kholte hi aarti nahi dikhti sirf aat hai error",
+          "Ha kro"
         ]
       },
       "acceptanceCriteria": [
-        "Admin can fill out the Katha form in the Admin Panel and submit without any error",
-        "The submitted Katha appears in the backend and is retrievable from the Kathayen listing page",
-        "No console errors or failure messages when adding a new Katha"
+        "Opening the Aarti section does not display any error message.",
+        "All aarti entries from staticData.ts are rendered as AartiCard components on the page.",
+        "The fix works on all devices and browsers.",
+        "Clicking an aarti card navigates to the correct AartiDetail page.",
+        "No console errors related to aarti data loading or rendering."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add an MP3 file upload field in the Admin Panel's Katha creation/edit form. The admin should be able to upload an MP3 audio file along with each Katha. The MP3 binary data should be stored in the backend (as a Blob/chunk) associated with the Katha record. The backend Katha data model should include an optional `audioBlob` or `audioData` field to store the uploaded MP3 bytes.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-6",
-          "msg-8"
-        ],
-        "quotes": [
-          "admin khud MP3 audio file upload kar sake katha ke saath",
-          "ek feature or add kro ki kathayen upload krte time khud admin hi mp3 upload krega"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin Panel Katha form includes an MP3 file upload input",
-        "After upload, the MP3 is stored in the backend associated with the Katha",
-        "The Katha record indicates whether audio is available"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Add an audio player ('सुनें' / Listen button) on the public-facing Katha detail page (`KathaDetail.tsx`). When a Katha has an associated MP3 uploaded by the admin, the 'सुनें' button should appear and play that audio when clicked. Use an HTML5 audio player or a styled play/pause control that streams or loads the MP3 blob from the backend.",
+      "text": "Add a graceful empty state UI to the Aarti section (frontend/src/pages/Aarti.tsx) in case no aarti data is available, showing a friendly Hindi message instead of an error or blank screen.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6",
           "msg-8"
         ],
         "quotes": [
-          "us katha me sun ne wale option pr click krke sun sakte hai",
-          "Public side par Audio Player — 'सुनें' button se MP3 play hoga"
+          "kholte hi aarti nahi dikhti sirf aat hai error"
         ]
       },
       "acceptanceCriteria": [
-        "A 'सुनें' (Listen) button is visible on the Katha detail page only when an MP3 is associated with that Katha",
-        "Clicking the button plays the uploaded MP3 audio",
-        "User can pause and resume playback",
-        "If no MP3 is uploaded, the button is hidden or disabled"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Fix Community Posts so that all logged-in users can see all approved posts and also create new posts. The Community page (`Community.tsx`) should display a YouTube-style feed of all posts to any authenticated user. Non-logged-in users should not be able to view or create posts. Fix any backend query or approval-status filter that may be preventing posts from appearing to regular users.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-6",
-          "msg-8"
-        ],
-        "quotes": [
-          "community post nahi ho rahi hai or na public ko dikh rahi hai",
-          "Community Posts fix — Posts sabhi logged-in users ko dikhein aur YouTube jaisa feed ho",
-          "Login ke baad hi community posts dekh aur upload kar sakte hain"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Logged-in users can see all community posts in a feed-style layout",
-        "Logged-in users can create and submit new community posts",
-        "Posts submitted by users appear in the feed after submission",
-        "Unauthenticated users are shown a login prompt and cannot view or create posts",
-        "The feed visually resembles a YouTube/social feed with post cards showing author, content, and media"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Fix the Text-to-Speech (TTS) functionality in the production/downloaded app. The `useSpeechNarration` hook currently uses the Web Speech API which may not work reliably in installed PWA or certain browsers. Ensure TTS works in production by: (1) verifying the speech synthesis voices are loaded before speaking, (2) adding a user-gesture-triggered warm-up, (3) handling the case where `speechSynthesis` is cancelled silently in background tabs or PWA mode with a retry/resume mechanism.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6",
-          "msg-8"
-        ],
-        "quotes": [
-          "tts in downloaded app not working",
-          "TTS fix — Text-to-Speech sahi se kaam karega"
-        ]
-      },
-      "acceptanceCriteria": [
-        "TTS plays correctly when user taps the narration/play button in the production/installed app",
-        "TTS works on Katha detail page and other pages that use `useSpeechNarration`",
-        "TTS does not silently fail — if unavailable, a clear message or fallback is shown",
-        "TTS resumes or restarts if interrupted by background/foreground switch in PWA mode"
+        "If no aarti data is available, a friendly message is shown instead of an error.",
+        "The empty state does not crash the app or show a raw error."
       ]
     }
   ],
   "constraints": [
-    "Do not rebuild the app from scratch — only modify the existing codebase",
-    "Keep the existing login system (Internet Identity + admin username/password) unchanged",
-    "Do not modify immutable frontend paths: useInternetIdentity.ts, useActor.ts, main.tsx, components/ui",
-    "All Motoko logic must remain in the single backend/main.mo actor file"
+    "Do not create a new app — fix the existing Aarti section only.",
+    "Do not modify any immutable frontend paths (hooks/useInternetIdentity.ts, hooks/useActor.ts, main.tsx, components/ui).",
+    "Do not change the backend schema or data model."
   ],
   "nonGoals": [
-    "Rebuilding or redesigning the entire application",
-    "Changing the authentication system or login flow",
-    "Adding new pages or navigation items beyond what is described",
-    "External audio hosting or CDN integration — MP3 stored in backend blob storage only"
+    "Adding new aarti entries or content.",
+    "Changes to any section other than Aarti.",
+    "Backend changes.",
+    "Audio playback changes."
   ],
   "imageRequirements": {
     "required": [],

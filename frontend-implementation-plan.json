@@ -1,109 +1,43 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Admin Panel Katha errors, add MP3 upload, fix Community Posts visibility, and fix TTS",
+  "title": "Fix Aarti Section Error — Aartis Not Displaying",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix Admin Panel Katha form errors to correctly submit all required fields matching the backend interface",
+      "summary": "Fix the Aarti section so that all aartis from static data are correctly loaded and displayed as cards without error on all devices",
       "acceptanceCriteria": [
-        "Admin can fill out the Katha form in the Admin Panel and submit without any error",
-        "The submitted Katha appears in the backend and is retrievable from the Kathayen listing page",
-        "No console errors or failure messages when adding a new Katha"
+        "Opening the Aarti section does not display any error message.",
+        "All aarti entries from staticData.ts are rendered as AartiCard components on the page.",
+        "The fix works on all devices and browsers.",
+        "Clicking an aarti card navigates to the correct AartiDetail page.",
+        "No console errors related to aarti data loading or rendering."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AdminPanel.tsx",
+          "path": "frontend/src/pages/Aarti.tsx",
           "operation": "modify",
-          "description": "Fix the Katha form submission logic to ensure all required fields (title, category, deity, hindiText, englishText, tags, audioBlob) are correctly typed and match the backend addKatha signature. Verify the form correctly handles the KathaCategory enum, converts tags input to Array<string>, and passes audioBlob as ExternalBlob | null. Add form validation and error display for required fields. Ensure the mutation invalidates the kathayen query cache on success."
+          "description": "Fix the Aarti page component to correctly import and render all aarti entries from frontend/src/lib/staticData.ts. Ensure the aartis array is properly mapped to AartiCard components with correct props (name, hindiText, deity, gradient). Add error boundary handling to prevent crashes. Verify that the navigation links to /aarti/:id routes are correctly formed using the aarti keys from staticData. Test that the component renders without errors on mount and displays all available aartis as clickable cards."
+        },
+        {
+          "path": "frontend/src/components/AartiCard.tsx",
+          "operation": "modify",
+          "description": "Review and ensure the AartiCard component correctly receives and displays all required props (name, hindiText preview, deity tag, emoji icon). Verify the component handles missing or undefined props gracefully without throwing errors. Ensure the onClick navigation to the AartiDetail route works correctly. Add prop validation or default values where appropriate to prevent rendering errors."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add MP3 file upload field to the Admin Panel Katha form using ExternalBlob",
+      "summary": "Add a graceful empty state UI to the Aarti section showing a friendly Hindi message when no aarti data is available",
       "acceptanceCriteria": [
-        "Admin Panel Katha form includes an MP3 file upload input",
-        "After upload, the MP3 is stored in the backend associated with the Katha",
-        "The Katha record indicates whether audio is available"
+        "If no aarti data is available, a friendly message is shown instead of an error.",
+        "The empty state does not crash the app or show a raw error."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AdminPanel.tsx",
+          "path": "frontend/src/pages/Aarti.tsx",
           "operation": "modify",
-          "description": "Add an MP3 file input field to the Katha creation/edit form. Use ExternalBlob.fromBytes() to convert the uploaded File to ExternalBlob format. Add withUploadProgress() callback to display upload progress percentage. Include validation to ensure only MP3 files are accepted (accept='audio/mpeg'). Store the ExternalBlob in form state and pass it to the addKatha/updateKatha mutation as the audioBlob parameter. Display upload progress and success/error feedback. Verify the component's usage instructions from the blob-storage component before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add audio player with 'सुनें' button to Katha detail page when MP3 is available",
-      "acceptanceCriteria": [
-        "A 'सुनें' (Listen) button is visible on the Katha detail page only when an MP3 is associated with that Katha",
-        "Clicking the button plays the uploaded MP3 audio",
-        "User can pause and resume playback",
-        "If no MP3 is uploaded, the button is hidden or disabled"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/KathaDetail.tsx",
-          "operation": "modify",
-          "description": "Add conditional rendering for the 'सुनें' button when katha.audioBlob exists. Use katha.audioBlob.getDirectURL() to obtain the streaming URL for the HTML5 audio element. Implement a styled audio player with play/pause controls using the button and an <audio> element. Add state to track playback status (playing/paused) and update the button icon accordingly. Position the audio player prominently near the katha title. Hide the button when katha.audioBlob is null or undefined. Verify the component's usage instructions from the blob-storage component before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Fix Community Posts visibility so logged-in users can view and create posts in a YouTube-style feed",
-      "acceptanceCriteria": [
-        "Logged-in users can see all community posts in a feed-style layout",
-        "Logged-in users can create and submit new community posts",
-        "Posts submitted by users appear in the feed after submission",
-        "Unauthenticated users are shown a login prompt and cannot view or create posts",
-        "The feed visually resembles a YouTube/social feed with post cards showing author, content, and media"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/Community.tsx",
-          "operation": "modify",
-          "description": "Replace the current query hook call from getCommunityPosts to getAllCommunityPosts to fetch all approved posts visible to authenticated users. Add an authentication guard at the top of the component: if not authenticated, display a login prompt with the LoginButton component and return early. Ensure the post creation form is only shown to authenticated users. Refactor the layout to use a vertical feed design with post cards stacked in a single column (YouTube-style). Update the CommunityPostCard rendering to include author name display using getUserProfile for each post's author principal. Invalidate the community posts query cache after successful post creation. Add loading states and empty state messages."
-        },
-        {
-          "path": "frontend/src/components/CommunityPostCard.tsx",
-          "operation": "modify",
-          "description": "Enhance the card to display the post author's name by fetching the UserProfile for the post.author principal using the getUserProfile query hook. Show a fallback placeholder if the profile is not found. Ensure the card layout accommodates author info, content text, and media (image/video/file) in a vertical stack. Add proper spacing and styling for a feed-style card appearance."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Fix Text-to-Speech functionality in production/downloaded app by improving voice loading, warm-up, and resume logic",
-      "acceptanceCriteria": [
-        "TTS plays correctly when user taps the narration/play button in the production/installed app",
-        "TTS works on Katha detail page and other pages that use useSpeechNarration",
-        "TTS does not silently fail — if unavailable, a clear message or fallback is shown",
-        "TTS resumes or restarts if interrupted by background/foreground switch in PWA mode"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useSpeechNarration.ts",
-          "operation": "modify",
-          "description": "Enhance the speech synthesis reliability by: (1) Adding a voice availability check before speaking—wait for speechSynthesis.getVoices() to return a non-empty array using a voiceschanged event listener with timeout. (2) Implement a user-gesture-triggered warm-up call (speak an empty utterance) on first interaction to wake up the speech engine. (3) Add robust retry logic: if speaking fails or is cancelled silently, detect via onend/onerror handlers and retry up to 3 times with exponential backoff. (4) Handle PWA visibility changes: listen to document visibilitychange event and resume/restart speech if paused when the app returns to foreground. (5) Add a fallback error state that displays a user-friendly message if TTS is unavailable after retries. (6) Store the current utterance and position to allow resume after interruption."
-        },
-        {
-          "path": "frontend/src/pages/KathaDetail.tsx",
-          "operation": "modify",
-          "description": "Update the TTS controls to handle the new error state from useSpeechNarration. Display a visible error message or toast notification if TTS fails after retries. Add a retry button in the error state. Ensure the narration controls (play/pause/stop) reflect the updated hook's state accurately."
-        },
-        {
-          "path": "frontend/src/pages/AartiDetail.tsx",
-          "operation": "modify",
-          "description": "Update the TTS controls to handle the new error state from useSpeechNarration. Display a visible error message if TTS fails after retries. Add a retry button in the error state. Ensure the narration controls reflect the updated hook's state accurately."
-        },
-        {
-          "path": "frontend/src/components/ChatMessage.tsx",
-          "operation": "modify",
-          "description": "Update the TTS controls to handle the new error state from useSpeechNarration. Display a visible error message if TTS fails after retries. Ensure the play/pause/stop buttons reflect the updated hook's state accurately."
+          "description": "Add an empty state UI that displays when the aartis array is empty or undefined. Show a friendly Hindi message such as 'कोई आरती उपलब्ध नहीं है' (No aartis available) with an appropriate icon or illustration. Ensure this empty state does not trigger any console errors and provides a clean user experience. Style the empty state consistently with the app's Hindu devotional theme using saffron/gold colors."
         }
       ]
     }

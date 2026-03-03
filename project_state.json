@@ -1,94 +1,33 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "A Katha (religious stories) app with admin panel, community feed, TTS, and audio playback features. The existing app is being modified (not rebuilt) to fix bugs and add new capabilities.",
-  "architectural_notes": [
-    "Existing app should be modified, not rebuilt — login system and existing structure must remain unchanged",
-    "Community posts require login to view and upload (no public access without login)",
-    "Admin can upload MP3 files along with Kathayen; public users play audio via player button"
-  ],
+  "summary": "Devotional app with Admin Panel, MP3 upload, Audio Player, Community Feed, and TTS features. Currently fixing Aarti section error where no aartis are displayed on open (affects all devices).",
+  "architectural_notes": [],
   "known_issues": [
-    "Admin Panel: error occurs when trying to add Kathayen",
-    "TTS not working in downloaded/production app",
-    "Community posts not visible to public/logged-in users"
+    "Aarti section shows error on open — no aartis displayed, affects all devices"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-admin-panel-error-that-occurs-when-adding-a-new-katha-religious-story-the-backend-addkatha-or-equivalent-function-should-correctly-accept-and-persist-all-required-fields-without-throwing-errors-validate-that-the-motoko-actor-s-katha-creation-logic-handles-all-field-types-properly-and-that-the-frontend-form-submits-correct-data-types-matching-the-backend-interface",
-      "title": "Fix the Admin Panel error that occurs when adding a new Katha (religious story). The backend `addKatha` or equivalent function should correctly accept and persist all required fields without throwing errors. Validate that the Motoko actor's katha creation logic handles all field types properly and that the frontend form submits correct data types matching the backend interface.",
+      "id": "feature-fix-the-aarti-section-frontend-src-pages-aarti-tsx-so-that-all-aartis-from-static-data-frontend-src-lib-staticdata-ts-are-correctly-loaded-and-displayed-as-cards-when-the-section-is-opened-the-page-must-not-show-an-error-on-load-and-must-render-all-available-aarti-entries-on-all-devices",
+      "title": "Fix the Aarti section (frontend/src/pages/Aarti.tsx) so that all aartis from static data (frontend/src/lib/staticData.ts) are correctly loaded and displayed as cards when the section is opened. The page must not show an error on load and must render all available aarti entries on all devices.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-an-mp3-file-upload-field-in-the-admin-panel-s-katha-creation-edit-form-the-admin-should-be-able-to-upload-an-mp3-audio-file-along-with-each-katha-the-mp3-binary-data-should-be-stored-in-the-backend-as-a-blob-chunk-associated-with-the-katha-record-the-backend-katha-data-model-should-include-an-optional-audioblob-or-audiodata-field-to-store-the-uploaded-mp3-bytes",
-      "title": "Add an MP3 file upload field in the Admin Panel's Katha creation/edit form. The admin should be able to upload an MP3 audio file along with each Katha. The MP3 binary data should be stored in the backend (as a Blob/chunk) associated with the Katha record. The backend Katha data model should include an optional `audioBlob` or `audioData` field to store the uploaded MP3 bytes.",
+      "id": "feature-add-a-graceful-empty-state-ui-to-the-aarti-section-frontend-src-pages-aarti-tsx-in-case-no-aarti-data-is-available-showing-a-friendly-hindi-message-instead-of-an-error-or-blank-screen",
+      "title": "Add a graceful empty state UI to the Aarti section (frontend/src/pages/Aarti.tsx) in case no aarti data is available, showing a friendly Hindi message instead of an error or blank screen.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-add-an-audio-player-listen-button-on-the-public-facing-katha-detail-page-kathadetail-tsx-when-a-katha-has-an-associated-mp3-uploaded-by-the-admin-the-button-should-appear-and-play-that-audio-when-clicked-use-an-html5-audio-player-or-a-styled-play-pause-control-that-streams-or-loads-the-mp3-blob-from-the-backend",
-      "title": "Add an audio player ('सुनें' / Listen button) on the public-facing Katha detail page (`KathaDetail.tsx`). When a Katha has an associated MP3 uploaded by the admin, the 'सुनें' button should appear and play that audio when clicked. Use an HTML5 audio player or a styled play/pause control that streams or loads the MP3 blob from the backend.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-community-posts-so-that-all-logged-in-users-can-see-all-approved-posts-and-also-create-new-posts-the-community-page-community-tsx-should-display-a-youtube-style-feed-of-all-posts-to-any-authenticated-user-non-logged-in-users-should-not-be-able-to-view-or-create-posts-fix-any-backend-query-or-approval-status-filter-that-may-be-preventing-posts-from-appearing-to-regular-users",
-      "title": "Fix Community Posts so that all logged-in users can see all approved posts and also create new posts. The Community page (`Community.tsx`) should display a YouTube-style feed of all posts to any authenticated user. Non-logged-in users should not be able to view or create posts. Fix any backend query or approval-status filter that may be preventing posts from appearing to regular users.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-text-to-speech-tts-functionality-in-the-production-downloaded-app-the-usespeechnarration-hook-currently-uses-the-web-speech-api-which-may-not-work-reliably-in-installed-pwa-or-certain-browsers-ensure-tts-works-in-production-by-1-verifying-the-speech-synthesis-voices-are-loaded-before-speaking-2-adding-a-user-gesture-triggered-warm-up-3-handling-the-case-where-speechsynthesis-is-cancelled-silently-in-background-tabs-or-pwa-mode-with-a-retry-resume-mechanism",
-      "title": "Fix the Text-to-Speech (TTS) functionality in the production/downloaded app. The `useSpeechNarration` hook currently uses the Web Speech API which may not work reliably in installed PWA or certain browsers. Ensure TTS works in production by: (1) verifying the speech synthesis voices are loaded before speaking, (2) adding a user-gesture-triggered warm-up, (3) handling the case where `speechSynthesis` is cancelled silently in background tabs or PWA mode with a retry/resume mechanism.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Fix Admin Panel error when adding Kathayen (stories)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Add MP3 upload option in Admin Panel when uploading a Katha",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Audio player on public side - 'Sunein' button plays uploaded MP3",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Fix Community Posts visibility - all logged-in users can see and upload posts (YouTube-like feed)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Fix TTS (Text-to-Speech) not working in downloaded/production app",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
+  "new_feature_requests": [],
   "gameProjectType": "none",
-  "projectName": "Katha App",
+  "projectName": "Divya Darshan",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

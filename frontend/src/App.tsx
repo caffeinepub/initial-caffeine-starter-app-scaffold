@@ -45,7 +45,7 @@ const rootRoute = createRootRoute({
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Home });
 const japRoute = createRoute({ getParentRoute: () => rootRoute, path: '/jap', component: Jap });
 const aartiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/aarti', component: Aarti });
-const aartiDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/aarti/$aartiId', component: AartiDetail });
+const aartiDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/aarti/$id', component: AartiDetail });
 const mantrasRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mantras', component: Mantras });
 const bhajansRoute = createRoute({ getParentRoute: () => rootRoute, path: '/bhajans', component: Bhajans });
 const chalisaRoute = createRoute({ getParentRoute: () => rootRoute, path: '/chalisa', component: Chalisa });

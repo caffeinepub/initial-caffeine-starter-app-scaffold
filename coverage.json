@@ -1,99 +1,47 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-03T02:53:07.253Z",
+  "generatedAt": "2026-03-03T03:13:37.926Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the Admin Panel error that occurs when adding a new Katha (religious story). The backend `addKatha` or equivalent function should correctly accept and persist all required fields without throwing errors. Validate that the Motoko actor's katha creation logic handles all field types properly and that the frontend form submits correct data types matching the backend interface.",
+        "summary": "Fix the Aarti section (frontend/src/pages/Aarti.tsx) so that all aartis from static data (frontend/src/lib/staticData.ts) are correctly loaded and displayed as cards when the section is opened. The page must not show an error on load and must render all available aarti entries on all devices.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AdminPanel.tsx"
+          "frontend/src/pages/Aarti.tsx",
+          "frontend/src/components/AartiCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AdminPanel.tsx"
+          "frontend/src/pages/Aarti.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add an MP3 file upload field in the Admin Panel's Katha creation/edit form. The admin should be able to upload an MP3 audio file along with each Katha. The MP3 binary data should be stored in the backend (as a Blob/chunk) associated with the Katha record. The backend Katha data model should include an optional `audioBlob` or `audioData` field to store the uploaded MP3 bytes.",
+        "summary": "Add a graceful empty state UI to the Aarti section (frontend/src/pages/Aarti.tsx) in case no aarti data is available, showing a friendly Hindi message instead of an error or blank screen.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AdminPanel.tsx"
+          "frontend/src/pages/Aarti.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AdminPanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Add an audio player ('सुनें' / Listen button) on the public-facing Katha detail page (`KathaDetail.tsx`). When a Katha has an associated MP3 uploaded by the admin, the 'सुनें' button should appear and play that audio when clicked. Use an HTML5 audio player or a styled play/pause control that streams or loads the MP3 blob from the backend.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/KathaDetail.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/KathaDetail.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Fix Community Posts so that all logged-in users can see all approved posts and also create new posts. The Community page (`Community.tsx`) should display a YouTube-style feed of all posts to any authenticated user. Non-logged-in users should not be able to view or create posts. Fix any backend query or approval-status filter that may be preventing posts from appearing to regular users.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/Community.tsx",
-          "frontend/src/components/CommunityPostCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/Community.tsx",
-          "frontend/src/components/CommunityPostCard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Fix the Text-to-Speech (TTS) functionality in the production/downloaded app. The `useSpeechNarration` hook currently uses the Web Speech API which may not work reliably in installed PWA or certain browsers. Ensure TTS works in production by: (1) verifying the speech synthesis voices are loaded before speaking, (2) adding a user-gesture-triggered warm-up, (3) handling the case where `speechSynthesis` is cancelled silently in background tabs or PWA mode with a retry/resume mechanism.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useSpeechNarration.ts",
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/pages/AartiDetail.tsx",
-          "frontend/src/components/ChatMessage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useSpeechNarration.ts",
-          "frontend/src/pages/KathaDetail.tsx",
-          "frontend/src/pages/AartiDetail.tsx",
-          "frontend/src/components/ChatMessage.tsx"
+          "frontend/src/pages/Aarti.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/ChatMessage.tsx",
-    "frontend/src/components/CommunityPostCard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/hooks/useSpeechNarration.ts",
-    "frontend/src/pages/AartiDetail.tsx",
-    "frontend/src/pages/AdminPanel.tsx",
-    "frontend/src/pages/Community.tsx",
-    "frontend/src/pages/KathaDetail.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/pages/Aarti.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
