@@ -144,7 +144,7 @@ export default function Mandir() {
               <h3 className="text-sm font-bold text-foreground font-hindi">
                 नजदीकी मंदिर खोजें
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-foreground/65 font-medium mt-1">
                 Find Hindu temples near your current location using Google Maps
               </p>
             </div>

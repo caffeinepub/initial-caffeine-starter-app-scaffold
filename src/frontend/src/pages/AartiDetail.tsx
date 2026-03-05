@@ -86,7 +86,7 @@ export default function AartiDetail() {
           <h1 className="text-white font-bold text-base truncate">
             {aarti.name}
           </h1>
-          <p className="text-white/70 text-xs">{aarti.deity}</p>
+          <p className="text-white/90 text-xs">{aarti.deity}</p>
         </div>
         <span className="text-xl">🪔</span>
       </div>

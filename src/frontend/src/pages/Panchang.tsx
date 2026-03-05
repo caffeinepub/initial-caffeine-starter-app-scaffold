@@ -40,7 +40,7 @@ export default function Panchang() {
       {/* Header */}
       <div className="bg-gradient-to-b from-blue-900 to-background px-4 pt-6 pb-4 text-center">
         <h1 className="text-2xl font-bold text-white mb-1">📅 पंचांग</h1>
-        <p className="text-blue-200 text-sm">हिंदू पंचांग — आज की तिथि और मुहूर्त</p>
+        <p className="text-white/90 text-sm">हिंदू पंचांग — आज की तिथि और मुहूर्त</p>
       </div>
 
       {/* Date Navigation */}
@@ -82,7 +82,9 @@ export default function Panchang() {
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">{field.emoji}</span>
-              <p className="text-muted-foreground text-xs">{field.label}</p>
+              <p className="text-foreground/65 text-xs font-medium">
+                {field.label}
+              </p>
             </div>
             <p className="text-foreground font-bold text-sm">{field.value}</p>
           </div>
@@ -91,7 +93,7 @@ export default function Panchang() {
 
       {/* Auspicious Periods */}
       <div className="px-4 pb-8">
-        <div className="bg-gradient-to-r from-green-900/40 to-teal-900/40 border border-green-500/30 rounded-2xl p-4">
+        <div className="bg-card border border-green-500/30 rounded-2xl p-4">
           <h2 className="text-foreground font-bold mb-3">✨ शुभ मुहूर्त</h2>
           <div className="space-y-2">
             {[
@@ -109,9 +111,13 @@ export default function Panchang() {
               >
                 <div className="flex items-center gap-2">
                   <span>{period.emoji}</span>
-                  <p className="text-foreground text-sm">{period.name}</p>
+                  <p className="text-foreground text-sm font-medium">
+                    {period.name}
+                  </p>
                 </div>
-                <p className="text-gold text-xs font-medium">{period.time}</p>
+                <p className="text-amber-700 dark:text-yellow-300 text-xs font-semibold">
+                  {period.time}
+                </p>
               </div>
             ))}
           </div>

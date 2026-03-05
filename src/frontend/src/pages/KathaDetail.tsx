@@ -13,7 +13,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KathaCategory } from "../backend";
-import { useGetKatha } from "../hooks/useQueries";
+import { useLocalKathayen } from "../hooks/useLocalKathayen";
 import { useSpeechNarration } from "../hooks/useSpeechNarration";
 import { STATIC_KATHAS } from "../lib/kathaData";
 
@@ -178,28 +178,24 @@ export default function KathaDetail() {
   const isPlaying = narrationState === "playing";
   const isTTSError = narrationState === "error";
 
-  // Determine if this is a static or backend katha
+  // localStorage-based local kathayen (admin-added)
+  const { getKatha: getLocalKatha } = useLocalKathayen();
+
+  // Determine katha type
   const isStatic = kathaId?.startsWith("static-");
-  const isBackend = kathaId?.startsWith("backend-");
-
-  // For backend kathas, extract the numeric ID safely
-  const backendNumericId = useMemo(() => {
-    if (!isBackend || !kathaId) return BigInt(0);
-    try {
-      return BigInt(kathaId.replace("backend-", ""));
-    } catch {
-      return BigInt(0);
-    }
-  }, [isBackend, kathaId]);
-
-  const { data: backendKatha, isLoading: backendLoading } =
-    useGetKatha(backendNumericId);
+  const isLocal = kathaId?.startsWith("local_");
 
   // Find static katha
   const staticKatha = useMemo(
     () =>
       isStatic ? (STATIC_KATHAS.find((k) => k.id === kathaId) ?? null) : null,
     [isStatic, kathaId],
+  );
+
+  // Find local (admin-added) katha
+  const localKatha = useMemo(
+    () => (isLocal && kathaId ? (getLocalKatha(kathaId) ?? null) : null),
+    [isLocal, kathaId, getLocalKatha],
   );
 
   // Build display katha
@@ -217,25 +213,23 @@ export default function KathaDetail() {
         audioUrl: null,
       };
     }
-    if (isBackend && backendKatha) {
+    if (isLocal && localKatha) {
       return {
-        id: `backend-${backendKatha.id.toString()}`,
-        title: backendKatha.title,
-        deity: backendKatha.deity,
-        category: backendKatha.category,
-        emoji: getDeityEmoji(backendKatha.deity),
-        hindiText: backendKatha.hindiText,
-        englishText: backendKatha.englishText,
-        tags: backendKatha.tags,
-        audioUrl: backendKatha.audioBlob
-          ? backendKatha.audioBlob.getDirectURL()
-          : null,
+        id: localKatha.id,
+        title: localKatha.title,
+        deity: localKatha.deity,
+        category: localKatha.category,
+        emoji: getDeityEmoji(localKatha.deity),
+        hindiText: localKatha.hindiText,
+        englishText: localKatha.englishText,
+        tags: localKatha.tags,
+        audioUrl: localKatha.audioDataUrl ?? null,
       };
     }
     return null;
-  }, [isStatic, staticKatha, isBackend, backendKatha]);
+  }, [isStatic, staticKatha, isLocal, localKatha]);
 
-  const isLoading = isBackend && backendLoading && !backendKatha;
+  const isLoading = false;
 
   const handleTTS = () => {
     if (isPlaying) {

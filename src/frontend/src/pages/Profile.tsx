@@ -18,7 +18,7 @@ export default function Profile() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 pb-24">
         <div className="text-6xl">🕉️</div>
         <h2 className="text-xl font-bold text-foreground">प्रोफाइल</h2>
-        <p className="text-muted-foreground text-center text-sm">
+        <p className="text-foreground/70 text-center text-sm">
           अपनी प्रोफाइल देखने के लिए login करें।
         </p>
         <button
@@ -78,26 +78,26 @@ export default function Profile() {
               <p className="text-2xl font-bold text-primary">
                 {japStats?.daily?.toString() ?? "0"}
               </p>
-              <p className="text-xs text-muted-foreground">आज</p>
+              <p className="text-xs text-foreground/65 font-medium">आज</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-primary">
                 {japStats?.lifetime?.toString() ?? "0"}
               </p>
-              <p className="text-xs text-muted-foreground">कुल</p>
+              <p className="text-xs text-foreground/65 font-medium">कुल</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-primary">
                 {japStats?.streak?.toString() ?? "0"}
               </p>
-              <p className="text-xs text-muted-foreground">streak</p>
+              <p className="text-xs text-foreground/65 font-medium">streak</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => resetJap.mutate()}
             disabled={resetJap.isPending}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground text-xs font-medium transition-colors disabled:opacity-50"
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground/75 text-xs font-semibold transition-colors disabled:opacity-50"
           >
             {resetJap.isPending ? (
               <Loader2 size={12} className="animate-spin" />

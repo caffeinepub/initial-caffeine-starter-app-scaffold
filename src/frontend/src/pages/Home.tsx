@@ -11,70 +11,80 @@ const categories = [
     label: "जाप",
     emoji: "📿",
     desc: "मंत्र जाप करें",
-    color: "from-orange-900/80 to-orange-700/60",
+    gradient: "linear-gradient(135deg, #c2410c 0%, #ff9933 100%)",
+    glow: "rgba(255,153,51,0.4)",
   },
   {
     path: "/aarti" as const,
     label: "आरती",
     emoji: "🪔",
     desc: "आरती पाठ करें",
-    color: "from-yellow-900/80 to-yellow-700/60",
+    gradient: "linear-gradient(135deg, #b45309 0%, #fbbf24 100%)",
+    glow: "rgba(251,191,36,0.4)",
   },
   {
     path: "/mantras" as const,
     label: "मंत्र",
     emoji: "🕉️",
     desc: "पवित्र मंत्र",
-    color: "from-purple-900/80 to-purple-700/60",
+    gradient: "linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%)",
+    glow: "rgba(139,92,246,0.4)",
   },
   {
     path: "/bhajans" as const,
     label: "भजन",
     emoji: "🎵",
     desc: "भक्ति भजन",
-    color: "from-pink-900/80 to-pink-700/60",
+    gradient: "linear-gradient(135deg, #9d174d 0%, #ec4899 100%)",
+    glow: "rgba(236,72,153,0.4)",
   },
   {
     path: "/chalisa" as const,
     label: "चालीसा",
     emoji: "📜",
     desc: "हनुमान चालीसा",
-    color: "from-red-900/80 to-red-700/60",
+    gradient: "linear-gradient(135deg, #991b1b 0%, #ef4444 100%)",
+    glow: "rgba(239,68,68,0.4)",
   },
   {
     path: "/kathayen" as const,
     label: "कथाएं",
     emoji: "📖",
     desc: "पौराणिक कथाएं",
-    color: "from-green-900/80 to-green-700/60",
+    gradient: "linear-gradient(135deg, #065f46 0%, #10b981 100%)",
+    glow: "rgba(16,185,129,0.4)",
   },
   {
     path: "/panchang" as const,
     label: "पंचांग",
     emoji: "📅",
     desc: "आज का पंचांग",
-    color: "from-blue-900/80 to-blue-700/60",
+    gradient: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+    glow: "rgba(59,130,246,0.4)",
   },
   {
     path: "/mandir" as const,
     label: "मंदिर",
     emoji: "🛕",
     desc: "मंदिर दर्शन",
-    color: "from-teal-900/80 to-teal-700/60",
+    gradient: "linear-gradient(135deg, #064e3b 0%, #14b8a6 100%)",
+    glow: "rgba(20,184,166,0.4)",
   },
   {
     path: "/community" as const,
     label: "समाज",
     emoji: "🤝",
     desc: "भक्त समुदाय",
-    color: "from-indigo-900/80 to-indigo-700/60",
+    gradient: "linear-gradient(135deg, #1e1b4b 0%, #6366f1 100%)",
+    glow: "rgba(99,102,241,0.4)",
   },
   {
     path: "/ai-guru" as const,
     label: "AI गुरु",
     emoji: "🔮",
     desc: "आध्यात्मिक मार्गदर्शन",
-    color: "from-violet-900/80 to-violet-700/60",
+    gradient: "linear-gradient(135deg, #312e81 0%, #7c3aed 100%)",
+    glow: "rgba(124,58,237,0.4)",
   },
 ];
 
@@ -92,16 +102,25 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="animate-fade-in-up relative">
+    <div
+      className="animate-fade-in-up relative min-h-screen"
+      style={{
+        background:
+          "linear-gradient(180deg, #0f0721 0%, #1a0a2e 40%, #0d1b3e 100%)",
+      }}
+    >
       <FloatingLotus />
 
-      {/* Vrat Mode Banner — use plain anchor since /vrat-dashboard is not a registered route */}
+      {/* Vrat Mode Banner */}
       {vratMode && (
-        <div className="bg-gradient-to-r from-amber-600 to-orange-500 text-white px-4 py-3 flex items-center justify-between">
+        <div
+          className="px-4 py-3 flex items-center justify-between"
+          style={{ background: "linear-gradient(90deg, #b45309, #c2410c)" }}
+        >
           <div className="flex items-center gap-2">
             <span className="text-xl">🙏</span>
             <div>
-              <p className="font-bold text-sm">व्रत मोड सक्रिय है</p>
+              <p className="font-bold text-sm text-white">व्रत मोड सक्रिय है</p>
               <p className="text-xs text-amber-100">आज का व्रत विवरण</p>
             </div>
           </div>
@@ -127,12 +146,27 @@ export default function Home() {
               "url(/assets/generated/mandala-hero.dim_1200x400.png)",
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/70" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(15,7,33,0.3) 0%, rgba(15,7,33,0.2) 50%, rgba(15,7,33,0.85) 100%)",
+            }}
+          />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-            <h2 className="text-white text-3xl font-bold drop-shadow-lg mb-1">
-              🕉️ जय श्री राम
+            <div
+              className="text-5xl mb-2 drop-shadow-lg"
+              style={{ filter: "drop-shadow(0 0 12px rgba(255,215,0,0.6))" }}
+            >
+              🕉️
+            </div>
+            <h2
+              className="text-3xl font-bold text-white drop-shadow-lg mb-1"
+              style={{ textShadow: "0 0 20px rgba(255,153,51,0.6)" }}
+            >
+              जय श्री राम
             </h2>
-            <p className="text-amber-200 text-sm font-medium drop-shadow">
+            <p className="text-amber-300 text-sm font-medium drop-shadow">
               हर हर महादेव • राधे राधे
             </p>
           </div>
@@ -140,113 +174,138 @@ export default function Home() {
       </div>
 
       {/* Panchang Strip */}
-      <div className="bg-gradient-to-r from-maroon to-saffron px-4 py-2">
+      <div
+        className="px-4 py-3 mx-3 mt-3 rounded-2xl"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,153,51,0.15), rgba(255,215,0,0.1))",
+          border: "1px solid rgba(255,153,51,0.3)",
+        }}
+      >
         <div className="flex items-center justify-around text-center">
           <div>
-            <p className="text-amber-200 text-xs">तिथि</p>
+            <p className="text-amber-400 text-xs font-medium">तिथि</p>
             <p className="text-white text-xs font-semibold">{tithi}</p>
           </div>
-          <div className="w-px h-8 bg-amber-400/30" />
+          <div className="w-px h-8 bg-amber-400/20" />
           <div>
-            <p className="text-amber-200 text-xs">नक्षत्र</p>
+            <p className="text-amber-400 text-xs font-medium">नक्षत्र</p>
             <p className="text-white text-xs font-semibold">{nakshatra}</p>
           </div>
-          <div className="w-px h-8 bg-amber-400/30" />
+          <div className="w-px h-8 bg-amber-400/20" />
           <div>
-            <p className="text-amber-200 text-xs">वार</p>
+            <p className="text-amber-400 text-xs font-medium">वार</p>
             <p className="text-white text-xs font-semibold">{vara}</p>
           </div>
-          <div className="w-px h-8 bg-amber-400/30" />
+          <div className="w-px h-8 bg-amber-400/20" />
           <Link
             to="/panchang"
-            className="text-amber-300 text-xs font-medium hover:text-amber-100 transition-colors"
+            className="text-amber-400 text-xs font-medium hover:text-amber-300 transition-colors"
           >
-            पूरा पंचांग →
+            पूरा →
           </Link>
         </div>
       </div>
 
       {/* Daily Shloka */}
       {shloka && (
-        <div className="mx-4 mt-4 p-4 bg-card border border-gold/30 rounded-2xl shadow-lg">
-          <p className="text-gold text-xs font-semibold mb-1 uppercase tracking-wider">
-            आज का श्लोक
+        <div
+          className="mx-4 mt-4 p-4 rounded-2xl"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(255,153,51,0.12), rgba(255,215,0,0.08))",
+            border: "1px solid rgba(255,215,0,0.25)",
+          }}
+        >
+          <p className="text-amber-400 text-xs font-semibold mb-2 uppercase tracking-wider">
+            ✨ आज का श्लोक
           </p>
-          <p className="text-foreground text-sm font-medium leading-relaxed font-hindi">
+          <p className="text-white text-sm font-medium leading-relaxed font-hindi">
             {shloka.sanskrit}
           </p>
-          <p className="text-muted-foreground text-xs mt-1">
+          <p className="text-amber-200/80 text-xs mt-1.5 leading-relaxed">
             {shloka.hindiMeaning}
           </p>
         </div>
       )}
 
       {/* Category Grid */}
-      <div className="px-4 mt-4">
-        <h3 className="text-foreground font-bold text-base mb-3">
-          🙏 भक्ति सेवाएं
+      <div className="px-4 mt-5">
+        <h3 className="text-white font-bold text-base mb-3 flex items-center gap-2">
+          <span>🙏</span> भक्ति सेवाएं
         </h3>
         <div className="grid grid-cols-2 gap-3">
           {categories.map((cat) => (
             <Link
               key={cat.path}
               to={cat.path}
-              className={`relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br ${cat.color} border border-white/10 hover:scale-105 hover:shadow-xl transition-all duration-300 group`}
+              className="relative overflow-hidden rounded-2xl p-4 hover:scale-105 transition-all duration-300 group active:scale-95"
+              style={{
+                background: cat.gradient,
+                boxShadow: `0 4px 16px ${cat.glow}`,
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
             >
               <div className="flex flex-col gap-1">
                 <span className="text-3xl group-hover:scale-110 transition-transform duration-200">
                   {cat.emoji}
                 </span>
                 <p className="text-white font-bold text-sm">{cat.label}</p>
-                <p className="text-white/70 text-xs">{cat.desc}</p>
+                <p className="text-white/85 text-xs">{cat.desc}</p>
               </div>
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300 rounded-2xl" />
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/8 transition-colors duration-300 rounded-2xl" />
             </Link>
           ))}
         </div>
       </div>
 
       {/* Dharma Quote */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-5">
         <DailyDharmaQuote />
       </div>
 
       {/* Quick Actions */}
       <div className="px-4 mt-4 mb-4">
-        <h3 className="text-foreground font-bold text-base mb-3">
-          ⚡ त्वरित क्रियाएं
-        </h3>
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <h3 className="text-white font-bold text-base mb-3">⚡ त्वरित क्रियाएं</h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {[
             {
               path: "/jap" as const,
               label: "जाप शुरू करें",
               emoji: "📿",
-              bg: "bg-orange-900/50",
+              bg: "linear-gradient(135deg, rgba(194,65,12,0.5), rgba(255,153,51,0.3))",
+              border: "rgba(255,153,51,0.4)",
             },
             {
               path: "/aarti" as const,
               label: "आरती करें",
               emoji: "🪔",
-              bg: "bg-yellow-900/50",
+              bg: "linear-gradient(135deg, rgba(180,83,9,0.5), rgba(251,191,36,0.3))",
+              border: "rgba(251,191,36,0.4)",
             },
             {
               path: "/kathayen" as const,
               label: "कथाएं",
               emoji: "📖",
-              bg: "bg-amber-900/50",
+              bg: "linear-gradient(135deg, rgba(6,78,59,0.5), rgba(16,185,129,0.3))",
+              border: "rgba(16,185,129,0.4)",
             },
             {
               path: "/community" as const,
               label: "समुदाय",
               emoji: "🤝",
-              bg: "bg-blue-900/50",
+              bg: "linear-gradient(135deg, rgba(30,27,75,0.5), rgba(99,102,241,0.3))",
+              border: "rgba(99,102,241,0.4)",
             },
           ].map((action) => (
             <Link
               key={action.path}
               to={action.path}
-              className={`flex-shrink-0 ${action.bg} border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2 hover:scale-105 transition-all duration-200 hover:shadow-lg`}
+              className="flex-shrink-0 rounded-xl px-4 py-3 flex items-center gap-2 hover:scale-105 transition-all duration-200 hover:shadow-lg active:scale-95"
+              style={{
+                background: action.bg,
+                border: `1px solid ${action.border}`,
+              }}
             >
               <span className="text-xl">{action.emoji}</span>
               <span className="text-white text-sm font-medium whitespace-nowrap">
@@ -258,15 +317,18 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="px-4 py-6 text-center border-t border-border mt-4">
-        <p className="text-muted-foreground text-xs">
-          © {new Date().getFullYear()} दिव्य दर्शन • Built with{" "}
+      <footer
+        className="px-4 py-6 text-center border-t mt-4"
+        style={{ borderColor: "rgba(255,153,51,0.15)" }}
+      >
+        <p className="text-white/40 text-xs">
+          © {new Date().getFullYear()} सनातन प्रो • Built with{" "}
           <span className="text-red-400">❤️</span> using{" "}
           <a
             href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gold hover:text-gold/80 transition-colors"
+            className="text-amber-400 hover:text-amber-300 transition-colors"
           >
             caffeine.ai
           </a>

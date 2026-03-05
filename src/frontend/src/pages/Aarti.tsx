@@ -8,7 +8,7 @@ export default function Aarti() {
       {/* Hero */}
       <div className="bg-gradient-to-b from-yellow-900 to-background px-4 pt-6 pb-4 text-center">
         <h1 className="text-2xl font-bold text-white mb-1">🪔 आरती संग्रह</h1>
-        <p className="text-amber-200 text-sm">पवित्र आरतियां — हिंदी में</p>
+        <p className="text-white/90 text-sm">पवित्र आरतियां — हिंदी में</p>
       </div>
 
       {/* Aarti Grid */}
@@ -35,7 +35,7 @@ export default function Aarti() {
                         {aarti.deity}
                       </span>
                     )}
-                    <p className="text-muted-foreground text-xs mt-1 line-clamp-2">
+                    <p className="text-foreground/65 text-xs mt-1 line-clamp-2">
                       {aarti.hindiText
                         ? `${aarti.hindiText.substring(0, 80)}...`
                         : ""}
@@ -55,7 +55,7 @@ export default function Aarti() {
             <h3 className="text-foreground font-bold text-lg mb-2">
               कोई आरती उपलब्ध नहीं है
             </h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-foreground/70 text-sm">
               अभी कोई आरती नहीं मिली। कृपया बाद में पुनः प्रयास करें।
             </p>
           </div>

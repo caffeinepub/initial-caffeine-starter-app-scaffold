@@ -1,9 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { KathaCategory } from "../backend";
-import { useGetAllKathayen } from "../hooks/useQueries";
-import { STATIC_KATHAS, StaticKatha } from "../lib/kathaData";
+import { useLocalKathayen } from "../hooks/useLocalKathayen";
+import { STATIC_KATHAS } from "../lib/kathaData";
 
 type FilterTab = "all" | "puranik" | "vrat";
 
@@ -57,7 +57,8 @@ export default function Kathayen() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-  const { data: backendKathas = [], isLoading } = useGetAllKathayen();
+  // localStorage-based kathayen (admin-added)
+  const { kathayen: localKathayen } = useLocalKathayen();
 
   const allKathas = useMemo((): DisplayKatha[] => {
     // Static kathas
@@ -71,25 +72,20 @@ export default function Kathayen() {
       isStatic: true,
     }));
 
-    // Backend kathas
-    const backendDisplay: DisplayKatha[] = backendKathas.map((k) => {
-      const cat =
-        typeof k.category === "object"
-          ? (Object.keys(k.category)[0] as KathaCategory)
-          : (k.category as KathaCategory);
-      return {
-        id: `backend-${k.id.toString()}`,
-        title: k.title,
-        deity: k.deity,
-        category: cat,
-        emoji: getDeityEmoji(k.deity),
-        excerpt: `${k.hindiText.slice(0, 120)}...`,
-        isStatic: false,
-      };
-    });
+    // Admin-added local kathayen (newest first)
+    const localDisplay: DisplayKatha[] = localKathayen.map((k) => ({
+      id: k.id,
+      title: k.title,
+      deity: k.deity,
+      category: k.category,
+      emoji: getDeityEmoji(k.deity),
+      excerpt: `${k.hindiText.slice(0, 120)}...`,
+      isStatic: false,
+    }));
 
-    return [...staticDisplay, ...backendDisplay];
-  }, [backendKathas]);
+    // Local (admin-added) kathayen shown first, then static
+    return [...localDisplay, ...staticDisplay];
+  }, [localKathayen]);
 
   const filtered = useMemo(() => {
     let list = allKathas;
@@ -142,7 +138,7 @@ export default function Kathayen() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="कथा खोजें..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
           />
         </div>
 
@@ -155,7 +151,7 @@ export default function Kathayen() {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 activeTab === tab.key
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-amber-600 text-white"
                   : "bg-card border border-border text-foreground hover:bg-muted"
               }`}
             >
@@ -164,58 +160,55 @@ export default function Kathayen() {
           ))}
         </div>
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        {/* Katha Grid */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-12 text-foreground/70">
+            <div className="text-4xl mb-3">📖</div>
+            <p>कोई कथा नहीं मिली</p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filtered.map((katha) => (
+              <button
+                key={katha.id}
+                type="button"
+                onClick={() => navigate({ to: `/katha/${katha.id}` })}
+                className="w-full text-left bg-card border border-border rounded-2xl p-4 hover:shadow-md hover:border-amber-400/50 transition-all group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl flex-shrink-0 mt-0.5">
+                    {katha.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        {katha.title}
+                      </h3>
+                      {!katha.isStatic && (
+                        <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded-full font-medium">
+                          नई
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-foreground/65 font-medium">
+                        {katha.deity}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(katha.category)}`}
+                      >
+                        {getCategoryLabel(katha.category)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-foreground/65 line-clamp-2 leading-relaxed">
+                      {katha.excerpt}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         )}
-
-        {/* Katha Grid */}
-        {!isLoading &&
-          (filtered.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <div className="text-4xl mb-3">📖</div>
-              <p>कोई कथा नहीं मिली</p>
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {filtered.map((katha) => (
-                <button
-                  key={katha.id}
-                  type="button"
-                  onClick={() => navigate({ to: `/katha/${katha.id}` })}
-                  className="w-full text-left bg-card border border-border rounded-2xl p-4 hover:shadow-md hover:border-primary/40 transition-all group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="text-3xl flex-shrink-0 mt-0.5">
-                      {katha.emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-primary transition-colors">
-                          {katha.title}
-                        </h3>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-muted-foreground">
-                          {katha.deity}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(katha.category)}`}
-                        >
-                          {getCategoryLabel(katha.category)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {katha.excerpt}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ))}
       </div>
     </div>
   );

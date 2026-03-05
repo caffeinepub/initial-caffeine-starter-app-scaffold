@@ -117,7 +117,9 @@ function BhajanCard({ bhajan }: { bhajan: BhajanData }) {
             <h3 className="text-foreground font-bold text-sm">
               {bhajan.title}
             </h3>
-            <p className="text-muted-foreground text-xs">{bhajan.deity}</p>
+            <p className="text-foreground/65 text-xs font-medium">
+              {bhajan.deity}
+            </p>
           </div>
         </div>
         <button
@@ -171,7 +173,7 @@ export default function Bhajans() {
     <div className="animate-fade-in-up">
       <div className="bg-gradient-to-b from-pink-900 to-background px-4 pt-6 pb-4 text-center">
         <h1 className="text-2xl font-bold text-white mb-1">🎵 भक्ति भजन</h1>
-        <p className="text-pink-200 text-sm">हिंदू भक्ति संगीत — पूर्ण गीत सहित</p>
+        <p className="text-white/90 text-sm">हिंदू भक्ति संगीत — पूर्ण गीत सहित</p>
       </div>
 
       <div className="px-4 py-4 space-y-4">

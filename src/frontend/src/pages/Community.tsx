@@ -74,10 +74,10 @@ export default function Community() {
           </div>
           <div>
             <h1 className="text-white font-bold text-xl">समुदाय</h1>
-            <p className="text-amber-100 text-sm">भक्तों का परिवार</p>
+            <p className="text-white/90 text-sm">भक्तों का परिवार</p>
           </div>
         </div>
-        <p className="text-amber-100 text-sm mt-2">
+        <p className="text-white/90 text-sm mt-2">
           अपनी भक्ति, अनुभव और प्रेरणा यहाँ साझा करें
         </p>
       </div>

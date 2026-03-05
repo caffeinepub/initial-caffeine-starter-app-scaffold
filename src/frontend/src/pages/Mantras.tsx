@@ -121,7 +121,9 @@ function MantraCard({ mantra }: { mantra: MantraData }) {
           <span className="text-2xl">{mantra.emoji}</span>
           <div>
             <h3 className="text-foreground font-bold text-sm">{mantra.name}</h3>
-            <p className="text-muted-foreground text-xs">{mantra.deity}</p>
+            <p className="text-foreground/65 text-xs font-medium">
+              {mantra.deity}
+            </p>
           </div>
         </div>
         <button
@@ -129,8 +131,8 @@ function MantraCard({ mantra }: { mantra: MantraData }) {
           onClick={handleTTS}
           className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
             isSpeaking
-              ? "bg-red-500/20 text-red-400 animate-pulse"
-              : "bg-gold-500/20 text-gold-400 hover:bg-gold-500/30"
+              ? "bg-red-500/20 text-red-500 dark:text-red-400 animate-pulse"
+              : "bg-amber-100 dark:bg-gold/20 text-amber-700 dark:text-gold hover:bg-amber-200 dark:hover:bg-gold/30"
           }`}
           aria-label={isSpeaking ? "रोकें" : "सुनें"}
         >
@@ -138,14 +140,14 @@ function MantraCard({ mantra }: { mantra: MantraData }) {
         </button>
       </div>
 
-      <p className="text-gold-300 text-sm font-medium leading-relaxed mb-2">
+      <p className="text-amber-800 dark:text-yellow-300 text-sm font-medium leading-relaxed mb-2">
         {mantra.sanskrit}
       </p>
 
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="text-xs text-foreground/65 hover:text-foreground font-medium transition-colors"
       >
         {expanded ? "▲ कम दिखाएं" : "▼ अर्थ देखें"}
       </button>
@@ -153,7 +155,7 @@ function MantraCard({ mantra }: { mantra: MantraData }) {
       {expanded && (
         <div className="mt-2 space-y-2 animate-fade-in">
           <div className="bg-muted/50 rounded-xl p-3">
-            <p className="text-xs text-amber-300 font-semibold mb-1">
+            <p className="text-xs text-amber-700 dark:text-amber-300 font-semibold mb-1">
               हिंदी अर्थ:
             </p>
             <p className="text-foreground text-xs leading-relaxed">
@@ -161,7 +163,7 @@ function MantraCard({ mantra }: { mantra: MantraData }) {
             </p>
           </div>
           <div className="bg-muted/50 rounded-xl p-3">
-            <p className="text-xs text-blue-300 font-semibold mb-1">
+            <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold mb-1">
               English Meaning:
             </p>
             <p className="text-foreground text-xs leading-relaxed">
@@ -180,9 +182,7 @@ export default function Mantras() {
       {/* Hero */}
       <div className="bg-gradient-to-b from-purple-900 to-background px-4 pt-6 pb-4 text-center">
         <h1 className="text-2xl font-bold text-white mb-1">🕉️ पवित्र मंत्र</h1>
-        <p className="text-purple-200 text-sm">
-          हिंदू धर्म के पवित्र मंत्र — अर्थ सहित
-        </p>
+        <p className="text-white/90 text-sm">हिंदू धर्म के पवित्र मंत्र — अर्थ सहित</p>
       </div>
 
       <div className="px-4 py-4 space-y-4">

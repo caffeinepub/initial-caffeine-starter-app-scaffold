@@ -37,7 +37,7 @@ function ChalisaCard({ chalisa }: { chalisa: ChalisaData }) {
             <h3 className="text-foreground font-bold text-sm">
               {chalisa.title}
             </h3>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-foreground/65 text-xs">
               {chalisa.meaning.slice(0, 60)}...
             </p>
           </div>
@@ -68,7 +68,7 @@ function ChalisaCard({ chalisa }: { chalisa: ChalisaData }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="mt-2 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+        className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-medium hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
       >
         {expanded ? "▲ कम दिखाएं" : "▼ पूरी चालीसा देखें"}
       </button>
@@ -93,7 +93,7 @@ export default function Chalisa() {
     <div className="animate-fade-in-up">
       <div className="bg-gradient-to-b from-orange-900 to-background px-4 pt-6 pb-4 text-center">
         <h1 className="text-2xl font-bold text-white mb-1">📿 चालीसा संग्रह</h1>
-        <p className="text-orange-200 text-sm">पवित्र चालीसाएं — पूर्ण पाठ सहित</p>
+        <p className="text-white/90 text-sm">पवित्र चालीसाएं — पूर्ण पाठ सहित</p>
       </div>
 
       <div className="px-4 py-4 space-y-4">

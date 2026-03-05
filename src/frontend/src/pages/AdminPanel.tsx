@@ -14,16 +14,10 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { ExternalBlob, KathaCategory } from "../backend";
-import type { Katha } from "../backend";
+import { KathaCategory } from "../backend";
 import { useAuth } from "../hooks/useAuth";
 import { useCommunityPosts } from "../hooks/useCommunityPosts";
-import {
-  useAddKatha,
-  useDeleteKatha,
-  useGetAllKathayen,
-  useUpdateKatha,
-} from "../hooks/useQueries";
+import { type LocalKatha, useLocalKathayen } from "../hooks/useLocalKathayen";
 
 interface KathaForm {
   title: string;
@@ -50,28 +44,32 @@ export default function AdminPanel() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AdminTab>("kathayen");
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<bigint | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<KathaForm>(emptyForm);
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // MP3 upload state
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioUploadProgress, setAudioUploadProgress] = useState(0);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
-  // All hooks must be called unconditionally before any early return
-  const { data: kathas = [], isLoading: kathasLoading } = useGetAllKathayen();
+  // localStorage-based kathayen
+  const { kathayen, addKatha, updateKatha, deleteKatha, version } =
+    useLocalKathayen();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version triggers re-read
+  const kathaList = useMemo(() => kathayen, [version, kathayen]);
 
   // localStorage-based community posts (works in APK)
-  const { getAllPosts, approvePost, rejectPost, deletePost, version } =
-    useCommunityPosts();
+  const {
+    getAllPosts,
+    approvePost,
+    rejectPost,
+    deletePost,
+    version: communityVersion,
+  } = useCommunityPosts();
   // biome-ignore lint/correctness/useExhaustiveDependencies: version triggers re-read of localStorage
-  const posts = useMemo(() => getAllPosts(), [version, getAllPosts]);
-
-  const addKatha = useAddKatha();
-  const updateKatha = useUpdateKatha();
-  const deleteKatha = useDeleteKatha();
+  const posts = useMemo(() => getAllPosts(), [communityVersion, getAllPosts]);
 
   // Early return AFTER all hooks
   if (!isAdmin) {
@@ -103,7 +101,6 @@ export default function AdminPanel() {
   const resetForm = () => {
     setForm(emptyForm);
     setAudioFile(null);
-    setAudioUploadProgress(0);
     setEditingId(null);
     setShowForm(false);
     setFormError("");
@@ -122,42 +119,31 @@ export default function AdminPanel() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    // Build audioBlob from uploaded file if any
-    let audioBlob: ExternalBlob | null = null;
-    if (audioFile) {
-      try {
-        const bytes = new Uint8Array(await audioFile.arrayBuffer());
-        audioBlob = ExternalBlob.fromBytes(bytes).withUploadProgress((p) =>
-          setAudioUploadProgress(p),
-        );
-      } catch {
-        setFormError("Audio file पढ़ने में समस्या आई।");
-        return;
-      }
-    }
-
+    setIsSubmitting(true);
     try {
       if (editingId !== null) {
-        await updateKatha.mutateAsync({
-          id: editingId,
-          title: form.title,
-          category: form.category,
-          deity: form.deity,
-          hindiText: form.hindiText,
-          englishText: form.englishText,
-          tags,
-          audioBlob,
-        });
+        await updateKatha(
+          editingId,
+          {
+            title: form.title,
+            category: form.category,
+            deity: form.deity,
+            hindiText: form.hindiText,
+            englishText: form.englishText,
+            tags,
+          },
+          audioFile,
+        );
         showSuccess("कथा अपडेट हो गई! ✅");
       } else {
-        await addKatha.mutateAsync({
+        await addKatha({
           title: form.title,
           category: form.category,
           deity: form.deity,
           hindiText: form.hindiText,
           englishText: form.englishText,
           tags,
-          audioBlob,
+          audioFile,
         });
         showSuccess("नई कथा जोड़ी गई! ✅");
       }
@@ -165,38 +151,31 @@ export default function AdminPanel() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "कुछ गलत हुआ।";
       setFormError(`Error: ${msg}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleEdit = (katha: Katha) => {
-    const cat =
-      typeof katha.category === "object"
-        ? (Object.keys(katha.category)[0] as KathaCategory)
-        : (katha.category as KathaCategory);
+  const handleEdit = (katha: LocalKatha) => {
     setForm({
       title: katha.title,
       deity: katha.deity,
-      category: cat,
+      category: katha.category,
       hindiText: katha.hindiText,
       englishText: katha.englishText,
       tags: katha.tags.join(", "),
     });
     setEditingId(katha.id);
     setAudioFile(null);
-    setAudioUploadProgress(0);
     setShowForm(true);
     setFormError("");
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
-  const handleDelete = async (id: bigint) => {
+  const handleDelete = (id: string) => {
     if (!confirm("क्या आप इस कथा को हटाना चाहते हैं?")) return;
-    try {
-      await deleteKatha.mutateAsync(id);
-      showSuccess("कथा हटा दी गई! ✅");
-    } catch {
-      setFormError("Delete में समस्या आई।");
-    }
+    deleteKatha(id);
+    showSuccess("कथा हटा दी गई! ✅");
   };
 
   const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,11 +185,8 @@ export default function AdminPanel() {
       return;
     }
     setAudioFile(file);
-    setAudioUploadProgress(0);
     setFormError("");
   };
-
-  const isPending = addKatha.isPending || updateKatha.isPending;
 
   const pendingPosts = posts.filter((p) => p.status === "pending");
   const approvedPosts = posts.filter((p) => p.status === "approved");
@@ -219,15 +195,13 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-accent px-4 py-5">
+      <div className="bg-gradient-to-r from-amber-700 via-orange-600 to-red-700 px-4 py-5">
         <div className="flex items-center gap-3">
-          <Shield size={24} className="text-primary-foreground" />
+          <Shield size={24} className="text-yellow-200" />
           <div>
-            <h1 className="text-xl font-bold text-primary-foreground">
-              Admin Panel
-            </h1>
-            <p className="text-primary-foreground/80 text-xs">
-              Welcome, {user?.username}
+            <h1 className="text-xl font-bold text-white">Admin Panel</h1>
+            <p className="text-yellow-200 text-xs">
+              Welcome, {user?.username} 👑
             </p>
           </div>
         </div>
@@ -251,7 +225,7 @@ export default function AdminPanel() {
           onClick={() => setActiveTab("kathayen")}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
             activeTab === "kathayen"
-              ? "bg-primary text-primary-foreground"
+              ? "bg-amber-600 text-white"
               : "bg-card border border-border text-foreground hover:bg-muted"
           }`}
         >
@@ -264,7 +238,7 @@ export default function AdminPanel() {
           onClick={() => setActiveTab("community")}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
             activeTab === "community"
-              ? "bg-primary text-primary-foreground"
+              ? "bg-amber-600 text-white"
               : "bg-card border border-border text-foreground hover:bg-muted"
           }`}
         >
@@ -297,7 +271,7 @@ export default function AdminPanel() {
                     setFormError("");
                   }
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-full text-sm font-medium hover:bg-amber-700 transition-colors"
               >
                 <Plus size={14} />
                 नई कथा
@@ -308,7 +282,7 @@ export default function AdminPanel() {
             {showForm && (
               <form
                 onSubmit={handleFormSubmit}
-                className="bg-card border border-border rounded-2xl p-4 mb-4 space-y-3"
+                className="bg-card border border-amber-200 dark:border-amber-800/40 rounded-2xl p-4 mb-4 space-y-3"
               >
                 <h3 className="font-semibold text-foreground text-sm">
                   {editingId !== null ? "कथा संपादित करें" : "नई कथा जोड़ें"}
@@ -330,7 +304,7 @@ export default function AdminPanel() {
                       setForm((f) => ({ ...f, title: e.target.value }))
                     }
                     placeholder="कथा का शीर्षक"
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                     required
                   />
                 </div>
@@ -351,7 +325,7 @@ export default function AdminPanel() {
                       setForm((f) => ({ ...f, deity: e.target.value }))
                     }
                     placeholder="जैसे: श्री राम, श्री कृष्ण"
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                     required
                   />
                 </div>
@@ -373,7 +347,7 @@ export default function AdminPanel() {
                         category: e.target.value as KathaCategory,
                       }))
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value={KathaCategory.puranik}>
                       पौराणिक (Puranik)
@@ -398,7 +372,7 @@ export default function AdminPanel() {
                     }
                     placeholder="हिंदी में कथा लिखें..."
                     rows={5}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
                     required
                   />
                 </div>
@@ -408,7 +382,7 @@ export default function AdminPanel() {
                     htmlFor="katha-english"
                     className="block text-xs font-medium text-muted-foreground mb-1"
                   >
-                    English Text
+                    English Text (optional)
                   </label>
                   <textarea
                     id="katha-english"
@@ -418,8 +392,8 @@ export default function AdminPanel() {
                       setForm((f) => ({ ...f, englishText: e.target.value }))
                     }
                     placeholder="English story text..."
-                    rows={4}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
                   />
                 </div>
 
@@ -439,7 +413,7 @@ export default function AdminPanel() {
                       setForm((f) => ({ ...f, tags: e.target.value }))
                     }
                     placeholder="राम, अयोध्या, रामायण"
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
@@ -447,14 +421,14 @@ export default function AdminPanel() {
                 <div>
                   <p className="block text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
                     <Music size={12} />
-                    Audio (MP3) — वैकल्पिक
+                    Audio (MP3) — वैकल्पिक (TTS auto-narration भी उपलब्ध है)
                   </p>
                   <div className="flex items-center gap-2">
                     <label
                       data-ocid="admin.katha_audio.upload_button"
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border bg-background hover:bg-muted cursor-pointer transition-colors flex-1"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-amber-400/50 bg-background hover:bg-amber-50 dark:hover:bg-amber-900/10 cursor-pointer transition-colors flex-1"
                     >
-                      <Upload size={14} className="text-muted-foreground" />
+                      <Upload size={14} className="text-amber-600" />
                       <span className="text-sm text-muted-foreground truncate">
                         {audioFile ? audioFile.name : "MP3 file चुनें..."}
                       </span>
@@ -471,7 +445,6 @@ export default function AdminPanel() {
                         type="button"
                         onClick={() => {
                           setAudioFile(null);
-                          setAudioUploadProgress(0);
                           if (audioInputRef.current)
                             audioInputRef.current.value = "";
                         }}
@@ -484,22 +457,9 @@ export default function AdminPanel() {
                   {audioFile && (
                     <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
                       <Music size={10} />
-                      {(audioFile.size / (1024 * 1024)).toFixed(2)} MB — upload
-                      होगा submit पर
+                      {(audioFile.size / (1024 * 1024)).toFixed(2)} MB — submit
+                      पर save होगा
                     </p>
-                  )}
-                  {audioUploadProgress > 0 && audioUploadProgress < 100 && (
-                    <div className="mt-2">
-                      <div className="w-full bg-muted rounded-full h-1.5">
-                        <div
-                          className="bg-primary h-1.5 rounded-full transition-all"
-                          style={{ width: `${audioUploadProgress}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Uploading... {audioUploadProgress}%
-                      </p>
-                    </div>
                   )}
                 </div>
 
@@ -516,10 +476,10 @@ export default function AdminPanel() {
                   <button
                     data-ocid="admin.katha_form.submit_button"
                     type="submit"
-                    disabled={isPending}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-60"
+                    disabled={isSubmitting}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium disabled:opacity-60 hover:bg-amber-700 transition-colors"
                   >
-                    {isPending && (
+                    {isSubmitting && (
                       <Loader2 size={14} className="animate-spin" />
                     )}
                     {editingId !== null ? "अपडेट करें" : "जोड़ें"}
@@ -537,14 +497,7 @@ export default function AdminPanel() {
             )}
 
             {/* Katha List */}
-            {kathasLoading ? (
-              <div
-                className="flex justify-center py-8"
-                data-ocid="admin.kathayen.loading_state"
-              >
-                <Loader2 size={24} className="animate-spin text-primary" />
-              </div>
-            ) : kathas.length === 0 ? (
+            {kathaList.length === 0 ? (
               <div
                 className="text-center py-8 text-muted-foreground text-sm"
                 data-ocid="admin.kathayen.empty_state"
@@ -554,9 +507,9 @@ export default function AdminPanel() {
               </div>
             ) : (
               <div className="space-y-3" data-ocid="admin.kathayen.list">
-                {kathas.map((katha, idx) => (
+                {kathaList.map((katha, idx) => (
                   <div
-                    key={katha.id.toString()}
+                    key={katha.id}
                     data-ocid={`admin.kathayen.item.${idx + 1}`}
                     className="bg-card border border-border rounded-xl p-3 flex items-start gap-3"
                   >
@@ -565,9 +518,12 @@ export default function AdminPanel() {
                         {katha.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {katha.deity}
+                        {katha.deity} •{" "}
+                        {katha.category === KathaCategory.puranik
+                          ? "पौराणिक"
+                          : "व्रत"}
                       </p>
-                      {katha.audioBlob && (
+                      {katha.audioDataUrl && (
                         <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mt-0.5">
                           <Music size={10} />
                           Audio available
@@ -587,14 +543,9 @@ export default function AdminPanel() {
                         type="button"
                         data-ocid={`admin.kathayen.delete_button.${idx + 1}`}
                         onClick={() => handleDelete(katha.id)}
-                        disabled={deleteKatha.isPending}
-                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive disabled:opacity-50"
+                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
                       >
-                        {deleteKatha.isPending ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={14} />
-                        )}
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
