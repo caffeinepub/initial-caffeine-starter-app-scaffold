@@ -145,11 +145,12 @@ export interface _SERVICE {
       string,
       Array<string>,
       [] | [ExternalBlob],
+      string,
     ],
     bigint
   >,
   'addVrat' : ActorMethod<[string, string, string], bigint>,
-  'approveCommunityPost' : ActorMethod<[bigint], boolean>,
+  'approveCommunityPost' : ActorMethod<[bigint, string], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createCommunityPost' : ActorMethod<
     [
@@ -163,9 +164,9 @@ export interface _SERVICE {
   >,
   'deleteBhajan' : ActorMethod<[bigint], boolean>,
   'deleteChalisa' : ActorMethod<[bigint], boolean>,
-  'deleteCommunityPost' : ActorMethod<[bigint], boolean>,
+  'deleteCommunityPost' : ActorMethod<[bigint, string], boolean>,
   'deleteDharmaQuote' : ActorMethod<[bigint], boolean>,
-  'deleteKatha' : ActorMethod<[bigint], boolean>,
+  'deleteKatha' : ActorMethod<[bigint, string], boolean>,
   'deleteVrat' : ActorMethod<[bigint], boolean>,
   'getAllBhajans' : ActorMethod<[], Array<Bhajan>>,
   'getAllChalisa' : ActorMethod<[], Array<Chalisa>>,
@@ -193,7 +194,7 @@ export interface _SERVICE {
   'likeCommunityPost' : ActorMethod<[bigint], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'listKathayenByCategory' : ActorMethod<[KathaCategory], Array<Katha>>,
-  'rejectCommunityPost' : ActorMethod<[bigint], boolean>,
+  'rejectCommunityPost' : ActorMethod<[bigint, string], boolean>,
   'reportCommunityPost' : ActorMethod<[bigint], boolean>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetJapStats' : ActorMethod<[], undefined>,
@@ -217,6 +218,7 @@ export interface _SERVICE {
       string,
       Array<string>,
       [] | [ExternalBlob],
+      string,
     ],
     boolean
   >,

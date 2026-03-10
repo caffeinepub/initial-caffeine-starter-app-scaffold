@@ -219,16 +219,16 @@ export interface backendInterface {
     addBhajan(title: string, lyrics: string, language: Variant_hindi_english): Promise<bigint>;
     addChalisa(title: string, fullText: string, meaning: string): Promise<bigint>;
     addDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<void>;
-    addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null): Promise<bigint>;
+    addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null, adminToken: string): Promise<bigint>;
     addVrat(name: string, date: string, description: string): Promise<bigint>;
-    approveCommunityPost(postId: bigint): Promise<boolean>;
+    approveCommunityPost(postId: bigint, adminToken: string): Promise<boolean>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCommunityPost(content: string, deityTag: string | null, image: ExternalBlob | null, video: ExternalBlob | null, fileAttachment: FileAttachment | null): Promise<bigint>;
     deleteBhajan(id: bigint): Promise<boolean>;
     deleteChalisa(id: bigint): Promise<boolean>;
-    deleteCommunityPost(postId: bigint): Promise<boolean>;
+    deleteCommunityPost(postId: bigint, adminToken: string): Promise<boolean>;
     deleteDharmaQuote(id: bigint): Promise<boolean>;
-    deleteKatha(id: bigint): Promise<boolean>;
+    deleteKatha(id: bigint, adminToken: string): Promise<boolean>;
     deleteVrat(id: bigint): Promise<boolean>;
     getAllBhajans(): Promise<Array<Bhajan>>;
     getAllChalisa(): Promise<Array<Chalisa>>;
@@ -256,7 +256,7 @@ export interface backendInterface {
     likeCommunityPost(postId: bigint): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     listKathayenByCategory(category: KathaCategory): Promise<Array<Katha>>;
-    rejectCommunityPost(postId: bigint): Promise<boolean>;
+    rejectCommunityPost(postId: bigint, adminToken: string): Promise<boolean>;
     reportCommunityPost(postId: bigint): Promise<boolean>;
     requestApproval(): Promise<void>;
     resetJapStats(): Promise<void>;
@@ -267,7 +267,7 @@ export interface backendInterface {
     updateBhajan(id: bigint, title: string, lyrics: string, language: Variant_hindi_english): Promise<boolean>;
     updateChalisa(id: bigint, title: string, fullText: string, meaning: string): Promise<boolean>;
     updateDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<boolean>;
-    updateKatha(id: bigint, title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null): Promise<boolean>;
+    updateKatha(id: bigint, title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null, adminToken: string): Promise<boolean>;
     updateVrat(id: bigint, name: string, date: string, description: string): Promise<boolean>;
 }
 import type { ApprovalStatus as _ApprovalStatus, Bhajan as _Bhajan, Chalisa as _Chalisa, CommunityPost as _CommunityPost, CommunityPostStatus as _CommunityPostStatus, DharmaQuote as _DharmaQuote, ExternalBlob as _ExternalBlob, FileAttachment as _FileAttachment, Katha as _Katha, KathaCategory as _KathaCategory, Mantra as _Mantra, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
@@ -413,17 +413,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addKatha(arg0: string, arg1: KathaCategory, arg2: string, arg3: string, arg4: string, arg5: Array<string>, arg6: ExternalBlob | null): Promise<bigint> {
+    async addKatha(arg0: string, arg1: KathaCategory, arg2: string, arg3: string, arg4: string, arg5: Array<string>, arg6: ExternalBlob | null, arg7: string): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addKatha(arg0, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4, arg5, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg6));
+                const result = await this.actor.addKatha(arg0, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4, arg5, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg6), arg7);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addKatha(arg0, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4, arg5, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg6));
+            const result = await this.actor.addKatha(arg0, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4, arg5, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg6), arg7);
             return result;
         }
     }
@@ -441,17 +441,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async approveCommunityPost(arg0: bigint): Promise<boolean> {
+    async approveCommunityPost(arg0: bigint, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.approveCommunityPost(arg0);
+                const result = await this.actor.approveCommunityPost(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.approveCommunityPost(arg0);
+            const result = await this.actor.approveCommunityPost(arg0, arg1);
             return result;
         }
     }
@@ -511,17 +511,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async deleteCommunityPost(arg0: bigint): Promise<boolean> {
+    async deleteCommunityPost(arg0: bigint, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteCommunityPost(arg0);
+                const result = await this.actor.deleteCommunityPost(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteCommunityPost(arg0);
+            const result = await this.actor.deleteCommunityPost(arg0, arg1);
             return result;
         }
     }
@@ -539,17 +539,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async deleteKatha(arg0: bigint): Promise<boolean> {
+    async deleteKatha(arg0: bigint, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteKatha(arg0);
+                const result = await this.actor.deleteKatha(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteKatha(arg0);
+            const result = await this.actor.deleteKatha(arg0, arg1);
             return result;
         }
     }
@@ -931,17 +931,17 @@ export class Backend implements backendInterface {
             return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
         }
     }
-    async rejectCommunityPost(arg0: bigint): Promise<boolean> {
+    async rejectCommunityPost(arg0: bigint, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.rejectCommunityPost(arg0);
+                const result = await this.actor.rejectCommunityPost(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.rejectCommunityPost(arg0);
+            const result = await this.actor.rejectCommunityPost(arg0, arg1);
             return result;
         }
     }
@@ -1085,17 +1085,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateKatha(arg0: bigint, arg1: string, arg2: KathaCategory, arg3: string, arg4: string, arg5: string, arg6: Array<string>, arg7: ExternalBlob | null): Promise<boolean> {
+    async updateKatha(arg0: bigint, arg1: string, arg2: KathaCategory, arg3: string, arg4: string, arg5: string, arg6: Array<string>, arg7: ExternalBlob | null, arg8: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateKatha(arg0, arg1, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg7));
+                const result = await this.actor.updateKatha(arg0, arg1, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg7), arg8);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateKatha(arg0, arg1, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg7));
+            const result = await this.actor.updateKatha(arg0, arg1, to_candid_KathaCategory_n9(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, await to_candid_opt_n11(this._uploadFile, this._downloadFile, arg7), arg8);
             return result;
         }
     }

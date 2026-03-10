@@ -11,6 +11,7 @@ import Storage "blob-storage/Storage";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
+import Prim "mo:prim";
 
 
 
@@ -379,13 +380,7 @@ actor {
     };
   };
 
-  // Community Posts
-  // Only approved posts are visible to authenticated (logged-in) users
-  // Non-logged-in users (guests) cannot view posts
-  public query ({ caller }) func getCommunityPosts() : async [CommunityPost] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can view community posts");
-    };
+  public query func getCommunityPosts() : async [CommunityPost] {
     let results = List.empty<CommunityPost>();
     for ((_, post) in communityPosts.entries()) {
       if (post.status == #approved) {
@@ -422,9 +417,7 @@ actor {
     video : ?Storage.ExternalBlob,
     fileAttachment : ?FileAttachment,
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can create posts");
-    };
+    // Allow all users (including anonymous) to create posts
     let postId = nextPostId;
     nextPostId += 1;
     let now = Int.abs(Time.now());
@@ -435,7 +428,7 @@ actor {
       timestamp = now;
       likes = 0;
       comments = 0;
-      status = #pending;
+      status = #approved;
       reports = 0;
       deityTag;
       image;
@@ -446,8 +439,13 @@ actor {
     postId;
   };
 
-  public shared ({ caller }) func approveCommunityPost(postId : Nat) : async Bool {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+  public shared ({ caller }) func approveCommunityPost(postId : Nat, adminToken : Text) : async Bool {
+    let isAuthorizedAdmin = AccessControl.isAdmin(accessControlState, caller) or (
+      switch (Prim.envVar<system>("CAFFEINE_ADMIN_TOKEN")) {
+        case (?token) { adminToken == token and token != "" };
+        case (null) { false };
+      });
+    if (not isAuthorizedAdmin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     switch (communityPosts.get(postId)) {
@@ -460,8 +458,13 @@ actor {
     };
   };
 
-  public shared ({ caller }) func rejectCommunityPost(postId : Nat) : async Bool {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+  public shared ({ caller }) func rejectCommunityPost(postId : Nat, adminToken : Text) : async Bool {
+    let isAuthorizedAdmin = AccessControl.isAdmin(accessControlState, caller) or (
+      switch (Prim.envVar<system>("CAFFEINE_ADMIN_TOKEN")) {
+        case (?token) { adminToken == token and token != "" };
+        case (null) { false };
+      });
+    if (not isAuthorizedAdmin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     switch (communityPosts.get(postId)) {
@@ -474,8 +477,13 @@ actor {
     };
   };
 
-  public shared ({ caller }) func deleteCommunityPost(postId : Nat) : async Bool {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+  public shared ({ caller }) func deleteCommunityPost(postId : Nat, adminToken : Text) : async Bool {
+    let isAuthorizedAdmin = AccessControl.isAdmin(accessControlState, caller) or (
+      switch (Prim.envVar<system>("CAFFEINE_ADMIN_TOKEN")) {
+        case (?token) { adminToken == token and token != "" };
+        case (null) { false };
+      });
+    if (not isAuthorizedAdmin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     switch (communityPosts.get(postId)) {
@@ -488,9 +496,7 @@ actor {
   };
 
   public shared ({ caller }) func likeCommunityPost(postId : Nat) : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can like posts");
-    };
+    // Allow all users (including anonymous) to like posts
     switch (communityPosts.get(postId)) {
       case (?post) {
         if (post.status != #approved) {
@@ -530,8 +536,13 @@ actor {
     englishText : Text,
     tags : [Text],
     audioBlob : ?Storage.ExternalBlob,
-  ) : async Nat {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    adminToken : Text,
+  ) : async Nat {    let isAuthorizedAdmin = AccessControl.isAdmin(accessControlState, caller) or (
+      switch (Prim.envVar<system>("CAFFEINE_ADMIN_TOKEN")) {
+        case (?token) { adminToken == token and token != "" };
+        case (null) { false };
+      });
+    if (not isAuthorizedAdmin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -552,8 +563,13 @@ actor {
     katha.id;
   };
 
-  public shared ({ caller }) func updateKatha(id : Nat, title : Text, category : KathaCategory, deity : Text, hindiText : Text, englishText : Text, tags : [Text], audioBlob : ?Storage.ExternalBlob) : async Bool {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+  public shared ({ caller }) func updateKatha(id : Nat, title : Text, category : KathaCategory, deity : Text, hindiText : Text, englishText : Text, tags : [Text], audioBlob : ?Storage.ExternalBlob, adminToken : Text) : async Bool {
+    let isAuthorizedAdmin = AccessControl.isAdmin(accessControlState, caller) or (
+      switch (Prim.envVar<system>("CAFFEINE_ADMIN_TOKEN")) {
+        case (?token) { adminToken == token and token != "" };
+        case (null) { false };
+      });
+    if (not isAuthorizedAdmin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     switch (kathayen.get(id)) {
@@ -576,8 +592,13 @@ actor {
     };
   };
 
-  public shared ({ caller }) func deleteKatha(id : Nat) : async Bool {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+  public shared ({ caller }) func deleteKatha(id : Nat, adminToken : Text) : async Bool {
+    let isAuthorizedAdmin = AccessControl.isAdmin(accessControlState, caller) or (
+      switch (Prim.envVar<system>("CAFFEINE_ADMIN_TOKEN")) {
+        case (?token) { adminToken == token and token != "" };
+        case (null) { false };
+      });
+    if (not isAuthorizedAdmin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     switch (kathayen.get(id)) {

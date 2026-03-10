@@ -128,7 +128,6 @@ const dashboardRoute = createRoute({
   path: "/dashboard",
   component: Dashboard,
 });
-
 const routeTree = rootRoute.addChildren([
   homeRoute,
   japRoute,

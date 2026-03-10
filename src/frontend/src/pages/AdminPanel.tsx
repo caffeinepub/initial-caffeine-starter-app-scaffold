@@ -1,11 +1,13 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Bell,
   BookOpen,
-  Check,
   Edit2,
   Loader2,
   Music,
   Plus,
+  Send,
   Shield,
   Trash2,
   Upload,
@@ -13,11 +15,20 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
-import { useMemo, useRef, useState } from "react";
-import { KathaCategory } from "../backend";
+import { useEffect, useRef, useState } from "react";
+import { ExternalBlob, KathaCategory } from "../backend";
+import { useActor } from "../hooks/useActor";
 import { useAuth } from "../hooks/useAuth";
-import { useCommunityPosts } from "../hooks/useCommunityPosts";
-import { type LocalKatha, useLocalKathayen } from "../hooks/useLocalKathayen";
+import { addAnnouncement } from "../hooks/useNotifications";
+import {
+  useAddKatha,
+  useDeleteCommunityPost,
+  useDeleteKatha,
+  useGetAllCommunityPosts,
+  useGetAllKathayen,
+  useUpdateKatha,
+} from "../hooks/useQueries";
+import { getSecretParameter } from "../utils/urlParams";
 
 interface KathaForm {
   title: string;
@@ -37,39 +48,71 @@ const emptyForm: KathaForm = {
   tags: "",
 };
 
-type AdminTab = "kathayen" | "community";
+type AdminTab = "kathayen" | "community" | "notifications";
+
+// Normalize KathaCategory from ICP (may come as object variant)
+function normalizeCategory(category: KathaCategory): KathaCategory {
+  if (typeof category === "object") {
+    const key = Object.keys(category as object)[0];
+    if (key === "vrat") return KathaCategory.vrat;
+    return KathaCategory.puranik;
+  }
+  return category;
+}
 
 export default function AdminPanel() {
   const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const adminInitialized = useRef(false);
+
   const [activeTab, setActiveTab] = useState<AdminTab>("kathayen");
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<bigint | null>(null);
   const [form, setForm] = useState<KathaForm>(emptyForm);
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Announcement state
+  const [announcementText, setAnnouncementText] = useState("");
+  const [announcementSent, setAnnouncementSent] = useState(false);
+
   // MP3 upload state
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
 
-  // localStorage-based kathayen
-  const { kathayen, addKatha, updateKatha, deleteKatha, version } =
-    useLocalKathayen();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: version triggers re-read
-  const kathaList = useMemo(() => kathayen, [version, kathayen]);
+  // Initialize admin access control when actor and admin status are confirmed
+  // This is needed because local username/password auth doesn't use Internet Identity
+  // so the actor is anonymous and needs admin token injected manually
+  useEffect(() => {
+    if (actor && isAdmin && !adminInitialized.current) {
+      const adminToken = getSecretParameter("caffeineAdminToken") || "";
+      actor
+        ._initializeAccessControlWithSecret(adminToken)
+        .then(() => {
+          adminInitialized.current = true;
+          // Invalidate all queries so they re-fetch with admin access
+          queryClient.invalidateQueries({ queryKey: ["kathayen"] });
+          queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
+        })
+        .catch(() => {
+          // Silently fail — some deployments may not require this
+          adminInitialized.current = true;
+          queryClient.invalidateQueries({ queryKey: ["kathayen"] });
+          queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
+        });
+    }
+  }, [actor, isAdmin, queryClient]);
 
-  // localStorage-based community posts (works in APK)
-  const {
-    getAllPosts,
-    approvePost,
-    rejectPost,
-    deletePost,
-    version: communityVersion,
-  } = useCommunityPosts();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: version triggers re-read of localStorage
-  const posts = useMemo(() => getAllPosts(), [communityVersion, getAllPosts]);
+  // ICP backend hooks
+  const { data: icpKathayen, isLoading: kathayenLoading } = useGetAllKathayen();
+  const addKathaMutation = useAddKatha();
+  const updateKathaMutation = useUpdateKatha();
+  const deleteKathaMutation = useDeleteKatha();
+
+  const { data: allPosts, isLoading: postsLoading } = useGetAllCommunityPosts();
+  const deletePostMutation = useDeleteCommunityPost();
 
   // Early return AFTER all hooks
   if (!isAdmin) {
@@ -104,7 +147,6 @@ export default function AdminPanel() {
     setEditingId(null);
     setShowForm(false);
     setFormError("");
-    if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -121,31 +163,37 @@ export default function AdminPanel() {
 
     setIsSubmitting(true);
     try {
+      // Convert audio file to ExternalBlob if provided
+      let audioBlob: ExternalBlob | null = null;
+      if (audioFile) {
+        const arrayBuffer = await audioFile.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        audioBlob = ExternalBlob.fromBytes(uint8Array);
+      }
+
       if (editingId !== null) {
-        await updateKatha(
-          editingId,
-          {
-            title: form.title,
-            category: form.category,
-            deity: form.deity,
-            hindiText: form.hindiText,
-            englishText: form.englishText,
-            tags,
-          },
-          audioFile,
-        );
-        showSuccess("कथा अपडेट हो गई! ✅");
-      } else {
-        await addKatha({
+        await updateKathaMutation.mutateAsync({
+          id: editingId,
           title: form.title,
           category: form.category,
           deity: form.deity,
           hindiText: form.hindiText,
           englishText: form.englishText,
           tags,
-          audioFile,
+          audioBlob,
         });
-        showSuccess("नई कथा जोड़ी गई! ✅");
+        showSuccess("कथा अपडेट हो गई! ✅");
+      } else {
+        await addKathaMutation.mutateAsync({
+          title: form.title,
+          category: form.category,
+          deity: form.deity,
+          hindiText: form.hindiText,
+          englishText: form.englishText,
+          tags,
+          audioBlob,
+        });
+        showSuccess("नई कथा जोड़ी गई! सभी users को दिखेगी ✅");
       }
       resetForm();
     } catch (err) {
@@ -156,11 +204,19 @@ export default function AdminPanel() {
     }
   };
 
-  const handleEdit = (katha: LocalKatha) => {
+  const handleEdit = (katha: {
+    id: bigint;
+    title: string;
+    deity: string;
+    category: KathaCategory;
+    hindiText: string;
+    englishText: string;
+    tags: string[];
+  }) => {
     setForm({
       title: katha.title,
       deity: katha.deity,
-      category: katha.category,
+      category: normalizeCategory(katha.category),
       hindiText: katha.hindiText,
       englishText: katha.englishText,
       tags: katha.tags.join(", "),
@@ -169,13 +225,17 @@ export default function AdminPanel() {
     setAudioFile(null);
     setShowForm(true);
     setFormError("");
-    if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: bigint) => {
     if (!confirm("क्या आप इस कथा को हटाना चाहते हैं?")) return;
-    deleteKatha(id);
-    showSuccess("कथा हटा दी गई! ✅");
+    deleteKathaMutation.mutate(id, {
+      onSuccess: () => showSuccess("कथा हटा दी गई! ✅"),
+      onError: (err) =>
+        setFormError(
+          `Error: ${err instanceof Error ? err.message : "कुछ गलत हुआ।"}`,
+        ),
+    });
   };
 
   const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,9 +248,15 @@ export default function AdminPanel() {
     setFormError("");
   };
 
-  const pendingPosts = posts.filter((p) => p.status === "pending");
-  const approvedPosts = posts.filter((p) => p.status === "approved");
-  const rejectedPosts = posts.filter((p) => p.status === "rejected");
+  const handleDeletePost = (postId: bigint) => {
+    if (!confirm("Post delete करें?")) return;
+    deletePostMutation.mutate(postId, {
+      onSuccess: () => showSuccess("Post delete हो गई! ✅"),
+    });
+  };
+
+  const kathaList = icpKathayen ?? [];
+  const posts = allPosts ?? [];
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -244,11 +310,24 @@ export default function AdminPanel() {
         >
           <Users size={14} />
           Community
-          {pendingPosts.length > 0 && (
+          {posts.length > 0 && (
             <span className="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-              {pendingPosts.length}
+              {posts.length > 9 ? "9+" : posts.length}
             </span>
           )}
+        </button>
+        <button
+          type="button"
+          data-ocid="admin.notifications.tab"
+          onClick={() => setActiveTab("notifications")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            activeTab === "notifications"
+              ? "bg-amber-600 text-white"
+              : "bg-card border border-border text-foreground hover:bg-muted"
+          }`}
+        >
+          <Bell size={14} />
+          सूचनाएं
         </button>
       </div>
 
@@ -433,7 +512,6 @@ export default function AdminPanel() {
                         {audioFile ? audioFile.name : "MP3 file चुनें..."}
                       </span>
                       <input
-                        ref={audioInputRef}
                         type="file"
                         accept="audio/mpeg,audio/mp3,audio/*"
                         className="hidden"
@@ -443,11 +521,7 @@ export default function AdminPanel() {
                     {audioFile && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setAudioFile(null);
-                          if (audioInputRef.current)
-                            audioInputRef.current.value = "";
-                        }}
+                        onClick={() => setAudioFile(null)}
                         className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                       >
                         <X size={14} />
@@ -497,7 +571,15 @@ export default function AdminPanel() {
             )}
 
             {/* Katha List */}
-            {kathaList.length === 0 ? (
+            {kathayenLoading ? (
+              <div
+                data-ocid="admin.kathayen.loading_state"
+                className="flex items-center justify-center py-8 gap-2 text-muted-foreground"
+              >
+                <Loader2 size={18} className="animate-spin" />
+                <span className="text-sm">कथाएँ लोड हो रही हैं...</span>
+              </div>
+            ) : kathaList.length === 0 ? (
               <div
                 className="text-center py-8 text-muted-foreground text-sm"
                 data-ocid="admin.kathayen.empty_state"
@@ -509,7 +591,7 @@ export default function AdminPanel() {
               <div className="space-y-3" data-ocid="admin.kathayen.list">
                 {kathaList.map((katha, idx) => (
                   <div
-                    key={katha.id}
+                    key={katha.id.toString()}
                     data-ocid={`admin.kathayen.item.${idx + 1}`}
                     className="bg-card border border-border rounded-xl p-3 flex items-start gap-3"
                   >
@@ -519,11 +601,12 @@ export default function AdminPanel() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {katha.deity} •{" "}
-                        {katha.category === KathaCategory.puranik
+                        {normalizeCategory(katha.category) ===
+                        KathaCategory.puranik
                           ? "पौराणिक"
                           : "व्रत"}
                       </p>
-                      {katha.audioDataUrl && (
+                      {katha.audioBlob && (
                         <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mt-0.5">
                           <Music size={10} />
                           Audio available
@@ -555,14 +638,90 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* NOTIFICATIONS TAB */}
+        {activeTab === "notifications" && (
+          <div>
+            <h2 className="font-bold text-foreground mb-4">
+              सूचना भेजें (Broadcast)
+            </h2>
+            <p className="text-xs text-muted-foreground mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2">
+              ℹ️ यहाँ से सभी users को in-app notification भेज सकते हैं। यह notification
+              app खोलने पर bell icon में दिखेगी।
+            </p>
+
+            <div className="space-y-3">
+              <textarea
+                data-ocid="admin.announcement.textarea"
+                value={announcementText}
+                onChange={(e) => setAnnouncementText(e.target.value)}
+                placeholder="सूचना लिखें... जैसे: 'नई रामायण कथा उपलब्ध है! अभी पढ़ें।'"
+                rows={4}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+              />
+
+              {announcementSent && (
+                <div
+                  data-ocid="admin.announcement.success_state"
+                  className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg"
+                >
+                  <span className="text-sm">✅</span>
+                  <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                    सूचना broadcast हो गई! Users को bell icon में दिखेगी।
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                data-ocid="admin.announcement.submit_button"
+                onClick={() => {
+                  if (!announcementText.trim()) return;
+                  addAnnouncement(`📢 Admin: ${announcementText.trim()}`);
+                  setAnnouncementText("");
+                  setAnnouncementSent(true);
+                  setTimeout(() => setAnnouncementSent(false), 3000);
+                }}
+                disabled={!announcementText.trim()}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-amber-700 transition-colors"
+              >
+                <Send size={14} />
+                सूचना भेजें
+              </button>
+            </div>
+
+            <div className="mt-6 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40 rounded-xl">
+              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                💡 उपयोग
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• नई कथा available होने पर notify करें</li>
+                <li>• पर्व/त्योहार की जानकारी share करें</li>
+                <li>• Community updates भेजें</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* COMMUNITY TAB */}
         {activeTab === "community" && (
           <div>
             <h2 className="font-bold text-foreground mb-4">
               Community Posts प्रबंधन
             </h2>
+            <p className="text-xs text-muted-foreground mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2">
+              ℹ️ Posts अब ICP backend में हैं — submit होते ही सभी users को दिखती हैं।
+              Admin सिर्फ Delete कर सकता है।
+            </p>
 
-            {posts.length === 0 ? (
+            {postsLoading ? (
+              <div
+                data-ocid="admin.community.loading_state"
+                className="flex items-center justify-center py-8 gap-2 text-muted-foreground"
+              >
+                <Loader2 size={18} className="animate-spin" />
+                <span className="text-sm">Posts लोड हो रहे हैं...</span>
+              </div>
+            ) : posts.length === 0 ? (
               <div
                 className="text-center py-8 text-muted-foreground text-sm"
                 data-ocid="admin.community.empty_state"
@@ -571,195 +730,59 @@ export default function AdminPanel() {
                 <p>कोई post नहीं है।</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Pending Section */}
-                {pendingPosts.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-yellow-700 dark:text-yellow-400 mb-2 flex items-center gap-1.5">
-                      ⏳ Pending Approval ({pendingPosts.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {pendingPosts.map((post, idx) => (
-                        <div
-                          key={post.id}
-                          data-ocid={`admin.community.item.${idx + 1}`}
-                          className="bg-card border border-yellow-200 dark:border-yellow-800 rounded-xl p-3"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-muted-foreground mb-1 truncate font-medium">
-                                👤 {post.author}
-                              </p>
-                              {post.content && (
-                                <p className="text-sm text-foreground line-clamp-2">
-                                  {post.content}
-                                </p>
-                              )}
-                              {post.deityTag && (
-                                <span className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full mt-1 inline-block">
-                                  🙏 {post.deityTag}
-                                </span>
-                              )}
-                            </div>
-                            {post.imageDataUrl && (
-                              <img
-                                src={post.imageDataUrl}
-                                alt="Post thumbnail"
-                                className="w-16 h-16 object-cover rounded-lg shrink-0"
-                              />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {new Date(post.timestamp).toLocaleString("hi-IN")}
+              <div className="space-y-3" data-ocid="admin.community.list">
+                {posts.map((post, idx) => {
+                  const authorStr = post.author?.toString?.() ?? "भक्त";
+                  const authorDisplay =
+                    authorStr.length > 12
+                      ? `${authorStr.slice(0, 5)}...${authorStr.slice(-4)}`
+                      : authorStr;
+
+                  // Format timestamp (ICP ns to ms)
+                  const tsMs = Number(post.timestamp / 1_000_000n);
+                  const dateStr = new Date(tsMs).toLocaleString("hi-IN");
+
+                  return (
+                    <div
+                      key={post.id.toString()}
+                      data-ocid={`admin.community.item.${idx + 1}`}
+                      className="bg-card border border-border rounded-xl p-3"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground mb-1 truncate font-medium">
+                            👤 भक्त {authorDisplay}
                           </p>
-                          <div className="flex gap-2 flex-wrap">
-                            <button
-                              type="button"
-                              data-ocid={`admin.community.confirm_button.${idx + 1}`}
-                              onClick={() => {
-                                approvePost(post.id);
-                                showSuccess("Post approve हो गई! ✅");
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors"
-                            >
-                              <Check size={12} />
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              data-ocid={`admin.community.cancel_button.${idx + 1}`}
-                              onClick={() => {
-                                rejectPost(post.id);
-                                showSuccess("Post reject हो गई।");
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-medium hover:bg-yellow-200 transition-colors"
-                            >
-                              <X size={12} />
-                              Reject
-                            </button>
-                            <button
-                              type="button"
-                              data-ocid={`admin.community.delete_button.${idx + 1}`}
-                              onClick={() => {
-                                if (confirm("Post delete करें?"))
-                                  deletePost(post.id);
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors"
-                            >
-                              <Trash2 size={12} />
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Approved Section */}
-                {approvedPosts.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-1.5">
-                      ✅ Approved ({approvedPosts.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {approvedPosts.map((post, idx) => (
-                        <div
-                          key={post.id}
-                          data-ocid={`admin.community.item.${pendingPosts.length + idx + 1}`}
-                          className="bg-card border border-green-200 dark:border-green-800 rounded-xl p-3"
-                        >
-                          <div className="flex items-start gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-muted-foreground mb-1 truncate font-medium">
-                                👤 {post.author}
-                              </p>
-                              {post.content && (
-                                <p className="text-sm text-foreground line-clamp-2">
-                                  {post.content}
-                                </p>
-                              )}
-                            </div>
-                            {post.imageDataUrl && (
-                              <img
-                                src={post.imageDataUrl}
-                                alt="Post thumbnail"
-                                className="w-14 h-14 object-cover rounded-lg shrink-0"
-                              />
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            data-ocid={`admin.community.delete_button.${pendingPosts.length + idx + 1}`}
-                            onClick={() => {
-                              if (confirm("Post delete करें?"))
-                                deletePost(post.id);
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors"
-                          >
-                            <Trash2 size={12} />
-                            Delete
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Rejected Section */}
-                {rejectedPosts.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-1.5">
-                      ❌ Rejected ({rejectedPosts.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {rejectedPosts.map((post, idx) => (
-                        <div
-                          key={post.id}
-                          data-ocid={`admin.community.item.${pendingPosts.length + approvedPosts.length + idx + 1}`}
-                          className="bg-card border border-red-200 dark:border-red-800 rounded-xl p-3 opacity-70"
-                        >
-                          <div className="flex-1 min-w-0 mb-2">
-                            <p className="text-xs text-muted-foreground mb-1 truncate">
-                              👤 {post.author}
+                          {post.content && (
+                            <p className="text-sm text-foreground line-clamp-2">
+                              {post.content}
                             </p>
-                            {post.content && (
-                              <p className="text-sm text-foreground line-clamp-2">
-                                {post.content}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              data-ocid={`admin.community.confirm_button.${pendingPosts.length + approvedPosts.length + idx + 1}`}
-                              onClick={() => {
-                                approvePost(post.id);
-                                showSuccess("Post approve हो गई! ✅");
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors"
-                            >
-                              <Check size={12} />
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              data-ocid={`admin.community.delete_button.${pendingPosts.length + approvedPosts.length + idx + 1}`}
-                              onClick={() => {
-                                if (confirm("Post delete करें?"))
-                                  deletePost(post.id);
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors"
-                            >
-                              <Trash2 size={12} />
-                              Delete
-                            </button>
-                          </div>
+                          )}
+                          {post.deityTag && (
+                            <span className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full mt-1 inline-block">
+                              🙏 {post.deityTag}
+                            </span>
+                          )}
                         </div>
-                      ))}
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          {dateStr}
+                        </p>
+                        <button
+                          type="button"
+                          data-ocid={`admin.community.delete_button.${idx + 1}`}
+                          onClick={() => handleDeletePost(post.id)}
+                          disabled={deletePostMutation.isPending}
+                          className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 size={12} />
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
             )}
           </div>

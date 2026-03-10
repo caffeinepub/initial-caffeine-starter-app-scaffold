@@ -14,6 +14,7 @@ import type {
   Variant_hindi_english,
   Vrat,
 } from "../backend";
+import { getSecretParameter } from "../utils/urlParams";
 import { useActor } from "./useActor";
 
 // ─── Kathayen ────────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ export function useAddKatha() {
         data.englishText,
         data.tags,
         data.audioBlob ?? null,
+        getSecretParameter("caffeineAdminToken") || "",
       );
     },
     onSuccess: () => {
@@ -96,6 +98,7 @@ export function useUpdateKatha() {
         data.englishText,
         data.tags,
         data.audioBlob ?? null,
+        getSecretParameter("caffeineAdminToken") || "",
       );
     },
     onSuccess: () => {
@@ -110,7 +113,10 @@ export function useDeleteKatha() {
   return useMutation({
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.deleteKatha(id);
+      return actor.deleteKatha(
+        id,
+        getSecretParameter("caffeineAdminToken") || "",
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kathayen"] });
@@ -120,32 +126,22 @@ export function useDeleteKatha() {
 
 // ─── Community Posts ──────────────────────────────────────────────────────────
 
-// Fetches approved posts using anonymous actor — works without login
-// and in APK (Appilix) without Internet Identity
+// Fetches approved posts — public query, no auth required.
+// Works for both logged-in users and anonymous visitors (including APK/Appilix).
 export function useGetApprovedCommunityPosts() {
   const { actor, isFetching } = useActor();
   return useQuery<CommunityPost[]>({
     queryKey: ["communityPosts", "approved"],
     queryFn: async () => {
       if (!actor) return [];
-      try {
-        // Try getAllKathayen-style public fetch first (no auth).
-        // getCommunityPosts requires #user permission (Internet Identity).
-        // We use getAllCommunityPosts as admin fallback won't work,
-        // so we call getCommunityPosts and catch, returning [] on auth error.
-        // For APK: since actor is anonymous, getCommunityPosts may throw.
-        // In that case we gracefully return empty array.
-        return await actor.getCommunityPosts();
-      } catch {
-        // Fallback: if auth check fails (happens in APK/anonymous context),
-        // return empty array so UI still renders without crashing
-        return [];
-      }
+      // getCommunityPosts is a public query — returns all approved posts
+      // without requiring Internet Identity auth
+      return actor.getCommunityPosts();
     },
     // Always enabled so public users see the feed too
     enabled: !!actor && !isFetching,
-    // Refresh every 30s to pick up newly approved posts
-    refetchInterval: 30_000,
+    // Refresh every 15s to pick up new posts quickly
+    refetchInterval: 15_000,
   });
 }
 
@@ -173,6 +169,42 @@ export function useGetAllCommunityPosts() {
   });
 }
 
+const POST_MEDIA_KEY = "sp_post_media";
+
+interface PostMedia {
+  imageDataUrl?: string;
+  videoUrl?: string;
+}
+
+export function getPostMedia(postId: string): PostMedia | null {
+  try {
+    const stored = localStorage.getItem(POST_MEDIA_KEY);
+    if (!stored) return null;
+    const map = JSON.parse(stored) as Record<string, PostMedia>;
+    return map[postId] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function savePostMedia(postId: string, media: PostMedia): void {
+  try {
+    const stored = localStorage.getItem(POST_MEDIA_KEY);
+    const map: Record<string, PostMedia> = stored ? JSON.parse(stored) : {};
+    map[postId] = media;
+    // Keep only last 100 entries to avoid huge storage
+    const entries = Object.entries(map);
+    if (entries.length > 100) {
+      const trimmed = Object.fromEntries(entries.slice(-100));
+      localStorage.setItem(POST_MEDIA_KEY, JSON.stringify(trimmed));
+    } else {
+      localStorage.setItem(POST_MEDIA_KEY, JSON.stringify(map));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function useCreateCommunityPost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -182,15 +214,25 @@ export function useCreateCommunityPost() {
       deityTag?: string;
       image?: ExternalBlob;
       video?: ExternalBlob;
+      imageDataUrl?: string;
+      videoUrl?: string;
     }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.createCommunityPost(
+      const postId = await actor.createCommunityPost(
         data.content,
         data.deityTag ?? null,
         data.image ?? null,
         data.video ?? null,
         null,
       );
+      // Store media sidecar in localStorage keyed by postId
+      if (data.imageDataUrl || data.videoUrl) {
+        savePostMedia(postId.toString(), {
+          imageDataUrl: data.imageDataUrl,
+          videoUrl: data.videoUrl,
+        });
+      }
+      return postId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
@@ -204,7 +246,10 @@ export function useApproveCommunityPost() {
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.approveCommunityPost(postId);
+      return actor.approveCommunityPost(
+        postId,
+        getSecretParameter("caffeineAdminToken") || "",
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
@@ -218,7 +263,10 @@ export function useRejectCommunityPost() {
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.rejectCommunityPost(postId);
+      return actor.rejectCommunityPost(
+        postId,
+        getSecretParameter("caffeineAdminToken") || "",
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
@@ -232,7 +280,10 @@ export function useDeleteCommunityPost() {
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.deleteCommunityPost(postId);
+      return actor.deleteCommunityPost(
+        postId,
+        getSecretParameter("caffeineAdminToken") || "",
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communityPosts"] });

@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { KathaCategory } from "../backend";
-import { useLocalKathayen } from "../hooks/useLocalKathayen";
+import { useGetAllKathayen } from "../hooks/useQueries";
 import { STATIC_KATHAS } from "../lib/kathaData";
 
 type FilterTab = "all" | "puranik" | "vrat";
@@ -52,13 +52,23 @@ function getDeityEmoji(deity: string): string {
   return "🕉️";
 }
 
+// Normalize KathaCategory from ICP (may come as { puranik: null } object variant)
+function normalizeCategory(category: KathaCategory): KathaCategory {
+  if (typeof category === "object") {
+    const key = Object.keys(category as object)[0];
+    if (key === "vrat") return KathaCategory.vrat;
+    return KathaCategory.puranik;
+  }
+  return category;
+}
+
 export default function Kathayen() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-  // localStorage-based kathayen (admin-added)
-  const { kathayen: localKathayen } = useLocalKathayen();
+  // ICP backend kathayen — shared across all users
+  const { data: icpKathayen, isLoading } = useGetAllKathayen();
 
   const allKathas = useMemo((): DisplayKatha[] => {
     // Static kathas
@@ -72,20 +82,20 @@ export default function Kathayen() {
       isStatic: true,
     }));
 
-    // Admin-added local kathayen (newest first)
-    const localDisplay: DisplayKatha[] = localKathayen.map((k) => ({
-      id: k.id,
+    // ICP backend kathayen (admin-added) — newest first, prefixed with "icp-"
+    const icpDisplay: DisplayKatha[] = (icpKathayen ?? []).map((k) => ({
+      id: `icp-${k.id.toString()}`,
       title: k.title,
       deity: k.deity,
-      category: k.category,
+      category: normalizeCategory(k.category),
       emoji: getDeityEmoji(k.deity),
       excerpt: `${k.hindiText.slice(0, 120)}...`,
       isStatic: false,
     }));
 
-    // Local (admin-added) kathayen shown first, then static
-    return [...localDisplay, ...staticDisplay];
-  }, [localKathayen]);
+    // ICP (admin-added) kathayen shown first, then static
+    return [...icpDisplay, ...staticDisplay];
+  }, [icpKathayen]);
 
   const filtered = useMemo(() => {
     let list = allKathas;
@@ -148,6 +158,7 @@ export default function Kathayen() {
             <button
               key={tab.key}
               type="button"
+              data-ocid={`kathayen.${tab.key}.tab`}
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 activeTab === tab.key
@@ -160,55 +171,71 @@ export default function Kathayen() {
           ))}
         </div>
 
-        {/* Katha Grid */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-12 text-foreground/70">
-            <div className="text-4xl mb-3">📖</div>
-            <p>कोई कथा नहीं मिली</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filtered.map((katha) => (
-              <button
-                key={katha.id}
-                type="button"
-                onClick={() => navigate({ to: `/katha/${katha.id}` })}
-                className="w-full text-left bg-card border border-border rounded-2xl p-4 hover:shadow-md hover:border-amber-400/50 transition-all group"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="text-3xl flex-shrink-0 mt-0.5">
-                    {katha.emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {katha.title}
-                      </h3>
-                      {!katha.isStatic && (
-                        <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded-full font-medium">
-                          नई
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-foreground/65 font-medium">
-                        {katha.deity}
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(katha.category)}`}
-                      >
-                        {getCategoryLabel(katha.category)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-foreground/65 line-clamp-2 leading-relaxed">
-                      {katha.excerpt}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
+        {/* Loading State */}
+        {isLoading && (
+          <div
+            data-ocid="kathayen.loading_state"
+            className="flex items-center justify-center py-8 gap-3 text-muted-foreground"
+          >
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">कथाएँ लोड हो रही हैं...</span>
           </div>
         )}
+
+        {/* Katha Grid */}
+        {!isLoading &&
+          (filtered.length === 0 ? (
+            <div
+              className="text-center py-12 text-foreground/70"
+              data-ocid="kathayen.empty_state"
+            >
+              <div className="text-4xl mb-3">📖</div>
+              <p>कोई कथा नहीं मिली</p>
+            </div>
+          ) : (
+            <div className="grid gap-4" data-ocid="kathayen.list">
+              {filtered.map((katha, idx) => (
+                <button
+                  key={katha.id}
+                  type="button"
+                  data-ocid={`kathayen.item.${idx + 1}`}
+                  onClick={() => navigate({ to: `/katha/${katha.id}` })}
+                  className="w-full text-left bg-card border border-border rounded-2xl p-4 hover:shadow-md hover:border-amber-400/50 transition-all group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl flex-shrink-0 mt-0.5">
+                      {katha.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                          {katha.title}
+                        </h3>
+                        {!katha.isStatic && (
+                          <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded-full font-medium">
+                            नई
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs text-foreground/65 font-medium">
+                          {katha.deity}
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(katha.category)}`}
+                        >
+                          {getCategoryLabel(katha.category)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground/65 line-clamp-2 leading-relaxed">
+                        {katha.excerpt}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ))}
       </div>
     </div>
   );

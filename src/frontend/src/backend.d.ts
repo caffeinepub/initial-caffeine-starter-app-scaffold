@@ -126,16 +126,16 @@ export interface backendInterface {
     addBhajan(title: string, lyrics: string, language: Variant_hindi_english): Promise<bigint>;
     addChalisa(title: string, fullText: string, meaning: string): Promise<bigint>;
     addDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<void>;
-    addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null): Promise<bigint>;
+    addKatha(title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null, adminToken: string): Promise<bigint>;
     addVrat(name: string, date: string, description: string): Promise<bigint>;
-    approveCommunityPost(postId: bigint): Promise<boolean>;
+    approveCommunityPost(postId: bigint, adminToken: string): Promise<boolean>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCommunityPost(content: string, deityTag: string | null, image: ExternalBlob | null, video: ExternalBlob | null, fileAttachment: FileAttachment | null): Promise<bigint>;
     deleteBhajan(id: bigint): Promise<boolean>;
     deleteChalisa(id: bigint): Promise<boolean>;
-    deleteCommunityPost(postId: bigint): Promise<boolean>;
+    deleteCommunityPost(postId: bigint, adminToken: string): Promise<boolean>;
     deleteDharmaQuote(id: bigint): Promise<boolean>;
-    deleteKatha(id: bigint): Promise<boolean>;
+    deleteKatha(id: bigint, adminToken: string): Promise<boolean>;
     deleteVrat(id: bigint): Promise<boolean>;
     getAllBhajans(): Promise<Array<Bhajan>>;
     getAllChalisa(): Promise<Array<Chalisa>>;
@@ -163,7 +163,7 @@ export interface backendInterface {
     likeCommunityPost(postId: bigint): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     listKathayenByCategory(category: KathaCategory): Promise<Array<Katha>>;
-    rejectCommunityPost(postId: bigint): Promise<boolean>;
+    rejectCommunityPost(postId: bigint, adminToken: string): Promise<boolean>;
     reportCommunityPost(postId: bigint): Promise<boolean>;
     requestApproval(): Promise<void>;
     resetJapStats(): Promise<void>;
@@ -174,6 +174,6 @@ export interface backendInterface {
     updateBhajan(id: bigint, title: string, lyrics: string, language: Variant_hindi_english): Promise<boolean>;
     updateChalisa(id: bigint, title: string, fullText: string, meaning: string): Promise<boolean>;
     updateDharmaQuote(id: bigint, englishText: string, hindiText: string, author: string): Promise<boolean>;
-    updateKatha(id: bigint, title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null): Promise<boolean>;
+    updateKatha(id: bigint, title: string, category: KathaCategory, deity: string, hindiText: string, englishText: string, tags: Array<string>, audioBlob: ExternalBlob | null, adminToken: string): Promise<boolean>;
     updateVrat(id: bigint, name: string, date: string, description: string): Promise<boolean>;
 }

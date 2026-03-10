@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
+  Loader2,
   Music,
   Pause,
   Play,
@@ -13,7 +14,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KathaCategory } from "../backend";
-import { useLocalKathayen } from "../hooks/useLocalKathayen";
+import { useGetKatha } from "../hooks/useQueries";
 import { useSpeechNarration } from "../hooks/useSpeechNarration";
 import { STATIC_KATHAS } from "../lib/kathaData";
 
@@ -178,12 +179,23 @@ export default function KathaDetail() {
   const isPlaying = narrationState === "playing";
   const isTTSError = narrationState === "error";
 
-  // localStorage-based local kathayen (admin-added)
-  const { getKatha: getLocalKatha } = useLocalKathayen();
-
   // Determine katha type
   const isStatic = kathaId?.startsWith("static-");
-  const isLocal = kathaId?.startsWith("local_");
+  const isICP = kathaId?.startsWith("icp-");
+
+  // Extract ICP bigint id
+  const icpBigintId = useMemo<bigint | null>(() => {
+    if (!isICP || !kathaId) return null;
+    try {
+      return BigInt(kathaId.replace("icp-", ""));
+    } catch {
+      return null;
+    }
+  }, [isICP, kathaId]);
+
+  // ICP katha fetch — only enabled for icp- prefixed IDs
+  const { data: icpKathaData, isLoading: icpLoading } =
+    useGetKatha(icpBigintId);
 
   // Find static katha
   const staticKatha = useMemo(
@@ -192,11 +204,19 @@ export default function KathaDetail() {
     [isStatic, kathaId],
   );
 
-  // Find local (admin-added) katha
-  const localKatha = useMemo(
-    () => (isLocal && kathaId ? (getLocalKatha(kathaId) ?? null) : null),
-    [isLocal, kathaId, getLocalKatha],
-  );
+  // Resolve ICP audio URL from ExternalBlob
+  const [icpAudioUrl, setIcpAudioUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (icpKathaData?.audioBlob) {
+      try {
+        const url = icpKathaData.audioBlob.getDirectURL();
+        if (url) setIcpAudioUrl(url);
+      } catch {
+        setIcpAudioUrl(null);
+      }
+    }
+  }, [icpKathaData]);
 
   // Build display katha
   const katha: KathaDisplay | null = useMemo(() => {
@@ -213,23 +233,23 @@ export default function KathaDetail() {
         audioUrl: null,
       };
     }
-    if (isLocal && localKatha) {
+    if (isICP && icpKathaData) {
       return {
-        id: localKatha.id,
-        title: localKatha.title,
-        deity: localKatha.deity,
-        category: localKatha.category,
-        emoji: getDeityEmoji(localKatha.deity),
-        hindiText: localKatha.hindiText,
-        englishText: localKatha.englishText,
-        tags: localKatha.tags,
-        audioUrl: localKatha.audioDataUrl ?? null,
+        id: `icp-${icpKathaData.id.toString()}`,
+        title: icpKathaData.title,
+        deity: icpKathaData.deity,
+        category: icpKathaData.category,
+        emoji: getDeityEmoji(icpKathaData.deity),
+        hindiText: icpKathaData.hindiText,
+        englishText: icpKathaData.englishText,
+        tags: icpKathaData.tags,
+        audioUrl: icpAudioUrl,
       };
     }
     return null;
-  }, [isStatic, staticKatha, isLocal, localKatha]);
+  }, [isStatic, staticKatha, isICP, icpKathaData, icpAudioUrl]);
 
-  const isLoading = false;
+  const isLoading = isICP && icpLoading;
 
   const handleTTS = () => {
     if (isPlaying) {
@@ -250,7 +270,10 @@ export default function KathaDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="animate-spin w-6 h-6" />
+          <span>कथा लोड हो रही है...</span>
+        </div>
       </div>
     );
   }
